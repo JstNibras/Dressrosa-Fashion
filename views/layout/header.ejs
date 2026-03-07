@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dressrosa</title>
+  <link rel="stylesheet" href="/css/home.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+
+  <header class="main-header">
+    <div class="header-logo">
+      <a href="/" class="brand-link" style="text-decoration: none; color: inherit;">
+          <h1 style="margin: 0; font-family: 'YourBrandFont', sans-serif;">
+              <span style="color: #ff0055;">Dressrosa</span> Fashion
+          </h1>
+      </a>
+    </div>
+
+    <div class="search-container">
+      <input type="text" placeholder="Search for products,brands & more" class="search-input">
+      <i class="fas fa-search search-icon"></i>
+    </div>
+
+    <nav class="main-nav">
+      <a href="/" class="active">HOME</a>
+      <a href="/shop">SHOP</a>
+      <a href="/orders">ORDERS</a>
+    </nav>
+
+    <div class="nav-actions">
+      <a href="/cart" class="icon-link"><i class="fas fa-shopping-bag"></i></a>
+      <a href="/wishlist" class="icon-link"><i class="far fa-heart"></i></a>
+      <a href="/profile" class="icon-link"><i class="far fa-user"></i></a>
+      <% if (user) { %>
+        <a href="/profile" title="My Profile">
+            <i class="icon-user"></i> <span><%= user.name %></span>
+        </a>
+        <form action="/logout" method="POST" style="display:inline;">
+            <button type="submit" class="btn-logout">Logout</button>
+        </form>
+        <% } else { %>
+          <a href="/login" class="btn-primary-pink">Sign In</a>
+        <% } %>
+    </div>
+  </header>

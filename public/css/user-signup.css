@@ -1,0 +1,130 @@
+/* Base Styles */
+body, html {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    background-color: #ffffff;
+}
+
+/* Header */
+.brand-header {
+    background-color: #000000;
+    color: #ffffff;
+    text-align: center;
+    padding: 20px 0;
+}
+
+.brand-header h1 {
+    margin: 0;
+    font-size: 18px;
+    letter-spacing: 4px;
+}
+
+.brand-header p {
+    margin: 5px 0 0 0;
+    font-size: 9px;
+    letter-spacing: 6px;
+}
+
+/* Layout */
+.signup-main {
+    display: flex;
+    justify-content: center;
+    padding: 60px 20px;
+}
+
+.signup-box {
+    width: 100%;
+    max-width: 500px;
+    border: 1px solid #333;
+    padding: 40px;
+    box-sizing: border-box;
+}
+
+.signup-box h2 {
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 30px;
+    font-size: 24px;
+}
+
+/* Form Styling */
+.form-row {
+    display: flex;
+    gap: 15px;
+}
+
+.flex-1 {
+    flex: 1;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 11px;
+    font-weight: bold;
+    color: #444;
+    margin-bottom: 6px;
+}
+
+.required {
+    color: #ff004d;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #cccccc;
+    border-radius: 6px;
+    box-sizing: border-box;
+    font-size: 14px;
+}
+
+.form-group input::placeholder {
+    color: #999;
+    font-size: 12px;
+}
+
+/* Button Container & Button */
+.form-actions {
+    text-align: center;
+    margin-top: 25px;
+    margin-bottom: 15px;
+}
+
+.btn-signup {
+    width: 220px; /* Constrained width like the image */
+    background-color: #ff004d;
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 6px;
+    font-weight: bold;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-signup:hover {
+    background-color: #e20045;
+}
+
+/* Bottom Login Link */
+.login-prompt {
+    text-align: center;
+    font-size: 11px;
+    color: #333;
+    margin-top: 15px;
+}
+
+.login-prompt a {
+    color: #2563eb;
+    text-decoration: none;
+}
+
+.login-prompt a:hover {
+    text-decoration: underline;
+}

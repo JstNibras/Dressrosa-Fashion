@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dressrosa - User Sign In</title>
+    <link rel="stylesheet" href="/css/user-login.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+    <header class="brand-header">
+        <h1>DRESSROSA</h1>
+        <p>F A S H I O N</p>
+    </header>
+
+    <main class="login-main">
+        <div class="login-box">
+            <h2>Sign In</h2>
+            
+            <form action="/login" method="POST">
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="text" name="email" value="<%= locals.oldData?.email || '' %>" class="form-control">
+                        <% if (locals.errors && errors.email) { %>
+                            <small style="color: #ff0055;"><%= errors.email[0] %></small>
+                        <% } %>
+                </div>
+
+                <div class="form-group">
+                    <label>Password</label>
+                    <div style="position: relative;">
+                        <input type="password" name="password" id="password" class="form-control">
+                        <i class="fas fa-eye toggle-icon" data-target="password" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer;"></i>
+                    </div>
+                    <div style="text-align: right; margin-top: 5px;">
+                        <a href="/forgot-password" style="color: #0066cc; font-size: 13px; text-decoration: none;">
+                            Forgot Password?
+                        </a>
+                    </div>
+                    <% if (locals.errors && errors.password) { %>
+                        <small style="color: #ff0055;"><%= errors.password[0] %></small>
+                    <% } %>
+                </div>
+
+                <button type="submit" class="btn-login">Log In</button>
+            </form>
+
+            <div class="signup-prompt">
+                Not a member yet? <a href="/signup">Sign Up</a>
+            </div>
+
+            <div class="social-login">
+                <a href="/auth/google" class="btn-google">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google Logo">
+                    <span>Sign up with Google</span>
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        document.querySelectorAll('.toggle-icon').forEach(icon => {
+            icon.addEventListener('click', function () {
+                const targetId = this.getAttribute('data-target');
+                const input = document.getElementById(targetId);
+
+                const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+                input.setAttribute('type', type);
+                
+                this.classList.toggle('fa-eye');
+                this.classList.toggle('fa-eye-slash');
+            });
+        });
+    </script>
+</body>
+</html>

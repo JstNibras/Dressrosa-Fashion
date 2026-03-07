@@ -1,0 +1,135 @@
+/* Reset & Layout */
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: Arial, Helvetica, sans-serif;
+    background-color: #ffffff;
+    display: flex;
+    align-items: center; 
+    justify-content: center; 
+}
+
+.verify-otp-main {
+    width: 100%;
+    padding: 20px;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: center;
+}
+
+.form-box {
+    width: 100%;
+    max-width: 480px;
+    border: 1px solid #333333;
+    padding: 40px 30px;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+/* Box Header (Logo) */
+.box-header {
+    margin-bottom: 25px;
+}
+
+.box-header h1 {
+    margin: 0;
+    font-size: 18px;
+    letter-spacing: 4px;
+    color: #000000;
+}
+
+.box-header p {
+    margin: 5px 0 0 0;
+    font-size: 9px;
+    letter-spacing: 6px;
+    color: #000000;
+}
+
+/* Typography */
+.form-box h2 {
+    margin: 0 0 10px 0;
+    font-size: 20px;
+    color: #000000;
+}
+
+.instruction-text {
+    font-size: 10px;
+    color: #000000;
+    margin-bottom: 30px;
+    font-weight: bold;
+}
+
+/* Form Container & OTP Inputs */
+.form-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.otp-input-group {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 30px;
+}
+
+.otp-box {
+    width: 45px;
+    height: 30px;
+    text-align: center;
+    font-size: 16px;
+    border: 1px solid #888888;
+    border-radius: 6px;
+    box-sizing: border-box;
+}
+
+.otp-box:focus {
+    outline: none;
+    border-color: #333333;
+}
+
+.separator {
+    color: #888888;
+    font-weight: bold;
+}
+
+/* Button */
+.form-actions {
+    width: 100%;
+    max-width: 280px;
+    margin-bottom: 20px;
+}
+
+.btn-submit {
+    width: 100%;
+    background-color: #ff004d;
+    color: white;
+    border: none;
+    padding: 10px 0;
+    border-radius: 6px;
+    font-weight: bold;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-submit:hover {
+    background-color: #cc003d;
+}
+
+/* Footer Link */
+.resend-link {
+    font-size: 10px;
+    color: #333333;
+}
+
+.resend-link a {
+    color: #2563eb;
+    text-decoration: none;
+}
+
+.resend-link a:hover {
+    text-decoration: underline;
+}

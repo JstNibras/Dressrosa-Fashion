@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - User Management</title>
+    <link rel="stylesheet" href="/css/admin-users.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+    <div class="admin-layout">
+        
+        <aside class="sidebar">
+            <div class="brand-logo">
+                <h1>DRESSROSA</h1>
+                <p>F A S H I O N</p>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="/admin/dashboard" class="nav-item"><i class="fas fa-th-large"></i> Dashboard</a>
+                <a href="/admin/users" class="nav-item active"><i class="fas fa-users"></i> Users</a>
+                <a href="/admin/products" class="nav-item"><i class="fas fa-box"></i> Products</a>
+                <a href="/admin/categories" class="nav-item"><i class="fas fa-th-list"></i> Categories</a>
+                <a href="/admin/banners" class="nav-item"><i class="fas fa-plus-square"></i> Add Banners</a>
+                <a href="/admin/coupons" class="nav-item"><i class="fas fa-ticket-alt"></i> Coupons</a>
+                <a href="/admin/orders" class="nav-item"><i class="fas fa-shopping-cart"></i> Orders</a>
+                <a href="/admin/report" class="nav-item"><i class="fas fa-chart-pie"></i> Report</a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <a href="/admin/logout" class="nav-item logout-btn">Logout <i class="fas fa-sign-out-alt"></i></a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="page-header">
+                <h2>USER MANAGEMENT</h2>
+            </header>
+
+            <div class="controls-bar">
+                <form action="/admin/users" method="GET" style="display: flex; width: 100%; gap: 15px; align-items: center;">
+                    
+                    <input type="text" name="search" class="search-input" value="<%= searchQuery %>" placeholder="Search Users...">
+
+                    <select name="status" class="filter-select" onchange="this.form.submit()">
+                        <option value="all" <%= statusFilter === 'all' ? 'selected' : '' %>>All Status</option>
+                        <option value="active" <%= statusFilter === 'active' ? 'selected' : '' %>>Active</option>
+                        <option value="blocked" <%= statusFilter === 'blocked' ? 'selected' : '' %>>Blocked</option>
+                    </select>
+
+                    <button type="submit" class="btn-action btn-block">FILTER</button>
+                    
+                    <% if (searchQuery || statusFilter !== 'all') { %>
+                        <a href="/admin/users" class="btn-action btn-unblock">RESET</a>
+                    <% } %>
+                </form>
+            </div>
+
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>USERS ID</th>
+                            <th>USERS</th>
+                            <th>EMAIL</th>
+                            <th>JOINED ON</th>
+                            <th>ACTION</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (users.length > 0) { %>
+                            <% users.forEach(user => { %>
+                                <tr style="<%= user.isBlocked ? 'background-color: #fce4e4;' : '' %>">
+                                    <td><%= user._id.toString().slice(-5).toUpperCase() %></td>
+                                    <td>
+                                        <div class="user-info">
+                                            <span><%= user.firstName %> <%= user.lastName %></span>
+                                        </div>
+                                    </td>
+                                    <td><%= user.email %></td>
+                                    <td><%= new Date(user.createdAt).toLocaleDateString() %></td>
+                                    <td>
+                                        <form id="toggle-form-<%= user._id %>" action="/admin/users/toggle/<%= user._id %>" method="POST" style="display:inline;">
+                                            <button type="button" 
+                                                    class="btn-action <%= user.isBlocked ? 'btn-unblock' : 'btn-block' %>"
+                                                    onclick="confirmToggle('<%= user._id %>', '<%= user.isBlocked ? 'unblock' : 'block' %>')">
+                                                <%= user.isBlocked ? 'UNBLOCK' : 'BLOCK' %>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="5" style="text-align:center; padding: 20px;">No users found.</td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="pagination">
+                <% for(let i = 1; i <= totalPages; i++) { %>
+                    <a href="?page=<%= i %>&search=<%= searchQuery %>&status=<%= statusFilter %>" 
+                    class="page-item <%= currentPage == i ? 'active' : '' %>">
+                    <%= i %>
+                    </a>
+                <% } %>
+            </div>
+        </main>
+    </div>
+
+
+
+
+    <script>
+        function confirmToggle(userId, action) {
+            const isBlocking = action === 'block';
+            
+            Swal.fire({
+                title: `Are you sure?`,
+                text: `Do you want to ${action} this user?`,
+                icon: isBlocking ? 'warning' : 'question',
+                showCancelButton: true,
+                confirmButtonColor: isBlocking ? '#d33' : '#3085d6',
+                cancelButtonColor: '#888',
+                confirmButtonText: `${action}`,
+                cancelButtonText: 'Cancel',
+                background: '#fff',
+                color: '#000'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById(`toggle-form-${userId}`).submit();
+                }
+            });
+        }
+    </script>
+</body>
+</html>

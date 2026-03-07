@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dressrosa - Enter OTP</title>
+    <link rel="stylesheet" href="/css/verify-otp.css">
+</head>
+<body>
+    <main class="verify-otp-main">
+        <div class="form-box">
+            
+            <header class="box-header">
+                <h1>DRESSROSA</h1>
+                <p>F A S H I O N</p>
+            </header>
+
+            <h2>Enter OTP</h2>
+            <p class="instruction-text">
+                We have sent an OTP to your email address. 
+                <br>
+                <span style="color: #888; font-size: 13px;">Valid for: <span id="expiry-timer">02:00</span></span>
+            </p>
+
+            <form action="/verify-otp" method="POST" class="form-container">
+                
+                <div class="otp-input-group">
+                    <input type="text" name="otp1" class="otp-box" maxlength="1" required autocomplete="off">
+                    <span class="separator">-</span>
+                    <input type="text" name="otp2" class="otp-box" maxlength="1" required autocomplete="off">
+                    <span class="separator">-</span>
+                    <input type="text" name="otp3" class="otp-box" maxlength="1" required autocomplete="off">
+                    <span class="separator">-</span>
+                    <input type="text" name="otp4" class="otp-box" maxlength="1" required autocomplete="off">
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" onclick="handleManualSubmit()" class="btn-submit">Verify</button>
+                </div>
+            </form>
+
+            <div class="resend-container" style="text-align: center; margin-top: 20px;">
+                <p id="timer-text">Resend OTP in <span id="timer">60</span>s</p>
+                <a href="javascript:void(0)" id="resend-link" onclick="resendOtp()" style="display: none; color: #ff0055; font-weight: bold; text-decoration: none;">
+                    RESEND OTP
+                </a>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        const inputs = document.querySelectorAll('.otp-box');
+        const form = document.querySelector('.form-container');
+        const submitBtn = document.querySelector('.btn-submit');
+
+        function handleManualSubmit() {
+            const otpValue = Array.from(inputs).map(i => i.value).join('');
+            
+            if (otpValue.length !== 4) {
+                alert("Please enter all 4 digits");
+                return;
+            }
+
+            console.log("Submitting OTP:", otpValue);
+            document.querySelector('.form-container').submit();
+        }
+        
+        inputs.forEach((input, index) => {
+            input.addEventListener('input', function(e) {
+
+                this.value = this.value.replace(/[^0-9]/g, '');
+
+                if (this.value.length === 1 && index < inputs.length - 1) {
+                    inputs[index + 1].focus();
+                }
+
+                checkInputs();
+            });
+
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Backspace' && !this.value && index > 0) {
+                    inputs[index - 1].focus();
+                }
+            });
+        });
+
+        function checkInputs() {
+            const values = Array.from(inputs).map(input => input.value);
+            const allFilled = values.every(val => val.length === 1);
+
+            console.log("Current OTP values:", values);
+
+            const submitBtn = document.querySelector('.btn-submit');
+            submitBtn.disabled = !allFilled;
+            submitBtn.style.opacity = allFilled ? "1" : "0.5";
+            submitBtn.style.cursor = allFilled ? "pointer" : "not-allowed";
+        }
+
+        checkInputs();
+        const isExpiredFromServer = `<%= locals.isExpired ? 'true' : 'false' %>` === 'true';
+
+        let timeLeft = 120;
+        const timerElement = document.getElementById('timer');
+        const expiryElement = document.getElementById('expiry-timer');
+        const timerText = document.getElementById('timer-text');
+        const resendLink = document.getElementById('resend-link');
+        const otpInputs = document.querySelectorAll('.otp-box');
+
+        function startTimer() {
+            if (isExpiredFromServer) {
+                showResendUI();
+                return;
+            }
+
+            const countdown = setInterval(() => {
+                timeLeft--;
+                updateDisplay();
+
+                if (timeLeft <= 0) {
+                    clearInterval(countdown);
+                    showResendUI();
+                }
+            }, 1000);
+        }
+
+        function updateDisplay() {
+            if (timerElement) timerElement.innerText = timeLeft;
+            let minutes = Math.floor(timeLeft / 60);
+            let seconds = timeLeft % 60;
+            expiryElement.innerText = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+        }
+
+        function showResendUI() {
+            timerText.style.display = 'none';
+            resendLink.style.display = 'inline';
+            expiryElement.innerText = "EXPIRED";
+            expiryElement.style.color = "#ff0055";
+        }
+
+        async function resendOtp() {
+            try {
+                const response = await fetch('/resend-otp', { method: 'POST' });
+                const data = await response.json();
+
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    alert(data.message);
+                }
+            } catch (error) {
+                alert("Error resending OTP. Please try again.");
+            }
+        }
+
+        startTimer();
+        
+    </script>
+</body>
+</html>

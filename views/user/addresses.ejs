@@ -1,0 +1,170 @@
+<%- include('../layout/header') %>
+
+    <style>
+        .address-container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        .address-title {
+            font-size: 20px;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 30px;
+        }
+
+        .add-address-box {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin-bottom: 20px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            transition: background-color 0.3s ease;
+        }
+
+        .add-address-box:hover {
+            background-color: #f9f9f9;
+        }
+
+        .add-address-box i {
+            margin-right: 10px;
+        }
+
+        .address-card {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .address-card p {
+            margin: 5px 0;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .address-card strong {
+            color: #333;
+        }
+
+        .address-type {
+            font-weight: bold;
+            color: #333;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+
+        .address-actions {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-delete {
+            padding: 8px 20px;
+            border: 1px solid #ff0055;
+            background: transparent;
+            color: #ff0055;
+            text-transform: capitalize;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-delete:hover {
+            background: #ff0055;
+            color: white;
+        }
+
+        .btn-edit {
+            padding: 8px 20px;
+            border: 1px solid #333;
+            background: transparent;
+            color: #333;
+            text-transform: capitalize;
+            font-size: 12px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .btn-edit:hover {
+            background: #333;
+            color: white;
+        }
+    </style>
+
+    <div class="address-container">
+        <div class="address-title">ADDRESS</div>
+
+        <a href="/profile/address/add" class="add-address-box">
+            <i class="fas fa-plus"></i> ADD NEW ADDRESS
+        </a>
+
+        <% if (addresses && addresses.length> 0) { %>
+            <% addresses.forEach(address=> { %>
+                <div class="address-card">
+                    <div>
+                        <input type="radio" name="selectedAddress" <%=address.isDefault ? 'checked' : '' %>>
+                        <span class="address-type">(<%= address.type %>)</span>
+                    </div>
+                    <div style="margin-left: 25px; margin-top: 10px;">
+                        <p><%= address.houseNo %></p>
+                        <p><%= address.city %>, <%= address.district %>, <%= address.state %> - <%= address.pincode %></p>
+                        <p>Mobile: <%= address.mobile %></p>
+                    </div>
+
+                    <div class="address-actions">
+                        <% if (!address.isDefault) { %>
+                            <form action="/profile/address/default/<%= address._id %>" method="POST" style="display:inline;">
+                                <button type="submit" class="btn-edit" style="border-color: #ff0050; color: #ff0050;">Set as Default</button>
+                            </form>
+                        <% } %>
+                        <a href="/profile/address/edit/<%= address._id %>" class="btn-edit">Edit</a>
+                        <button type="button" class="btn-delete" onclick="confirmDelete('<%= address._id %>')">
+                            Delete
+                        </button>
+
+                        <form id="delete-form-<%= address._id %>" 
+                            action="/profile/address/delete/<%= address._id %>" 
+                            method="POST" style="display: none;">
+                        </form>
+                    </div>
+                </div>
+                    <% }) %>
+                        <% } else { %>
+                            <p>No addresses found.</p>
+                        <% } %>
+                </div>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <%- include('../layout/footer') %>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        function confirmDelete(addressId) {
+            Swal.fire({
+                title: "Are you sure?",
+                text: "Do you want to remove this address from your profile?",
+                icon: "question",
+                showCancelButton: true,
+                confirmButtonColor: "#ff0055", 
+                cancelButtonColor: "#6c757d",
+                confirmButtonText: "Yes, delete it!",
+                cancelButtonText: "No, keep it"
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Submit the hidden form
+                    document.getElementById(`delete-form-${addressId}`).submit();
+                }
+            });
+        }
+    </script>
