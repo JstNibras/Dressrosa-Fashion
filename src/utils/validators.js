@@ -44,6 +44,17 @@ const loginSchema = z.object({
         .min(1, "Password is required")
 });
 
+const adminLoginSchema = z.object({
+    username: z.string()
+        .trim()
+        .min(1, "Email cannot be empty")
+        .email("Invalid email format"),
+
+    password: z.string()
+        .min(1, "Email cannot be empty")
+        .min(5, "Password must be at least 5 characters long")
+});
+
 const forgotPasswordSchema = z.object({
     email: z.string()
         .trim()
@@ -151,4 +162,5 @@ module.exports = { signupSchema,
                     profileSchema,
                     addressSchema,
                     changePasswordSchema,
-                    otpSchema };
+                    otpSchema,
+                    adminLoginSchema };

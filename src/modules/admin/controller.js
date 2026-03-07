@@ -1,7 +1,19 @@
+const { adminLoginSchema } = require('../../utils/validators');
 const User = require('../auth/userModel')
 
 exports.postAdminLogin = (req, res) => {
-    const { username, password } = req.body;
+    const validation = adminLoginSchema.safeParse(req.body);
+
+    if (!validation.success) {
+        const errors = validation.error.flatten().fieldErrors;
+        return res.render('admin/login', {
+            errors: errors,
+            oldData: req.body,
+            layout: 'layout/header-minimal'
+        });
+    }
+
+    const { username, password } = validation.data;
 
     if (username === process.env.ADMIN_EMAIL && password === process.env.ADMIN_PASSWORD) {
         req.session.admin = {
