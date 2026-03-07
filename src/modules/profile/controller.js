@@ -2,6 +2,7 @@ const User = require('../auth/userModel');
 const Address = require('./addressModel');
 const { profileSchema, addressSchema, changePasswordSchema } = require('../../utils/validators')
 const bcrypt = require('bcrypt');
+const axios = require('axios');
 
 const getProfile = async (req, res) => {
     try {
@@ -159,6 +160,35 @@ const postAddAddress = async (req, res) => {
                 errors: errors,
                 oldData: req.body
             });
+        }
+
+        const { pincode, state, district, city } = validation.data;
+
+        try {
+            const pincodeRes = await axios.get(`https://api.postalpincode.in/pincode/${pincode}`);
+            const pinData = pincodeRes.data[0];
+
+            if (pinData.Status === "Success") {
+                const officialState = pinData.PostOffice[0].State;
+                const officialDistrict = pinData.PostOffice[0].District;
+
+                if (state.toLowerCase() !== officialState.toLowerCase() ||
+                    district.toLocaleLowerCase() !== officialDistrict.toLowerCase()) {
+                        return res.render('user/add-address', {
+                            user: req.session.user,
+                            errors: { pincode: [`Pincode ${pincode} does not match ${district}, ${state}`]},
+                            oldData: req.body
+                        });
+                }
+            } else {
+                return res.render('user/add-address', {
+                    user: req.session.user,
+                    errors: { pincode: ["Invalid Pincode provided"] },
+                    oldData: req.body
+                });
+            }
+        } catch (apiErr) {
+            console.error("Pincode API Error:", apiErr);
         }
 
         const addressData = {
