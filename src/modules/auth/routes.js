@@ -18,7 +18,13 @@ router.get('/login', noCache, (req, res) => {
     res.render('user/login', { error: null });
 });
 
-router.get('/verify-otp', canAccessOTP, (req, res) => res.render('user/verify-otp', { error: null }));
+router.get('/verify-otp', canAccessOTP, (req, res) => {
+    let timeLeft = 120;
+    if (req.session.otpExpiry) {
+        timeLeft = Math.max(0, Math.floor((req.session.otpExpiry - Date.now()) / 1000));
+    }
+    res.render('user/verify-otp', { error: null, timeLeft });
+});
 
 router.get('/signup', noCache, (req, res) => {
     res.render('user/signup', { errors: {}, oldData: {} });

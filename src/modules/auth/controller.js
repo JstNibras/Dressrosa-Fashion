@@ -2,6 +2,7 @@ const bcrypt = require('bcrypt');
 const User = require('./userModel');
 const sendOtpEmail = require('../../utils/sendOtp');
 const { signupSchema, loginSchema, forgotPasswordSchema, newPasswordSchema, otpSchema } = require('../../utils/validators');
+const userModel = require('./userModel');
 
 exports.signup = async (req, res) => {
     try {
@@ -124,29 +125,17 @@ exports.verifyOtp = async (req, res) => {
         console.log("Is Expired:", Date.now() > otpExpiry);
 
         if (!sessionOtp || !otpExpiry) {
-            return res.render('user/verify-otp', { 
-                error: { otp: ["Session expired. Please try again."] },
-                user: req.session.user || null
-        });
-        }
-
-        if (enteredOtp !== sessionOtp || Date.now() > otpExpiry) {
-            return res.render('user/verify-otp', {
-                error: { otp: ["Invalid or Expired OTP"] },
-                otpType,
-                user: req.session.user || null
-            });
+            return res.status(400).json({ success: false, message: "Session expired. Please try again." });
         }
 
         if (Date.now() > otpExpiry) {
             delete req.session.otp;
             delete req.session.otpExpiry;
+            return res.status(400).json({ success: false, message: "OTP Expired. Please request a new one.", isExpired: true });
+        }
 
-            return res.render('user/verify-otp', { 
-                errors: { otp: ["OTP Expired. Please request a new one."] },
-                isExpired: true,
-                user: req.session.user || null 
-            });
+        if (enteredOtp !== sessionOtp ) {
+            return res.status(400).json({ success: false, message: "Invalid OTP. Please try again." });
         }
 
         switch (otpType) {
@@ -154,41 +143,41 @@ exports.verifyOtp = async (req, res) => {
                 const { firstName, lastName, email, password, phone } = req.session.tempUser;
                 const salt = await bcrypt.genSalt(10);
                 const hashedPassword = await bcrypt.hash(password, salt);
-
                 const newUser = new User({
                     firstName, lastName, email, password: hashedPassword, phone
                 });
                 await newUser.save();
                 delete req.session.otp;
                 delete req.session.otpType;
-                return res.redirect('/login');
+                return res.json({ success: true, redirectUrl: '/login' });
 
             case 'forgotPassword':
                 req.session.isOtpVerified = true;
                 delete req.session.otp;
                 delete req.session.otpType;
-                return req.session.save(() => res.redirect('/new-password'));
+                return req.session.save(() => res.json({ success: true, redirectUrl: '/new-password' }));
 
             case 'emailChange':
                 const userId = req.session.user.id;
                 await User.findByIdAndUpdate(userId, { email: req.session.newEmail});
                 req.session.user.email = req.session.newEmail;
                 delete req.session.newEmail;
-                return res.redirect('/profile');
+                return res.json({ success: true, redirectUrl: '/profile?success=EmailUpdate' });
         }
 
+        const type = otpType;
         delete req.session.otp;
         delete req.session.otpExpiry;
         delete req.session.otpType;
         if(req.session.tempUser) delete req.session.tempUser;
 
-        if(otpType === 'forgotPassword') return res.redirect('/new-password');
-        if(otpType === 'emailChange') return res.redirect('/profile?success=Email Update');
-
-        res.redirect('/login?success=Verified Successfully')
+        let redirectUrl = '/login?success=verified';
+        if(type === 'forgotPassword') redirectUrl = '/new-password';
+        if(type === 'emailChange') redirectUrl = '/profile?success=EmailUpdate';
+        return res.json({ success: true, redirectUrl });
     } catch (error) {
         console.error("OTP Verification Error:", error);
-        res.status(500).send("Internal Server Error")
+        res.status(500).json({ success: false, message: "Internal Server Error" });
     }
 };
 
@@ -219,7 +208,7 @@ exports.forgotPasswordRequest = async (req, res) => {
         await sendOtpEmail(email, otp);
         req.session.save((err) => {
             if (err) console.error("Session save error:", err);
-            res.render('user/verify-otp', { error: null, forgotPassword: true});
+            res.redirect('/verify-otp');
         });
     } catch (error) {
         res.status(500).send("Error");

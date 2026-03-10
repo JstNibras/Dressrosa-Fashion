@@ -1,15 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dressrosa - Enter OTP</title>
     <link rel="stylesheet" href="/css/verify-otp.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
+
 <body>
     <main class="verify-otp-main">
         <div class="form-box">
-            
+
             <header class="box-header">
                 <h1>DRESSROSA</h1>
                 <p>F A S H I O N</p>
@@ -17,13 +20,14 @@
 
             <h2>Enter OTP</h2>
             <p class="instruction-text">
-                We have sent an OTP to your email address. 
+                We have sent an OTP to your email address.
                 <br>
                 <span style="color: #888; font-size: 13px;">Valid for: <span id="expiry-timer">02:00</span></span>
             </p>
 
-            <form action="/verify-otp" method="POST" class="form-container">
-                
+            <form action="/verify-otp" method="POST" class="form-container"
+                onsubmit="event.preventDefault(); handleManualSubmit();">
+
                 <div class="otp-input-group">
                     <input type="text" name="otp1" class="otp-box" maxlength="1" required autocomplete="off">
                     <span class="separator">-</span>
@@ -41,7 +45,8 @@
 
             <div class="resend-container" style="text-align: center; margin-top: 20px;">
                 <p id="timer-text">Resend OTP in <span id="timer">60</span>s</p>
-                <a href="javascript:void(0)" id="resend-link" onclick="resendOtp()" style="display: none; color: #ff0055; font-weight: bold; text-decoration: none;">
+                <a href="javascript:void(0)" id="resend-link" onclick="resendOtp()"
+                    style="display: none; color: #ff0055; font-weight: bold; text-decoration: none;">
                     RESEND OTP
                 </a>
             </div>
@@ -50,24 +55,66 @@
     </main>
 
     <script>
-        const inputs = document.querySelectorAll('.otp-box');
         const form = document.querySelector('.form-container');
         const submitBtn = document.querySelector('.btn-submit');
+        const inputs = document.querySelectorAll('.otp-box');
 
-        function handleManualSubmit() {
+        async function handleManualSubmit() {
             const otpValue = Array.from(inputs).map(i => i.value).join('');
-            
+
             if (otpValue.length !== 4) {
-                alert("Please enter all 4 digits");
+                Swal.fire({ icon: 'error', title: 'Please enter all 4 digits' });
                 return;
             }
 
-            console.log("Submitting OTP:", otpValue);
-            document.querySelector('.form-container').submit();
+            try {
+                const response = await fetch('/verify-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        otp1: inputs[0].value,
+                        otp2: inputs[1].value,
+                        otp3: inputs[2].value,
+                        otp4: inputs[3].value
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success',
+                        text: 'OTP verified successfully!',
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 1500,
+                        timerProgressBar: true
+                    }).then(() => {
+                        window.location.href = data.redirectUrl || '/login';
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Invalid OTP',
+                        text: data.message || 'The OTP you entered is incorrect.',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+
+                    inputs.forEach(input => input.value = '');
+                    inputs[0].focus();
+                    checkInputs();
+                }
+            } catch (error) {
+                console.error("Verification Error", error);
+                alert("Something went wrong. Please try again.");
+            }
         }
-        
+
         inputs.forEach((input, index) => {
-            input.addEventListener('input', function(e) {
+            input.addEventListener('input', function (e) {
 
                 this.value = this.value.replace(/[^0-9]/g, '');
 
@@ -78,7 +125,7 @@
                 checkInputs();
             });
 
-            input.addEventListener('keydown', function(e) {
+            input.addEventListener('keydown', function (e) {
                 if (e.key === 'Backspace' && !this.value && index > 0) {
                     inputs[index - 1].focus();
                 }
@@ -100,12 +147,13 @@
         checkInputs();
         const isExpiredFromServer = `<%= locals.isExpired ? 'true' : 'false' %>` === 'true';
 
-        let timeLeft = 120;
+        let timeLeft = <%= typeof timeLeft !== 'undefined' ? timeLeft : 120 %>;
+        if (timeLeft <= 0) timeLeft = 0;
+
         const timerElement = document.getElementById('timer');
         const expiryElement = document.getElementById('expiry-timer');
         const timerText = document.getElementById('timer-text');
         const resendLink = document.getElementById('resend-link');
-        const otpInputs = document.querySelectorAll('.otp-box');
 
         function startTimer() {
             if (isExpiredFromServer) {
@@ -154,7 +202,8 @@
         }
 
         startTimer();
-        
+
     </script>
 </body>
+
 </html>
