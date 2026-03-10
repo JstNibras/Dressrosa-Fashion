@@ -10,6 +10,10 @@ const userSchema = new mongoose.Schema({
     wallet : { type : Number, default : 0},
     isBlocked : {  type : Boolean, default : false},
     addresses : [{ type : mongoose.Schema.Types.ObjectId, ref : 'Address'}],
+    profileImage: {
+        type: String,
+        default: '/images/default-avatar.png'
+    },
 }, {timestamps : true});
 
 userSchema.virtual('name').get(function() {

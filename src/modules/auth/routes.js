@@ -5,6 +5,8 @@ const { noCache } = require('../../middlewares/auth');
 const { isUser } = require('../../middlewares/auth');
 const { canAccessOTP } = require('../../middlewares/auth');
 const passport = require('passport');
+const { upload } = require('../../config/cloudinary');
+const userController = require('./controller');
 
 
 router.get('/', noCache, (req, res) => {
@@ -74,6 +76,8 @@ router.post('/login', authController.login);
 router.post('/verify-otp', authController.verifyOtp);
 router.post('/forgot-password', authController.forgotPasswordRequest);
 router.post('/reset-password', authController.resetPassword);
+router.post('/profile/update-image', upload.single('profileImage'), userController.updateProfileImage);
+router.post('/profile/remove-image', userController.removeProfileImage);
 router.post('/profile/change-email-request', isUser, authController.changeEmailRequest);
 router.post('/resend-otp', authController.resendOtp);
 

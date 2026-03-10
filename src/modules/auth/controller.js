@@ -3,6 +3,7 @@ const User = require('./userModel');
 const sendOtpEmail = require('../../utils/sendOtp');
 const { signupSchema, loginSchema, forgotPasswordSchema, newPasswordSchema, otpSchema } = require('../../utils/validators');
 const userModel = require('./userModel');
+const { cloudinary } = require('../../config/cloudinary');
 
 exports.signup = async (req, res) => {
     try {
@@ -110,6 +111,50 @@ exports.logout = (req, res, next) => {
         });
     })
 };
+
+exports.updateProfileImage = async (req, res) => {
+    try {
+        if (!req.file) return res.redirect('/profile?error=NoImage');
+
+        const userId = req.session.user.id;
+        const imageUrl = req.file.url || req.file.path;
+
+        const updatedUser = await User.findByIdAndUpdate(
+            userId, 
+            { profileImage: imageUrl }, 
+            { new: true }
+        );
+
+        req.session.user.profileImage = updatedUser.profileImage;
+
+        res.redirect('/profile?success=Image Updated')
+    } catch (error) {
+        console.error("Cloudinary Upload Error:", error);
+        res.status(500).send("Upload failed");
+    }
+};
+
+exports.removeProfileImage = async (req, res) => {
+    try {
+        const userId = req.session.user.id;
+        const user = await User.findById(userId);
+
+        if (user.profileImage && !user.profileImage.includes('default-avatar')) {
+            const publicId = user.profileImage.split('/').slice(-2).join('/').split('.')[0];
+            await cloudinary.uploader.destroy(publicId);
+        }
+
+        user.profileImage = '/images/Default/images.jpg';
+        await user.save();
+
+        req.session.user.profileImage = user.profileImage;
+
+        res.redirect('/profile?success=ImageRemoved')
+    } catch (error) {
+        console.error("Remove Image Error:", error);
+        res.status(500).send("Failed to remove image");
+    }
+}
 
 exports.verifyOtp = async (req, res) => {
     try {

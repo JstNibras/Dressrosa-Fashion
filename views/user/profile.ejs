@@ -1,119 +1,186 @@
 <%- include('../layout/header') %>
 
 <style>
-/* Add your custom styles here matching the design */
-.profile-container {
-    max-width: 800px;
-    margin: 40px auto;
-    padding: 20px;
-}
-.profile-card {
-    border: 1px solid #ddd;
-    padding: 40px;
-    text-align: center;
-    position: relative;
-    border-radius: 4px;
-}
-.profile-title {
-    font-size: 24px;
-    font-weight: bold;
-    margin-bottom: 30px;
-}
-.profile-info {
-    text-align: left;
-    margin-top: 30px;
-    font-size: 16px;
-    line-height: 1.8;
-}
-.edit-icon {
-    position: absolute;
-    top: 40px;
-    right: 40px;
-    font-size: 20px;
-    color: #333;
-    text-decoration: none;
-}
-.action-buttons {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
-    margin-top: 40px;
-}
-.action-btn {
-    display: inline-block;
-    padding: 15px;
-    border: 1px solid #333;
-    text-align: center;
-    text-transform: uppercase;
-    font-size: 12px;
-    font-weight: bold;
-    color: #333;
-    text-decoration: none;
-    transition: all 0.3s ease;
-}
-.action-btn:hover {
-    background-color: #333;
-    color: #fff;
-}
-.btn-change-pw {
-        display: inline-flex; /* Ensures the button only takes up as much space as its text */
-        align-items: center;
-        gap: 8px;
-        text-decoration: none;
-        font-size: 13px;
-        font-weight: 600;
-        color: #ff0055;
-        border: 1px solid #ff0055;
-        padding: 6px 12px;
-        border-radius: 4px;
-        transition: all 0.2s ease-in-out;
+    :root {
+        --primary-pink: #ff0055;
+        --soft-grey: #f8f9fa;
+        --border-color: #e0e0e0;
     }
 
-    .btn-change-pw:hover {
-        background-color: #ff0055;
-        color: #ffffff;
-        box-shadow: 0 2px 5px rgba(255, 0, 85, 0.2);
+    .profile-page-wrapper {
+        max-width: 1200px;
+        margin: 50px auto;
+        display: grid;
+        grid-template-columns: 300px 1fr; /* Sidebar + Main Content */
+        gap: 30px;
+        padding: 0 20px;
     }
+
+    /* Left Sidebar */
+    .profile-sidebar {
+        background: white;
+        border: 1px solid var(--border-color);
+        padding: 30px 0;
+        border-radius: 8px;
+        height: fit-content;
+    }
+
+    .profile-nav-item {
+        display: flex;
+        align-items: center;
+        padding: 15px 25px;
+        color: #444;
+        text-decoration: none;
+        transition: 0.2s;
+        border-left: 4px solid transparent;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .profile-nav-item i { margin-right: 15px; width: 20px; }
+    
+    .profile-nav-item:hover, .profile-nav-item.active {
+        background: var(--soft-grey);
+        color: var(--primary-pink);
+        border-left-color: var(--primary-pink);
+    }
+
+    /* Main Content Card */
+    .profile-main-content {
+        background: white;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 40px;
+    }
+
+    /* Profile Pic Styles */
+    .pic-upload-wrapper {
+        position: relative;
+        width: 130px;
+        margin: 0 auto 30px;
+    }
+
+    .profile-avatar {
+        width: 130px;
+        height: 130px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid var(--primary-pink);
+    }
+
+    .upload-overlay {
+        position: absolute;
+        bottom: 5px;
+        right: 5px;
+        background: white;
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        cursor: pointer;
+    }
+
+    .hidden-file-input { display: none; }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+        border-top: 1px solid #eee;
+        padding-top: 30px;
+    }
+
+    .info-group label {
+        display: block;
+        font-size: 12px;
+        color: #888;
+        text-transform: uppercase;
+        margin-bottom: 5px;
+    }
+
+    .info-group p { font-size: 16px; font-weight: 500; color: #333; }
 </style>
 
-<div class="profile-container">
-    <div class="profile-card">
-        <div class="profile-title">User Profile</div>
-        
-        <i class="fas fa-user" style="font-size: 60px; margin-bottom: 20px;"></i>
-        <a href="/profile/edit" class="edit-icon"><i class="fas fa-pencil-alt"></i></a>
-        
+<div class="profile-page-wrapper">
+    
+    <aside class="profile-sidebar">
+        <div style="text-align: center; margin-bottom: 20px;">
+            <p style="font-weight: bold; font-size: 18px;">Hello, <%= user.firstName %>!</p>
+        </div>
+        <nav>
+            <a href="/profile" class="profile-nav-item active"><i class="fas fa-user"></i> Personal Info</a>
+            <a href="/orders" class="profile-nav-item"><i class="fas fa-shopping-bag"></i> My Orders</a>
+            <a href="/wishlist" class="profile-nav-item"><i class="fas fa-heart"></i> My Wishlist</a>
+            <a href="/profile/addresses" class="profile-nav-item"><i class="fas fa-map-marker-alt"></i> Addresses</a>
+            <a href="/wallet" class="profile-nav-item"><i class="fas fa-wallet"></i> Wallet</a>
+            <a href="/coupons" class="profile-nav-item"><i class="fas fa-tag"></i> Coupons</a>
+            <a href="/refer" class="profile-nav-item"><i class="fas fa-tag"></i> Refer & Earn</a>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 10px 0;">
+            <a href="/logout" class="profile-nav-item" style="color: #ff4d4d;"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </nav>
+    </aside>
 
-        <div class="profile-info">
-    <p><strong>Full Name :</strong> <%= user.firstName %> <%= user.lastName %></p>
-    <p><strong>Email :</strong> <%= user.email %></p>
-    <% if (defaultAddress) { %>
-        <p><strong>Default Address :</strong> <%= defaultAddress.houseNo %> <%= defaultAddress.city %>, <%= defaultAddress.state %>, <%= defaultAddress.pincode %></p>
-    <% } else { %>
-        <p><strong>Default Address :</strong> Not set</p>
-    <% } %>
-    <p><strong>Mobile No. :</strong> <%= user.phone || 'Not set' %></p>
+    <main class="profile-main-content">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <h2 style="margin-top: 0;">Account Overview</h2>
+            <a href="/profile/edit" style="color: var(--primary-pink); text-decoration: none; font-weight: 600;">Edit Profile</a>
+        </div>
 
-    <div style="display: flex; justify-content: flex-end; width: 100%; margin-top: 10px;">
-        <a href="/profile/change-password" class="btn-change-pw">
-            <i class="fas fa-key"></i> Change Password
-        </a>
-    </div>
+        <div class="pic-upload-wrapper">
+            <img src="<%= user.profileImage || '/images/Default/images.jpg' %>" class="profile-avatar" alt="User">
+            <label for="profilePicInput" class="upload-overlay">
+                <i class="fas fa-camera" style="color: #666; font-size: 14px;"></i>
+            </label>
+            <% if (user.profileImage && !user.profileImage.includes('default-avatar')) { %>
+                <form action="/profile/remove-image" method="POST" style="position: absolute; top: 5px; left: 5px;">
+                    <button type="submit" style="background: white; border: none; border-radius: 50%; width: 30px; height: 30px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); cursor: pointer; color: #ff4d4d;">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </form>
+            <% } %>
+            <form id="uploadForm" action="/profile/update-image" method="POST" enctype="multipart/form-data">
+                <input type="file" id="profilePicInput" name="profileImage" class="hidden-file-input" onchange="this.form.submit()">
+            </form>
+        </div>
+
+        <div class="info-grid">
+            <div class="info-group">
+                <label>First Name</label>
+                <p><%= user.firstName %></p>
+            </div>
+            <div class="info-group">
+                <label>Last Name</label>
+                <p><%= user.lastName %></p>
+            </div>
+            <div class="info-group">
+                <label>Email Address</label>
+                <p><%= user.email %></p>
+            </div>
+            <div class="info-group">
+                <label>Phone Number</label>
+                <p><%= user.phone || 'Not set' %></p>
+            </div>
+            <div class="info-group" style="grid-column: span 2;">
+                <label>Default Shipping Address</label>
+                <p>
+                    <% if (defaultAddress) { %>
+                        <%= defaultAddress.houseNo %>, <%= defaultAddress.city %>, <%= defaultAddress.state %> - <%= defaultAddress.pincode %>
+                    <% } else { %>
+                        No address found. <a href="/profile/addresses" style="color: blue;">Add one</a>
+                    <% } %>
+                </p>
+            </div>
+        </div>
+
+        <div style="margin-top: 40px;">
+            <a href="/profile/change-password" class="btn-change-pw">
+                <i class="fas fa-shield-alt"></i> Change Password
+            </a>
+        </div>
+    </main>
 </div>
-        
-    </div>
-
-    <div class="action-buttons">
-        <a href="/orders" class="action-btn">MY ORDERS</a>
-        <a href="/wishlist" class="action-btn">MY WISHLIST</a>
-        <a href="/profile/addresses" class="action-btn">EDIT / CHANGE ADDRESS</a>
-        <a href="/wallet" class="action-btn">WALLET</a>
-        <a href="/coupons" class="action-btn">MY COUPON</a>
-        <a href="/referrals" class="action-btn">REFER AND EARN</a>
-    </div>
-</div>
-
-
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 
 <%- include('../layout/footer') %>
