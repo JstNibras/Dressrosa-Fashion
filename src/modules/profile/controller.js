@@ -113,7 +113,7 @@ const getAddresses = async (req, res) => {
         if (!userId) return res.redirect('/login');
 
         const addresses = await Address.find({ user: userId });
-        res.render('user/addresses', { addresses , user : userId});
+        res.render('user/addresses', { addresses, user: req.session.user });
     } catch (error) {
         console.error('Error fetching addresses:', error);
         res.status(500).send('Internal Server Error');
@@ -201,7 +201,12 @@ const postAddAddress = async (req, res) => {
             addressData.isDefault = true;
         }
 
-        await Address.create(addressData);
+        const newAddress = await Address.create(addressData);
+        
+        await User.findByIdAndUpdate(req.session.user.id, {
+            $push: { addresses: newAddress._id }
+        });
+
         res.redirect('/profile/addresses?success=Address added successfully');
 
     } catch (error) {
