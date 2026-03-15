@@ -114,25 +114,6 @@ body, html {
     margin-bottom: 20px;
 }
 
-.search-input, .filter-select {
-    background-color: #f1f1f1;
-    border: none;
-    padding: 12px 15px;
-    border-radius: 6px;
-    font-size: 14px;
-    color: #555;
-    outline: none;
-}
-
-.search-input {
-    width: 250px;
-}
-
-.filter-select {
-    width: 150px;
-    cursor: pointer;
-}
-
 /* --- DATA TABLE --- */
 .table-container {
     width: 100%;
@@ -170,19 +151,11 @@ body, html {
     vertical-align: middle;
 }
 
-/* User Info Layout */
+/* User Info Layout (Reused for Category Name) */
 .user-info {
     display: flex;
     align-items: center;
     gap: 12px;
-}
-
-.avatar {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    object-fit: cover;
-    background-color: #ccc; /* Fallback */
 }
 
 /* Action Buttons */
@@ -197,12 +170,110 @@ body, html {
     text-transform: uppercase;
 }
 
-.btn-block {
-    background-color: #e60039; /* Red */
+.btn-block { background-color: #e60039; } /* Red */
+.btn-unblock { background-color: #009955; } /* Green */
+.btn-add-new { background-color: #000000; } /* Black to match sidebar */
+
+
+/* --- NEW: CATEGORY SPECIFIC STYLES --- */
+.cat-img {
+    width: 45px;
+    height: 45px;
+    border-radius: 4px;
+    object-fit: cover;
+    background-color: #ccc;
 }
 
-.btn-unblock {
-    background-color: #009955; /* Green */
+.desc-text {
+    max-width: 250px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #555;
+}
+
+.badge-active {
+    background-color: #009955;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.badge-inactive {
+    background-color: #e60039;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+/* --- NEW: MODAL STYLES --- */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: #ffffff;
+    width: 400px;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    border-bottom: 1px solid #d1d1d1;
+    padding-bottom: 15px;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #333;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 18px;
+    color: #888;
+    cursor: pointer;
+}
+
+.close-btn:hover { color: #e60039; }
+
+.form-group { margin-bottom: 20px; }
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 13px;
+    font-weight: bold;
+    color: #333;
+}
+
+.form-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d1d1d1;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 14px;
+    outline: none;
+    background-color: #f1f1f1; /* Matched to input fields in reference */
 }
 
 /* --- PAGINATION STYLES --- */
@@ -246,3 +317,7 @@ body, html {
 .page-item i {
     font-size: 11px; /* perfectly sizes the FontAwesome chevron arrows */
 }
+
+.form-input:focus { border-color: #888888; }
+.file-input { padding: 7px; background: #f1f1f1; cursor: pointer; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 30px; }

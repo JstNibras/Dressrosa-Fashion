@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Category Management</title>
+    <link rel="stylesheet" href="/css/admin-categories.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+    <div class="admin-layout">
+        
+        <aside class="sidebar">
+            <div class="brand-logo">
+                <h1>DRESSROSA</h1>
+                <p>F A S H I O N</p>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="/admin/dashboard" class="nav-item"><i class="fas fa-th-large"></i> Dashboard</a>
+                <a href="/admin/users" class="nav-item"><i class="fas fa-users"></i> Users</a>
+                <a href="/admin/products" class="nav-item"><i class="fas fa-box"></i> Products</a>
+                <a href="/admin/categories" class="nav-item active"><i class="fas fa-th-list"></i> Categories</a>
+                <a href="/admin/banners" class="nav-item"><i class="fas fa-plus-square"></i> Add Banners</a>
+                <a href="/admin/coupons" class="nav-item"><i class="fas fa-ticket-alt"></i> Coupons</a>
+                <a href="/admin/orders" class="nav-item"><i class="fas fa-shopping-cart"></i> Orders</a>
+                <a href="/admin/report" class="nav-item"><i class="fas fa-chart-pie"></i> Report</a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <a href="/admin/logout" class="nav-item logout-btn">Logout <i class="fas fa-sign-out-alt"></i></a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="page-header">
+                <h2>CATEGORY MANAGEMENT</h2>
+            </header>
+
+            <div class="controls-bar" style="display: flex; justify-content: space-between; align-items: center;">
+                
+                <form action="/admin/categories" method="GET" style="display: flex; gap: 15px; align-items: center; margin: 0;">
+                    
+                    <input type="text" name="search" class="form-input search-input" style="width: 250px; background-color: #f1f1f1; border: none;" 
+                           value="<%= locals.searchQuery || '' %>" placeholder="Search Categories...">
+
+                    <select name="status" class="form-input filter-select" style="width: 150px; background-color: #f1f1f1; border: none; cursor: pointer;" 
+                            onchange="this.form.submit()">
+                        <option value="all" <%= locals.statusFilter === 'all' ? 'selected' : '' %>>All Status</option>
+                        <option value="active" <%= locals.statusFilter === 'active' ? 'selected' : '' %>>Active</option>
+                        <option value="inactive" <%= locals.statusFilter === 'inactive' ? 'selected' : '' %>>Inactive</option>
+                    </select>
+
+                    <button type="submit" class="btn-action" style="background-color: #333; color: white;">FILTER</button>
+                    
+                    <% if ((locals.searchQuery && locals.searchQuery.trim() !== '') || (locals.statusFilter && locals.statusFilter !== 'all')) { %>
+                        <a href="/admin/categories" class="btn-action btn-unblock" style="text-decoration: none; display: flex; align-items: center;">RESET</a>
+                    <% } %>
+                </form>
+
+                <button class="btn-action btn-add-new" onclick="openModal()">+ ADD CATEGORY</button>
+            </div>
+
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>IMAGE</th>
+                            <th>CATEGORY NAME</th>
+                            <th>DESCRIPTION</th>
+                            <th>STATUS</th>
+                            <th>ACTION</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (categories && categories.length > 0) { %>
+                            <% categories.forEach(category => { %>
+                                <tr style="<%= !category.isActive ? 'background-color: #fce4e4;' : '' %>">
+                                    <td>
+                                        <img src="<%= category.image || '/images/default/default-category.png' %>" class="cat-img" alt="Category">
+                                    </td>
+                                    <td>
+                                        <div class="user-info">
+                                            <span><%= category.name %></span>
+                                        </div>
+                                    </td>
+                                    <td class="desc-text"><%= category.description || 'N/A' %></td>
+                                    <td>
+                                        <span id="status-badge-<%= category._id %>" class="<%= category.isActive ? 'badge-active' : 'badge-inactive' %>">
+                                            <%= category.isActive ? 'Active' : 'Inactive' %>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div style="display: flex; gap: 8px;">
+                                            <button class="btn-action" style="background-color: #3085d6; color: white;" 
+                                                    onclick="openEditModal('<%= category._id %>', '<%= category.name %>', '<%= category.description || '' %>')">
+                                                EDIT
+                                            </button>
+                                            
+                                            <button id="toggle-btn-<%= category._id %>" 
+                                                    class="btn-action <%= category.isActive ? 'btn-block' : 'btn-unblock' %>"
+                                                    onclick="toggleCategory('<%= category._id %>', <%= category.isActive %>)">
+                                                <%= category.isActive ? 'DEACTIVATE' : 'ACTIVATE' %>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="5" style="text-align:center; padding: 20px;">No categories found.</td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+
+            <% if (locals.totalPages > 1) { %>
+                <div class="pagination">
+                    <% if (locals.currentPage > 1) { %>
+                        <a href="?page=<%= locals.currentPage - 1 %>&search=<%= locals.searchQuery %>&status=<%= locals.statusFilter %>" class="page-item"><i class="fas fa-chevron-left"></i></a>
+                    <% } %>
+
+                    <% for(let i = 1; i <= locals.totalPages; i++) { %>
+                        <a href="?page=<%= i %>&search=<%= locals.searchQuery %>&status=<%= locals.statusFilter %>" 
+                           class="page-item <%= locals.currentPage == i ? 'active' : '' %>">
+                           <%= i %>
+                        </a>
+                    <% } %>
+
+                    <% if (locals.currentPage < locals.totalPages) { %>
+                        <a href="?page=<%= locals.currentPage + 1 %>&search=<%= locals.searchQuery %>&status=<%= locals.statusFilter %>" class="page-item"><i class="fas fa-chevron-right"></i></a>
+                    <% } %>
+                </div>
+            <% } %>
+        </main>
+    </div>
+
+    <div class="modal-overlay" id="categoryModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add New Category</h3>
+                <button type="button" class="close-btn" onclick="closeModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="addCategoryForm">
+                <div class="form-group">
+                    <label>Category Name *</label>
+                    <input type="text" id="catName" name="name" class="form-input" required placeholder="e.g. Men's Sneakers">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="catDesc" name="description" class="form-input" rows="3" placeholder="Optional description..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Category Image</label>
+                    <input type="file" id="catImage" name="image" class="form-input file-input" accept="image/*">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-action" style="background-color: #888888; color: #fff;" onclick="closeModal()">CANCEL</button>
+                    <button type="submit" class="btn-action btn-add-new">SAVE CATEGORY</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="editCategoryModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Category</h3>
+                <button type="button" class="close-btn" onclick="closeEditModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="editCategoryForm">
+                <input type="hidden" id="editCatId" name="id">
+                <div class="form-group">
+                    <label>Category Name *</label>
+                    <input type="text" id="editCatName" name="name" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="editCatDesc" name="description" class="form-input" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Update Image (Leave blank to keep current)</label>
+                    <input type="file" id="editCatImage" name="image" class="form-input file-input" accept="image/*">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-action" style="background-color: #888888; color: #fff;" onclick="closeEditModal()">CANCEL</button>
+                    <button type="submit" class="btn-action" style="background-color: #3085d6; color: #fff;">UPDATE CATEGORY</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openModal() { document.getElementById('categoryModal').style.display = 'flex'; }
+        
+        function closeModal() { 
+            document.getElementById('categoryModal').style.display = 'none'; 
+            document.getElementById('addCategoryForm').reset();
+        }
+
+        document.getElementById('addCategoryForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const form = document.getElementById('addCategoryForm');
+            const formData = new FormData(form); 
+
+            try {
+                const response = await fetch('/admin/categories/add', {
+                    method: 'POST',
+                    body: formData 
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    closeModal();
+                    Swal.fire({ icon: 'success', title: 'Success', text: data.message, timer: 1500, showConfirmButton: false })
+                    .then(() => location.reload()); 
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Oops...', text: data.message });
+                }
+            } catch (error) {
+                Swal.fire({ icon: 'error', title: 'Error', text: 'Server error occurred' });
+            }
+        });
+
+        async function toggleCategory(categoryId, currentStatus) {
+            const actionText = currentStatus ? "deactivate" : "activate";
+            const isDeactivating = currentStatus;
+            
+            const result = await Swal.fire({
+                title: `Are you sure?`,
+                text: `Do you want to ${actionText} this category?`,
+                icon: isDeactivating ? 'warning' : 'question',
+                showCancelButton: true,
+                confirmButtonColor: isDeactivating ? '#e60039' : '#009955',
+                cancelButtonColor: '#888',
+                confirmButtonText: actionText.toUpperCase(),
+                cancelButtonText: 'CANCEL',
+                background: '#fff',
+                color: '#000'
+            });
+
+            if (result.isConfirmed) {
+                try {
+                    const response = await fetch(`/admin/categories/toggle/${categoryId}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        Swal.fire({ icon: 'success', title: 'Updated!', text: data.message, timer: 1500, showConfirmButton: false });
+                        
+                        const badge = document.getElementById(`status-badge-${categoryId}`);
+                        const btn = document.getElementById(`toggle-btn-${categoryId}`);
+                        const row = btn.closest('tr');
+                        
+                        if (data.isActive) {
+                            badge.className = 'badge-active'; badge.innerText = 'Active';
+                            btn.className = 'btn-action btn-block'; btn.innerText = 'DEACTIVATE';
+                            btn.setAttribute('onclick', `toggleCategory('${categoryId}', true)`);
+                            row.style.backgroundColor = '#e2e2e2'; // Match table default
+                        } else {
+                            badge.className = 'badge-inactive'; badge.innerText = 'Inactive';
+                            btn.className = 'btn-action btn-unblock'; btn.innerText = 'ACTIVATE';
+                            btn.setAttribute('onclick', `toggleCategory('${categoryId}', false)`);
+                            row.style.backgroundColor = '#fce4e4';
+                        }
+                    } else {
+                        Swal.fire({ icon: 'error', title: 'Failed', text: data.message });
+                    }
+                } catch (error) {
+                    Swal.fire({ icon: 'error', title: 'Error', text: 'Could not connect to server' });
+                }
+            }
+        }
+
+        function openEditModal(id, name, description) {
+            document.getElementById('editCatId').value = id;
+            document.getElementById('editCatName').value = name;
+            document.getElementById('editCatDesc').value = description;
+            document.getElementById('editCategoryModal').style.display = 'flex';
+        }
+
+        function closeEditModal() {
+            document.getElementById('editCategoryModal').style.display = 'none';
+            document.getElementById('editCategoryForm').reset();
+        }
+
+        document.getElementById('editCategoryForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const form = document.getElementById('editCategoryForm');
+            const formData = new FormData(form);
+            const categoryId = document.getElementById('editCatId').value;
+
+            try {
+                const response = await fetch(`/admin/categories/edit/${categoryId}`, {
+                    method: 'POST',
+                    body: formData 
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    closeEditModal();
+                    Swal.fire({ icon: 'success', title: 'Updated!', text: data.message, timer: 1500, showConfirmButton: false })
+                    .then(() => location.reload()); // Reload to see updated name/image
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Oops...', text: data.message });
+                }
+            } catch (error) {
+                Swal.fire({ icon: 'error', title: 'Error', text: 'Server error occurred' });
+            }
+        });
+    </script>
+</body>
+</html>

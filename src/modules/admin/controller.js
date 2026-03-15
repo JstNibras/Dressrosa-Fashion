@@ -33,7 +33,7 @@ exports.postAdminLogin = (req, res) => {
 exports.getUsers = async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
-        const limit = 5;
+        const limit = 7;
         const skip = (page - 1) * limit;
 
         const searchQuery = req.query.search || "";

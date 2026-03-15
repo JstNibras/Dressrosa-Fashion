@@ -119,14 +119,25 @@ exports.updateProfileImage = async (req, res) => {
         const userId = req.session.user.id;
         const imageUrl = req.file.url || req.file.path;
 
-        const updatedUser = await User.findByIdAndUpdate(
-            userId, 
-            { profileImage: imageUrl }, 
-            { new: true }
-        );
+        const user = await User.findById(userId);
 
-        req.session.user.profileImage = updatedUser.profileImage;
+        if (user.profileImage && !user.profileImage.includes('Default/images.jpg')) {
+            try {
+                const urlParts = user.profileImage.split('/');
+                const folderAndFile = urlParts.slice(-2).join('/');
+                const pubicId = folderAndFile.split('.')[0];
 
+                await cloudinary.uploader.destroy(pubicId);
+                console.log(`Successfully deleted old image: ${pubicId}`)
+            } catch (cleanupError) {
+                console.error("Failed to delete old image from Cloudinary:", cleanupError);
+            }
+        }
+
+        user.profileImage = imageUrl;
+        await user.save();
+
+        req.session.user.profileImage = user.profileImage;
         res.redirect('/profile?success=Image Updated')
     } catch (error) {
         console.error("Cloudinary Upload Error:", error);

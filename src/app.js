@@ -60,6 +60,7 @@ app.use('/', authRoutes);
 
 
 app.use('/', require('./modules/profile/routes'));
+app.use('/', require('./modules/category/routes'));
 
 
 module.exports = app;
