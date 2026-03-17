@@ -1,4 +1,22 @@
 const Category = require('./categoryModel');
+const { cloudinary } = require('../../config/cloudinary')
+
+const uploadBufferToCloudinary = async (file) => {
+    try {
+        const b64 = Buffer.from(file.buffer).toString('base64');
+        const dataURI = "data:" + file.mimetype + ";base64," + b64;
+
+        const result = await cloudinary.uploader.upload(dataURI, {
+            folder: 'Dressrosa/Categories',
+            resource_type: 'auto'
+        });
+
+        return result.secure_url;
+    } catch (error) {
+        console.error("🔥 Cloudinary Base64 Error:", error);
+        throw new Error("Cloudinary upload failed.");
+    }
+}
 
 exports.getCategories = async (req, res) => {
     try {
@@ -55,7 +73,9 @@ exports.postAddCategory = async (req, res) => {
 
         let imageUrl = null;
         if (req.file) {
-            imageUrl = req.file.url || req.file.path;
+            imageUrl = await uploadBufferToCloudinary(req.file);
+        } else {
+            return res.status(400).json({ success: false, message: "Category image is required." });
         }
 
         const newCategory = new Category({
@@ -91,25 +111,22 @@ exports.postEditCategory = async (req, res) => {
             return res.status(404).json({ success: false, message: "Category not found" });
         }
 
-        let newImageUrl = category.image;
-
         if (req.file) {
-            newImageUrl = req.file.url || req.file.path;
-
             if (category.image && !category.image.includes('default-category')) {
                 try {
                     const urlParts = category.image.split('/');
-                    const publicId = urlParts.slice(-2).join('/').split('.')[0];
+                    const publicId = 'Dressrosa/Categories/' + urlParts.slice(-1)[0].split('.')[0];
                     await cloudinary.uploader.destroy(publicId);
                 } catch (cleanupErr) {
-                    console.error("Cloudinar old image cleanuo failed:", cleanupErr);
+                    console.error("Cloudinary old image cleanup failed:", cleanupErr);
                 }
             }
+            
+            category.image = await uploadBufferToCloudinary(req.file);
         }
 
         category.name = name;
         category.description = description;
-        category.image = newImageUrl
         
         await category.save();
 

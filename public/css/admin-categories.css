@@ -170,9 +170,9 @@ body, html {
     text-transform: uppercase;
 }
 
-.btn-block { background-color: #e60039; } /* Red */
-.btn-unblock { background-color: #009955; } /* Green */
-.btn-add-new { background-color: #000000; } /* Black to match sidebar */
+.btn-block { background-color: #e60039; }
+.btn-unblock { background-color: #009955; }
+.btn-add-new { background-color: #000000; } 
 
 
 /* --- NEW: CATEGORY SPECIFIC STYLES --- */
@@ -321,3 +321,62 @@ body, html {
 .form-input:focus { border-color: #888888; }
 .file-input { padding: 7px; background: #f1f1f1; cursor: pointer; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 30px; }
+
+/* Container for the dashed upload area */
+.image-upload-container {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+/* Style for each dashed box */
+.image-upload-box {
+    flex: 1; 
+    height: 150px; 
+    border: 2px dashed #d1d5db; 
+    border-radius: 8px;
+    background-color: #f8fafc;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden; /* THIS PREVENTS THE MASSIVE IMAGE OVERFLOW */
+    transition: all 0.2s;
+}
+
+/* Add hover effect to the box */
+.image-upload-box:hover {
+    border-color: #3085d6; /* Highlight border on hover */
+    background-color: #f1f4f8;
+}
+
+/* Hide the actual file input but keep it clickable over the box */
+.upload-input {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 10;
+}
+
+/* Styling for the text inside the box (e.g., "Category Image") */
+.upload-label {
+    color: #6b7280;
+    font-size: 13px;
+    font-weight: 500;
+    z-index: 5;
+    pointer-events: none; /* Text shouldn't interfere with clicks */
+}
+
+/* Style for the preview image */
+.upload-preview {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* THIS PREVENTS THE DISTORTION */
+    z-index: 8;
+    display: none;
+}

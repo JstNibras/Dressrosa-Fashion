@@ -6,6 +6,8 @@
     <title>Admin - Category Management</title>
     <link rel="stylesheet" href="/css/admin-categories.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
@@ -94,7 +96,7 @@
                                     <td>
                                         <div style="display: flex; gap: 8px;">
                                             <button class="btn-action" style="background-color: #3085d6; color: white;" 
-                                                    onclick="openEditModal('<%= category._id %>', '<%= category.name %>', '<%= category.description || '' %>')">
+                                                    onclick="openEditModal('<%= category._id %>', '<%= category.name %>', '<%= category.description || '' %>', '<%= category.image || '' %>')">
                                                 EDIT
                                             </button>
                                             
@@ -153,8 +155,14 @@
                     <textarea id="catDesc" name="description" class="form-input" rows="3" placeholder="Optional description..."></textarea>
                 </div>
                 <div class="form-group">
-                    <label>Category Image</label>
-                    <input type="file" id="catImage" name="image" class="form-input file-input" accept="image/*">
+                    <label style="margin-bottom: 10px; display: block;">Category Image *</label>
+                    <div class="image-upload-container">
+                        <div class="image-upload-box" style="max-width: 200px;">
+                            <input type="file" name="image" id="addCatInput" class="upload-input" accept="image/*" onchange="previewImage(this, 'prevCat', 'labelCat')" required>
+                            <img id="prevCat" class="upload-preview" src="">
+                            <span id="labelCat" class="upload-label">Upload Image</span>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn-action" style="background-color: #888888; color: #fff;" onclick="closeModal()">CANCEL</button>
@@ -181,8 +189,14 @@
                     <textarea id="editCatDesc" name="description" class="form-input" rows="3"></textarea>
                 </div>
                 <div class="form-group">
-                    <label>Update Image (Leave blank to keep current)</label>
-                    <input type="file" id="editCatImage" name="image" class="form-input file-input" accept="image/*">
+                    <label style="margin-bottom: 10px; display: block;">Category Image</label>
+                    <div class="image-upload-container">
+                        <div class="image-upload-box" style="max-width: 200px;">
+                            <input type="file" name="image" class="upload-input" accept="image/*" onchange="previewImage(this, 'editPrevCat', 'editLabelCat')">
+                            <img id="editPrevCat" class="upload-preview" src="">
+                            <span id="editLabelCat" class="upload-label">Change Image</span>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn-action" style="background-color: #888888; color: #fff;" onclick="closeEditModal()">CANCEL</button>
@@ -192,12 +206,40 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="cropModal" style="z-index: 9999; display: none;">
+        <div class="modal-content" style="max-width: 600px; background: #fff; padding: 20px; border-radius: 8px;">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="margin: 0;">Crop Category Image</h3>
+                <button type="button" class="close-btn" onclick="closeCropModal(true)" style="background: none; border: none; font-size: 20px; cursor: pointer;"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <div style="width: 100%; max-height: 400px; overflow: hidden; margin-bottom: 20px; background: #f8fafc; display: flex; justify-content: center; align-items: center;">
+                <img id="imageToCrop" src="" style="max-width: 100%; display: block;">
+            </div>
+            
+            <div class="modal-actions" style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" style="background-color: #888888; color: #fff; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;" onclick="closeCropModal(true)">CANCEL</button>
+                <button type="button" style="background-color: #3085d6; color: #fff; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;" onclick="executeCrop()">CROP & SAVE</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         function openModal() { document.getElementById('categoryModal').style.display = 'flex'; }
         
         function closeModal() { 
             document.getElementById('categoryModal').style.display = 'none'; 
             document.getElementById('addCategoryForm').reset();
+            
+            // HIGH-PRECISION FIX: Clear the preview images so the next Add is a clean slate
+            document.getElementById('prevCat').src = '';
+            document.getElementById('prevCat').style.display = 'none';
+            document.getElementById('labelCat').style.display = 'block';
+            
+            // Wipe the internal memory of the file input
+            if (document.getElementById('addCatInput')) {
+                document.getElementById('addCatInput').value = '';
+            }
         }
 
         document.getElementById('addCategoryForm').addEventListener('submit', async (e) => {
@@ -278,7 +320,20 @@
             }
         }
 
-        function openEditModal(id, name, description) {
+        function openEditModal(id, name, description, imageUrl) {
+            const preview = document.getElementById('editPrevCat');
+            const label = document.getElementById('editLabelCat');
+            
+            // Assuming 'category.image' contains the Cloudinary URL
+            if (imageUrl && imageUrl.trim() !== '') {
+                preview.src = imageUrl;
+                preview.style.display = 'block';
+                label.style.display = 'none';
+            } else {
+                preview.src = '';
+                preview.style.display = 'none';
+                label.style.display = 'block';
+            }
             document.getElementById('editCatId').value = id;
             document.getElementById('editCatName').value = name;
             document.getElementById('editCatDesc').value = description;
@@ -315,6 +370,103 @@
                 Swal.fire({ icon: 'error', title: 'Error', text: 'Server error occurred' });
             }
         });
+
+        // --- HIGH-PRECISION CROPPER ENGINE (CATEGORY) ---
+        let cropper; 
+        let currentInput; 
+        let currentPreviewId; 
+        let currentLabelId;
+
+        function previewImage(input, previewId, labelId) {
+            if (input.files && input.files[0]) {
+                currentInput = input;
+                currentPreviewId = previewId;
+                currentLabelId = labelId;
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('imageToCrop').src = e.target.result;
+                    document.getElementById('cropModal').style.display = 'flex';
+                    
+                    if (cropper) cropper.destroy();
+                    
+                    cropper = new Cropper(document.getElementById('imageToCrop'), {
+                        aspectRatio: 1, // 1:1 Square ratio for Category Thumbnails
+                        viewMode: 1,
+                        autoCropArea: 1,
+                        background: false
+                    });
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function closeCropModal(isCancel = false) {
+            document.getElementById('cropModal').style.display = 'none';
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+            // If they hit cancel, delete the uncropped file they selected
+            if (isCancel && currentInput) {
+                currentInput.value = ''; 
+            }
+        }
+
+        function executeCrop() {
+            if (!cropper) return;
+
+            const canvas = cropper.getCroppedCanvas({
+                width: 600, 
+                height: 600
+            });
+
+            canvas.toBlob((blob) => {
+                const fileName = currentInput.files[0].name;
+                const newFile = new File([blob], fileName, { type: 'image/jpeg', lastModified: Date.now() });
+
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(newFile);
+                
+                // 1. Save the file to the input
+                currentInput.files = dataTransfer.files;
+
+                // 2. Update the visual UI
+                const preview = document.getElementById(currentPreviewId);
+                const label = document.getElementById(currentLabelId);
+                preview.src = URL.createObjectURL(blob);
+                preview.style.display = 'block';
+                label.style.display = 'none';
+
+                // 3. Close the modal safely (passing FALSE so it doesn't wipe our new file!)
+                closeCropModal(false);
+            }, 'image/jpeg', 0.85); 
+        }
+
+        // Function to show the image preview after cropping
+        function showCroppedImage(blob, previewId, labelId) {
+            // 1. Get references to the preview img and the text label
+            const previewElement = document.getElementById(previewId);
+            const labelElement = document.getElementById(labelId);
+
+            if (blob) {
+                // 2. Create a temporary URL from the image data
+                const imageUrl = URL.createObjectURL(blob);
+
+                // 3. Set the preview image's source and make it visible
+                previewElement.src = imageUrl;
+                previewElement.style.display = 'block';
+
+                // 4. Hide the text label
+                labelElement.style.display = 'none';
+
+            } else {
+                // If no image is provided, clear the field
+                previewElement.src = '';
+                previewElement.style.display = 'none';
+                labelElement.style.display = 'block';
+            }
+        }
     </script>
 </body>
 </html>

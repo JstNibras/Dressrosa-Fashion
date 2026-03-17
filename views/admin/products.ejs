@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Product Management</title>
+    <link rel="stylesheet" href="/css/admin-products.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+    <div class="admin-layout">
+        
+        <aside class="sidebar">
+            <div class="brand-logo">
+                <h1>DRESSROSA</h1>
+                <p>F A S H I O N</p>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="/admin/dashboard" class="nav-item"><i class="fas fa-th-large"></i> Dashboard</a>
+                <a href="/admin/users" class="nav-item"><i class="fas fa-users"></i> Users</a>
+                <a href="/admin/products" class="nav-item active"><i class="fas fa-box"></i> Products</a>
+                <a href="/admin/categories" class="nav-item"><i class="fas fa-th-list"></i> Categories</a>
+                <a href="/admin/banners" class="nav-item"><i class="fas fa-plus-square"></i> Add Banners</a>
+                <a href="/admin/coupons" class="nav-item"><i class="fas fa-ticket-alt"></i> Coupons</a>
+                <a href="/admin/orders" class="nav-item"><i class="fas fa-shopping-cart"></i> Orders</a>
+                <a href="/admin/report" class="nav-item"><i class="fas fa-chart-pie"></i> Report</a>
+            </nav>
+            <div class="sidebar-footer">
+                <a href="/admin/logout" class="nav-item logout-btn">Logout <i class="fas fa-sign-out-alt"></i></a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="page-header">
+                <h2>Product Management</h2>
+            </header>
+
+            <form action="/admin/products" method="GET" class="controls-bar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; gap: 15px; flex-wrap: wrap;">
+    
+                <div style="display: flex; flex: 1; min-width: 250px;">
+                    <input type="text" name="search" value="<%= query.search || '' %>" placeholder="Search products..." class="form-input" style="border-radius: 6px 0 0 6px; border-right: none;">
+                    <button type="submit" style="background-color: #333; color: white; border: none; padding: 0 15px; border-radius: 0 6px 6px 0; cursor: pointer;">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+
+                <div style="display: flex; gap: 15px; align-items: center;">
+                    
+                    <select name="status" class="form-input" onchange="this.form.submit()" style="width: auto;">
+                        <option value="">All Status</option>
+                        <option value="active" <%= query.status === 'active' ? 'selected' : '' %>>Active</option>
+                        <option value="inactive" <%= query.status === 'inactive' ? 'selected' : '' %>>Inactive</option>
+                    </select>
+
+                    <select name="stock" class="form-input" onchange="this.form.submit()" style="width: auto;">
+                        <option value="">All Stock</option>
+                        <option value="in_stock" <%= query.stock === 'in_stock' ? 'selected' : '' %>>In Stock</option>
+                        <option value="out_of_stock" <%= query.stock === 'out_of_stock' ? 'selected' : '' %>>Out of Stock</option>
+                    </select>
+
+                    <select name="category" class="form-input" onchange="this.form.submit()" style="width: auto;">
+                        <option value="">All Categories</option>
+                        <% categories.forEach(cat => { %>
+                            <option value="<%= cat._id %>" <%= query.category == cat._id ? 'selected' : '' %>><%= cat.name %></option>
+                        <% }) %>
+                    </select>
+
+                    <button type="button" class="btn-action btn-add-new" onclick="openModal()" style="background-color: #333; color: white; border-radius: 6px; padding: 10px 20px; white-space: nowrap;">
+                        + Add New Product
+                    </button>
+                    
+                    <% if (query.search || query.status || query.stock || query.category) { %>
+                        <a href="/admin/products" style="color: #dc3545; text-decoration: none; font-size: 14px; font-weight: 500;"><i class="fas fa-times"></i> Clear</a>
+                    <% } %>
+                </div>
+            </form>
+
+            <div class="table-container" style="background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); padding: 20px;">
+                <table class="data-table">
+                    <thead>
+                        <tr style="color: #6c757d; font-size: 13px; text-transform: none; border-bottom: 2px solid #eee;">
+                            <th>Name</th>
+                            <th>Category</th>
+                            <th>Variants</th>
+                            <th>Price</th>
+                            <th>Status</th>
+                            <th>Stock</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (products && products.length > 0) { %>
+                            <% products.forEach(product => { %>
+                                <tr id="row-<%= product._id %>" style="border-bottom: 1px solid #eee;">
+                                    
+                                    <td style="display: flex; align-items: center; gap: 15px; padding: 15px 10px;">
+                                        <img src="<%= product.images[0] || '/images/default-product.png' %>" style="width: 40px; height: 50px; object-fit: cover; border-radius: 4px;">
+                                        <span style="font-weight: 500; color: #333;"><%= product.name %></span>
+                                    </td>
+                                    
+                                    <td style="color: #555;"><%= product.category ? product.category.name : 'N/A' %></td>
+                                    
+                                    <% 
+                                        const totalVariants = product.variants.length;
+                                        const activeVariants = product.variants.filter(v => v.isActive).length;
+                                    %>
+                                    <td style="color: #555;"><%= activeVariants %>/<%= totalVariants %> Active</td>
+                                    
+                                    <td>
+                                        <% if (product.salePrice < product.regularPrice) { %>
+                                            <div style="font-weight: 500; color: #333;">₹<%= product.salePrice %> <span style="text-decoration: line-through; color: #999; font-weight: normal; font-size: 12px; margin-left: 5px;">₹<%= product.regularPrice %></span></div>
+                                            <% const discount = Math.round(((product.regularPrice - product.salePrice) / product.regularPrice) * 100); %>
+                                            <div style="color: #28a745; font-size: 12px; font-weight: 600; margin-top: 3px;"><%= discount %>% OFF</div>
+                                        <% } else { %>
+                                            <div style="font-weight: 500; color: #333;">₹<%= product.regularPrice %></div>
+                                        <% } %>
+                                    </td>
+                                    
+                                    <td>
+                                        <span id="status-<%= product._id %>" style="padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; <%= product.isActive ? 'background-color: #e6f4ea; color: #28a745;' : 'background-color: #fce4e4; color: #dc3545;' %>">
+                                            <%= product.isActive ? 'Active' : 'Inactive' %>
+                                        </span>
+                                    </td>
+                                    
+                                    <% const activeStock = product.variants.filter(v => v.isActive).reduce((acc, v) => acc + v.stock, 0); %>
+                                    <td style="font-weight: 600; color: <%= activeStock > 0 ? '#28a745' : '#dc3545' %>;">
+                                        <%= activeStock %> Left
+                                    </td>
+                                    
+                                    <td>
+                                        <div style="display: flex; gap: 10px;">
+                                            <button style="border: 1px solid #ddd; background: white; padding: 6px 10px; border-radius: 4px; cursor: pointer; color: #333;" 
+                                                    data-product="<%= encodeURIComponent(JSON.stringify(product)) %>" 
+                                                    onclick="openEditModal(this)">
+                                                <i class="fas fa-pencil-alt"></i>
+                                            </button>
+                                            
+                                            <button style="border: 1px solid #ddd; background: white; padding: 6px 10px; border-radius: 4px; cursor: pointer; color: #dc3545;"
+                                                    onclick="toggleProductStatus('<%= product._id %>', <%= product.isActive %>)">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        <% } else { %>
+                            <tr><td colspan="7" style="text-align:center; padding: 20px;">No products found.</td></tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+            <% if (totalPages > 1) { %>
+                <div style="display: flex; justify-content: flex-end; margin-top: 20px; gap: 8px;">
+                    
+                    <% 
+                        const buildUrl = (pageNum) => {
+                            let url = `?page=${pageNum}`;
+                            if (query.search) url += `&search=${query.search}`;
+                            if (query.status) url += `&status=${query.status}`;
+                            if (query.stock) url += `&stock=${query.stock}`;
+                            if (query.category) url += `&category=${query.category}`;
+                            return url;
+                        }
+                    %>
+
+                    <% if (currentPage > 1) { %>
+                        <a href="<%= buildUrl(currentPage - 1) %>" style="padding: 8px 14px; border-radius: 6px; border: 1px solid #ddd; background: white; color: #333; text-decoration: none; font-weight: 500;">
+                            &laquo; Prev
+                        </a>
+                    <% } %>
+
+                    <% for(let i = 1; i <= totalPages; i++) { %>
+                        <a href="<%= buildUrl(i) %>" style="padding: 8px 14px; border-radius: 6px; text-decoration: none; font-weight: 500; transition: all 0.2s;
+                            <%= currentPage === i ? 'background-color: #333; color: white; border: 1px solid #3085d6;' : 'background-color: white; color: #333; border: 1px solid #ddd;' %>">
+                            <%= i %>
+                        </a>
+                    <% } %>
+
+                    <% if (currentPage < totalPages) { %>   
+                        <a href="<%= buildUrl(currentPage + 1) %>" style="padding: 8px 14px; border-radius: 6px; border: 1px solid #ddd; background: white; color: #333; text-decoration: none; font-weight: 500;">
+                            Next &raquo;
+                        </a>
+                    <% } %>
+                </div>
+            <% } %>
+        </main>
+    </div>
+
+    <div class="modal-overlay" id="productModal">
+        <div class="modal-content scrollable-modal">
+            <div class="modal-header">
+                <h3>Add New Product</h3>
+                <button type="button" class="close-btn" onclick="closeModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="addProductForm" enctype="multipart/form-data" novalidate>
+                <input type="hidden" name="hasVariants" value="true">
+                
+                <div class="form-row">
+                    <div class="form-group half-width">
+                        <label>Product Name *</label>
+                        <input type="text" name="name" class="form-input" required>
+                    </div>
+                    <div class="form-group half-width">
+                        <label>Category *</label>
+                        <select name="category" class="form-input" required>
+                            <option value="" disabled selected>Select Category</option>
+                            <% categories.forEach(cat => { %>
+                                <option value="<%= cat._id %>"><%= cat.name %></option>
+                            <% }) %>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Description *</label>
+                    <textarea name="description" class="form-input" rows="3" required></textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group half-width">
+                        <label>Regular Price (₹) *</label>
+                        <input type="number" name="regularPrice" class="form-input" min="0" required>
+                    </div>
+                    <div class="form-group half-width">
+                        <label>Sale Price (₹)</label>
+                        <input type="number" name="salePrice" class="form-input" min="0" placeholder="Leave blank if no discount">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label style="margin-bottom: 10px; display: block;">Product Images (Click to upload)</label>
+                    <div class="image-upload-container">
+                        <div class="image-upload-box">
+                            <input type="file" name="image1" class="upload-input" accept="image/*" onchange="previewImage(this, 'prev1', 'label1')">
+                            <img id="prev1" class="upload-preview" src="">
+                            <span id="label1" class="upload-label">Primary Photo</span>
+                        </div>
+                        <div class="image-upload-box">
+                            <input type="file" name="image2" class="upload-input" accept="image/*" onchange="previewImage(this, 'prev2', 'label2')">
+                            <img id="prev2" class="upload-preview" src="">
+                            <span id="label2" class="upload-label">Secondary Photo</span>
+                        </div>
+                        <div class="image-upload-box">
+                            <input type="file" name="image3" class="upload-input" accept="image/*" onchange="previewImage(this, 'prev3', 'label3')">
+                            <img id="prev3" class="upload-preview" src="">
+                            <span id="label3" class="upload-label">Other Photo</span>
+                        </div>
+                        <div class="image-upload-box">
+                            <input type="file" name="image4" class="upload-input" accept="image/*" onchange="previewImage(this, 'prev4', 'label4')">
+                            <img id="prev4" class="upload-preview" src="">
+                            <span id="label4" class="upload-label">Other Photo</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="variants-section">
+                    <div class="variants-header">
+                        <h4>Product Variants (Size / Color / Stock)</h4>
+                        <button type="button" class="btn-action btn-add-variant" onclick="addVariantRow()">+ Add Variant</button>
+                    </div>
+                    <div id="variantsContainer">
+                        <div class="variant-row">
+                            <input type="text" class="form-input var-size" placeholder="Size (e.g. XL, 32)">
+                            <input type="text" class="form-input var-color" placeholder="Color (e.g. Black)">
+                            <input type="number" class="form-input var-stock" placeholder="Stock Qty *" min="0" required>
+                            <button type="button" class="btn-remove-var" onclick="this.parentElement.remove()"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                    <small style="color: #888; font-size: 11px;">Leave Color blank for Oversized T-Shirts. Size can also be left blank if needed.</small>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-action" style="background-color: #888888; color: #fff;" onclick="closeModal()">CANCEL</button>
+                    <button type="submit" class="btn-action btn-add-new">SAVE PRODUCT</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="editProductModal">
+        <div class="modal-content scrollable-modal">
+            <div class="modal-header">
+                <h3>Edit Product</h3>
+                <button type="button" class="close-btn" onclick="closeEditModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="editProductForm" enctype="multipart/form-data" novalidate>
+                <input type="hidden" id="editProdId" name="id">
+                
+                <div class="form-row">
+                    <div class="form-group half-width">
+                        <label>Product Name *</label>
+                        <input type="text" id="editName" name="name" class="form-input" required>
+                    </div>
+                    <div class="form-group half-width">
+                        <label>Category *</label>
+                        <select id="editCategory" name="category" class="form-input" required>
+                            <option value="" disabled>Select Category</option>
+                            <% categories.forEach(cat => { %>
+                                <option value="<%= cat._id %>"><%= cat.name %></option>
+                            <% }) %>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Description *</label>
+                    <textarea id="editDescription" name="description" class="form-input" rows="3" required></textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group half-width">
+                        <label>Regular Price (₹) *</label>
+                        <input type="number" id="editRegularPrice" name="regularPrice" class="form-input" min="0" required>
+                    </div>
+                    <div class="form-group half-width">
+                        <label>Sale Price (₹)</label>
+                        <input type="number" id="editSalePrice" name="salePrice" class="form-input" min="0">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label style="margin-bottom: 10px; display: block;">Product Images (Click to upload)</label>
+                    <div class="image-upload-container">
+                        <div class="image-upload-box">
+                            <input type="file" name="image1" class="upload-input" accept="image/*" onchange="previewImage(this, 'editPrev1', 'editLabel1')">
+                            <img id="editPrev1" class="upload-preview" src="">
+                            <span id="editLabel1" class="upload-label">Primary Photo</span>
+                        </div>
+                        <div class="image-upload-box">
+                            <input type="file" name="image2" class="upload-input" accept="image/*" onchange="previewImage(this, 'editPrev2', 'editLabel2')">
+                            <img id="editPrev2" class="upload-preview" src="">
+                            <span id="editLabel2" class="upload-label">Secondary Photo</span>
+                        </div>
+                        <div class="image-upload-box">
+                            <input type="file" name="image3" class="upload-input" accept="image/*" onchange="previewImage(this, 'editPrev3', 'editLabel3')">
+                            <img id="editPrev3" class="upload-preview" src="">
+                            <span id="editLabel3" class="upload-label">Third Photo</span>
+                        </div>
+                        <div class="image-upload-box">
+                            <input type="file" name="image4" class="upload-input" accept="image/*" onchange="previewImage(this, 'editPrev4', 'editLabel4')">
+                            <img id="editPrev4" class="upload-preview" src="">
+                            <span id="editLabel4" class="upload-label">Other Photo</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="variants-section">
+                    <div class="variants-header">
+                        <h4>Product Variants</h4>
+                        <button type="button" class="btn-action btn-add-variant" onclick="addEditVariantRow()">+ Add Variant</button>
+                    </div>
+                    <div id="editVariantsContainer">
+                        </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-action" style="background-color: #888888; color: #fff;" onclick="closeEditModal()">CANCEL</button>
+                    <button type="submit" class="btn-action" style="background-color: #3085d6; color: #fff;">UPDATE PRODUCT</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="cropModal" style="z-index: 9999; display: none;">
+        <div class="modal-content" style="max-width: 600px; background: #fff; padding: 20px; border-radius: 8px;">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="margin: 0;">Crop Image</h3>
+                <button type="button" class="close-btn" onclick="closeCropModal()" style="background: none; border: none; font-size: 20px; cursor: pointer;"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <div style="width: 100%; max-height: 400px; overflow: hidden; margin-bottom: 20px; background: #f8fafc; display: flex; justify-content: center; align-items: center;">
+                <img id="imageToCrop" src="" style="max-width: 100%; display: block;">
+            </div>
+            
+            <div class="modal-actions" style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" style="background-color: #888888; color: #fff; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;" onclick="closeCropModal()">CANCEL</button>
+                <button type="button" style="background-color: #3085d6; color: #fff; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;" onclick="executeCrop()">CROP & SAVE</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openModal() { document.getElementById('productModal').style.display = 'flex'; }
+        function closeModal() { 
+            document.getElementById('productModal').style.display = 'none'; 
+            document.getElementById('addProductForm').reset();
+            // Reset variants to a single empty row
+            document.getElementById('variantsContainer').innerHTML = `
+                <div class="variant-row">
+                    <input type="text" class="form-input var-size" placeholder="Size (e.g. XL, 32)">
+                    <input type="text" class="form-input var-color" placeholder="Color (e.g. Black)">
+                    <input type="number" class="form-input var-stock" placeholder="Stock Qty *" min="0" required>
+                    <button type="button" class="btn-remove-var" onclick="this.parentElement.remove()"><i class="fas fa-trash"></i></button>
+                </div>
+            `;
+        }
+
+        // Add Dynamic Variant Row
+        function addVariantRow() {
+            const container = document.getElementById('variantsContainer');
+            const row = document.createElement('div');
+            row.className = 'variant-row';
+            row.innerHTML = `
+                <input type="text" class="form-input var-size" placeholder="Size (e.g. XL, 32)">
+                <input type="text" class="form-input var-color" placeholder="Color (e.g. Black)">
+                <input type="number" class="form-input var-stock" placeholder="Stock Qty *" min="0" required>
+                <button type="button" class="btn-remove-var" onclick="this.parentElement.remove()"><i class="fas fa-trash"></i></button>
+            `;
+            container.appendChild(row);
+        }
+
+        // Handle Form Submission
+        document.getElementById('addProductForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            console.log("🚀 BUTTON CLICKED! Data gathering started...");
+            const form = document.getElementById('addProductForm');
+
+            // Manual Validation to prevent silent HTML5 block on hidden elements
+            const name = form.querySelector('[name="name"]').value.trim();
+            const category = form.querySelector('[name="category"]').value;
+            const description = form.querySelector('[name="description"]').value.trim();
+            const regularPrice = form.querySelector('[name="regularPrice"]').value;
+
+            if (!name || !category || !description || !regularPrice) {
+                return Swal.fire({ icon: 'warning', title: 'Missing Fields', text: 'Please fill in all required fields (Name, Category, Description, Regular Price).' });
+            }
+            
+            // 1. Gather all variant rows
+            const variantRows = form.querySelectorAll('.variant-row');
+            const variantsArray = [];
+            
+            variantRows.forEach(row => {
+                const size = row.querySelector('.var-size').value.trim();
+                const color = row.querySelector('.var-color').value.trim();
+                const stock = row.querySelector('.var-stock').value;
+                
+                // Only push if stock is provided
+                if (stock !== "") {
+                    variantsArray.push({ size, color, stock: Number(stock) });
+                }
+            });
+
+            if (variantsArray.length === 0) {
+                return Swal.fire({ icon: 'error', title: 'Missing Variants', text: 'You must add at least one variant with stock.' });
+            }
+
+            const formData = new FormData(form);
+            formData.append('variants', JSON.stringify(variantsArray));
+
+            // HIGH-PRECISION FIX: Actually strip the empty inputs
+            if (form.querySelector('input[name="image1"]').files.length === 0) formData.delete('image1');
+            if (form.querySelector('input[name="image2"]').files.length === 0) formData.delete('image2');
+            if (form.querySelector('input[name="image3"]').files.length === 0) formData.delete('image3');
+            if (form.querySelector('input[name="image4"]').files.length === 0) formData.delete('image4');
+
+
+            try {
+                const response = await fetch('/admin/products/add', {
+                    method: 'POST',
+                    body: formData // Auto-handles the multiple files + text + JSON string
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    closeModal();
+                    Swal.fire({ icon: 'success', title: 'Success', text: data.message, timer: 1500, showConfirmButton: false })
+                    .then(() => location.reload()); 
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Oops...', text: data.message });
+                }
+            } catch (error) {
+                Swal.fire({ icon: 'error', title: 'Error', text: 'Server error occurred' });
+            }
+        });
+
+        // --- Edit Modal Logic ---
+        function openEditModal(buttonElement) {
+            // Decode and parse the product data safely
+            const product = JSON.parse(decodeURIComponent(buttonElement.getAttribute('data-product')));
+
+            // Populate standard fields
+            document.getElementById('editProdId').value = product._id;
+            document.getElementById('editName').value = product.name;
+            document.getElementById('editCategory').value = product.category._id || product.category; // Handles populated or unpopulated
+            document.getElementById('editDescription').value = product.description;
+            document.getElementById('editRegularPrice').value = product.regularPrice;
+            document.getElementById('editSalePrice').value = product.salePrice;
+
+            // Populate Variant Rows
+            const container = document.getElementById('editVariantsContainer');
+            container.innerHTML = ''; // Clear existing
+
+            if (product.variants && product.variants.length > 0) {
+                product.variants.forEach(variant => {
+                    addEditVariantRow(variant._id, variant.size, variant.color, variant.stock, variant.isActive);
+                });
+            } else {
+                addEditVariantRow(); // Add one empty row if no variants exist
+            }
+
+            document.getElementById('editProductModal').style.display = 'flex';
+
+            // Preload Images into the Edit Modal
+            for (let i = 1; i <= 4; i++) {
+                const preview = document.getElementById(`editPrev${i}`);
+                const label = document.getElementById(`editLabel${i}`);
+                
+                // If an image URL exists at this array index, show it
+                if (product.images && product.images[i-1]) {
+                    preview.src = product.images[i-1];
+                    preview.style.display = 'block';
+                    label.style.display = 'none';
+                } else {
+                    preview.src = '';
+                    preview.style.display = 'none';
+                    label.style.display = 'block';
+                }
+            }
+        }
+
+        function closeEditModal() {
+            document.getElementById('editProductModal').style.display = 'none';
+            document.getElementById('editProductForm').reset();
+        }
+
+        function addEditVariantRow(id = '', size = '', color = '', stock = '', isActive = true) {
+            const container = document.getElementById('editVariantsContainer');
+            const row = document.createElement('div');
+
+            row.className = `variant-row edit-variant-row ${isActive ? '' : 'inactive-variant'}`;
+            row.style.display = 'flex';
+            row.style.gap = '10px';
+            row.style.marginBottom = '10px';
+            row.style.opacity = isActive ? '1' : '0.5';
+
+            row.innerHTML = `
+                <input type="hidden" class="var-id" value="${id}">
+                <input type="hidden" class="var-active" value="${isActive}">
+                <input type="text" class="form-input var-size" placeholder="Size" value="${size}" ${isActive ? '' : 'readonly'}>
+                <input type="text" class="form-input var-color" placeholder="Color" value="${color}" ${isActive ? '' : 'readonly'}>
+                <input type="number" class="form-input var-stock" placeholder="Stock" min="0" value="${stock}" required ${isActive ? '' : 'readonly'}>
+                
+                <button type="button" class="btn-action" style="background-color: ${isActive ? '#dc3545' : '#28a745'}; color: white; padding: 8px;" onclick="toggleVariantRow(this)">
+                    <i class="fas ${isActive ? 'fa-ban' : 'fa-undo'}"></i>
+                </button>
+                
+                ${id === '' ? `<button type="button" style="color: #dc3545; background: none; border: none; cursor: pointer;" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>` : ''}
+            `;
+            container.appendChild(row);
+        }
+
+        function toggleVariantRow(button) {
+            const row = button.parentElement;
+            const activeInput = row.querySelector('.var-active');
+            const isCurrentlyActive = activeInput.value === 'true';
+            
+            // Toggle logic
+            activeInput.value = isCurrentlyActive ? 'false' : 'true';
+            row.style.opacity = isCurrentlyActive ? '0.5' : '1';
+            
+            // Toggle Inputs
+            row.querySelectorAll('input[type="text"], input[type="number"]').forEach(input => {
+                input.readOnly = isCurrentlyActive;
+            });
+            
+            // Toggle Button Icon & Color
+            button.style.backgroundColor = isCurrentlyActive ? '#28a745' : '#dc3545';
+            button.innerHTML = `<i class="fas ${isCurrentlyActive ? 'fa-undo' : 'fa-ban'}"></i>`;
+        }
+
+        // --- Edit Form Submission ---
+        document.getElementById('editProductForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const form = document.getElementById('editProductForm');
+            
+            // Manual Validation to prevent silent HTML5 block on hidden elements
+            const name = form.querySelector('[name="name"]').value.trim();
+            const category = form.querySelector('[name="category"]').value;
+            const description = form.querySelector('[name="description"]').value.trim();
+            const regularPrice = form.querySelector('[name="regularPrice"]').value;
+
+            if (!name || !category || !description || !regularPrice) {
+                return Swal.fire({ icon: 'warning', title: 'Missing Fields', text: 'Please fill in all required fields (Name, Category, Description, Regular Price).' });
+            }
+
+            const productId = document.getElementById('editProdId').value;
+            
+            // Gather variant rows
+            const variantRows = form.querySelectorAll('.edit-variant-row');
+            const variantsArray = [];
+            
+            variantRows.forEach(row => {
+                const id = row.querySelector('.var-id').value;
+                const size = row.querySelector('.var-size').value.trim();
+                const color = row.querySelector('.var-color').value.trim();
+                const stock = row.querySelector('.var-stock').value;
+                const isActive = row.querySelector('.var-active').value === 'true';
+                
+                if (stock !== "") {
+                    variantsArray.push({ id, size, color, stock: Number(stock), isActive });
+                }
+            });
+
+            if (variantsArray.length === 0) {
+                return Swal.fire({ icon: 'error', title: 'Missing Variants', text: 'You must add at least one variant with stock.' });
+            }
+
+            const formData = new FormData(form);
+            formData.append('variants', JSON.stringify(variantsArray));
+
+            // HIGH-PRECISION FIX: Strip empty inputs for Edit as well
+            if (form.querySelector('input[name="image1"]').files.length === 0) formData.delete('image1');
+            if (form.querySelector('input[name="image2"]').files.length === 0) formData.delete('image2');
+            if (form.querySelector('input[name="image3"]').files.length === 0) formData.delete('image3');
+            if (form.querySelector('input[name="image4"]').files.length === 0) formData.delete('image4');
+
+
+            try {
+                const response = await fetch(`/admin/products/edit/${productId}`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    closeEditModal();
+                    Swal.fire({ icon: 'success', title: 'Updated!', text: data.message, timer: 1500, showConfirmButton: false })
+                    .then(() => location.reload()); 
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Oops...', text: data.message });
+                }
+            } catch (error) {
+                Swal.fire({ icon: 'error', title: 'Error', text: 'Server error occurred' });
+            }
+        });
+
+        async function toggleProductStatus(productId, currentStatus) {
+            const action = currentStatus ? "delete" : "restore";
+            
+            const result = await Swal.fire({
+                title: `Are you sure?`,
+                text: `Do you want to ${action} this product?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: currentStatus ? '#dc3545' : '#28a745',
+                confirmButtonText: `Yes, ${action} it!`
+            });
+
+            if (result.isConfirmed) {
+                try {
+                    const response = await fetch(`/admin/products/toggle/${productId}`, { method: 'PATCH' });
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        Swal.fire({ icon: 'success', title: 'Success', text: data.message, timer: 1500, showConfirmButton: false })
+                        .then(() => location.reload()); 
+                    }
+                } catch (error) {
+                    Swal.fire({ icon: 'error', title: 'Error', text: 'Server error' });
+                }
+            }
+        }
+
+        // --- HIGH-PRECISION CROPPER ENGINE ---
+        let cropper; // Holds the cropper instance
+        let currentInput; // Remembers which input was clicked
+        let currentPreviewId; // Remembers which dashed box to update
+        let currentLabelId;
+
+        // 1. Intercept the file selection
+        function previewImage(input, previewId, labelId) {
+            if (input.files && input.files[0]) {
+                currentInput = input;
+                currentPreviewId = previewId;
+                currentLabelId = labelId;
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    // Load the image into the crop modal
+                    document.getElementById('imageToCrop').src = e.target.result;
+                    document.getElementById('cropModal').style.display = 'flex';
+                    
+                    // Destroy old cropper instance if it exists
+                    if (cropper) {
+                        cropper.destroy();
+                    }
+                    
+                    // Initialize new cropper
+                    cropper = new Cropper(document.getElementById('imageToCrop'), {
+                        aspectRatio: 3 / 4, // 3:4 is the standard portrait ratio for fashion/dresses. (Change to 1 for square, or NaN for free-crop)
+                        viewMode: 1,
+                        autoCropArea: 1,
+                        background: false
+                    });
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        // 2. Handle Modal Close/Cancel
+        function closeCropModal() {
+            document.getElementById('cropModal').style.display = 'none';
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+            // Clear the input so an uncropped image isn't accidentally uploaded
+            if (currentInput) currentInput.value = ''; 
+        }
+
+        // 3. Execute the Crop and Secretly update the form
+        function executeCrop() {
+            if (!cropper) return;
+
+            // Extract the cropped area as a canvas
+            const canvas = cropper.getCroppedCanvas({
+                width: 800, // Standardize output width to save bandwidth
+                height: 1066
+            });
+
+            // Convert canvas to a Blob (Binary Large Object)
+            canvas.toBlob((blob) => {
+                // Construct a new File object from the blob
+                const fileName = currentInput.files[0].name;
+                const newFile = new File([blob], fileName, { type: 'image/jpeg', lastModified: Date.now() });
+
+                // HIGH-PRECISION BYPASS: Use DataTransfer to inject the new file into the HTML input
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(newFile);
+                currentInput.files = dataTransfer.files;
+
+                // Update the visual preview in the dashed box
+                const preview = document.getElementById(currentPreviewId);
+                const label = document.getElementById(currentLabelId);
+                
+                preview.src = URL.createObjectURL(blob);
+                preview.style.display = 'block';
+                label.style.display = 'none';
+
+                // Cleanup and close
+                closeCropModal();
+            }, 'image/jpeg', 0.85); // 0.85 compresses the quality slightly for web optimization
+        }
+    </script>
+</body>
+</html>
