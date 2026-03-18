@@ -6,6 +6,7 @@ const cookieParser = require('cookie-parser');
 const { mongo } = require('mongoose');
 const authRoutes = require('./modules/auth/routes');
 const adminRoutes = require('./modules/admin/routes');
+const shopRoutes = require('./modules/shop/routes');
 const passport = require('passport');
 require('./config/passport');
 
@@ -57,6 +58,7 @@ app.use((req, res, next) => {
 
 app.use('/', adminRoutes);
 app.use('/', authRoutes);
+app.use('/', shopRoutes);
 
 
 app.use('/', require('./modules/profile/routes'));

@@ -368,7 +368,7 @@
         <div class="modal-content" style="max-width: 600px; background: #fff; padding: 20px; border-radius: 8px;">
             <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                 <h3 style="margin: 0;">Crop Image</h3>
-                <button type="button" class="close-btn" onclick="closeCropModal()" style="background: none; border: none; font-size: 20px; cursor: pointer;"><i class="fas fa-times"></i></button>
+                <button type="button" class="close-btn" onclick="closeCropModal(true)" style="background: none; border: none; font-size: 20px; cursor: pointer;"><i class="fas fa-times"></i></button>
             </div>
             
             <div style="width: 100%; max-height: 400px; overflow: hidden; margin-bottom: 20px; background: #f8fafc; display: flex; justify-content: center; align-items: center;">
@@ -376,7 +376,7 @@
             </div>
             
             <div class="modal-actions" style="display: flex; justify-content: flex-end; gap: 10px;">
-                <button type="button" style="background-color: #888888; color: #fff; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;" onclick="closeCropModal()">CANCEL</button>
+                <button type="button" style="background-color: #888888; color: #fff; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;" onclick="closeCropModal(true)">CANCEL</button>
                 <button type="button" style="background-color: #3085d6; color: #fff; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;" onclick="executeCrop()">CROP & SAVE</button>
             </div>
         </div>
@@ -704,14 +704,16 @@
         }
 
         // 2. Handle Modal Close/Cancel
-        function closeCropModal() {
+        function closeCropModal(isCancel = false) {
             document.getElementById('cropModal').style.display = 'none';
             if (cropper) {
                 cropper.destroy();
                 cropper = null;
             }
-            // Clear the input so an uncropped image isn't accidentally uploaded
-            if (currentInput) currentInput.value = ''; 
+            // Only clear the input if they clicked X or CANCEL
+            if (isCancel && currentInput) {
+                currentInput.value = ''; 
+            }
         }
 
         // 3. Execute the Crop and Secretly update the form
@@ -743,9 +745,8 @@
                 preview.style.display = 'block';
                 label.style.display = 'none';
 
-                // Cleanup and close
-                closeCropModal();
-            }, 'image/jpeg', 0.85); // 0.85 compresses the quality slightly for web optimization
+                closeCropModal(false);
+            }, 'image/jpeg', 0.85); 
         }
     </script>
 </body>

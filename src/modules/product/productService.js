@@ -1,6 +1,7 @@
 const productModel = require('./productModel');
 const Product = require('./productModel');
-const { cloudinary } = require('../../config/cloudinary')
+const { cloudinary } = require('../../config/cloudinary');
+const { isAborted } = require('zod/v3');
 
 const uploadBufferToCloudinary = async (file) => {
     try {
@@ -173,4 +174,58 @@ exports.toggleProductStatus = async (productId) => {
 
     product.isActive = !product.isActive;
     return await product.save();
+};
+
+exports.getStorefrontProducts = async (queryData = {}) => {
+    const { search, category, minPrice, maxPrice, sort, page = 1, limit = 9 } = queryData;
+
+    let filter = { isActive: true };
+
+    const Category = require('../category/categoryModel');
+    const activeCategories = await Category.find({ isActive: true }).select('_id name');
+    const activeCategoryIds = activeCategories.map(cat => cat._id);
+
+    if (category) {
+        if (activeCategoryIds.some(id => id.toString() === category)) {
+            filter.category = category;
+        } else {
+            filter.category = null;
+        }
+    } else {
+        filter.category = { $in: activeCategoryIds };
+    }
+
+    if (search) {
+        filter.name = new RegExp(search.trim(), 'i');
+    }
+
+    if (minPrice || maxPrice) {
+        filter.salePrice = {};
+        if (minPrice) filter.salePrice.$gte = Number(minPrice);
+        if (maxPrice) filter.salePrice.$lte = Number(maxPrice);
+    }
+
+    let sortOption = { createdAt: -1 };
+    if (sort === 'price_asc') sortOption = { salePrice: 1 };
+    if (sort === 'price_desc') sortOption = { salePrice: -1 };
+    if (sort === 'az') sortOption = { name: 1 };
+    if (sort === 'za') sortOption = { name: -1 }; 
+
+    const totalProducts = await Product.countDocuments(filter);
+    const totalPages = Math.ceil(totalProducts / limit);
+    const skip = (Number(page) - 1) * Number(limit);
+
+    const products = await Product.find(filter)
+        .populate('category', 'name')
+        .sort(sortOption)
+        .skip(skip)
+        .limit(limit);
+
+    return {
+        products,
+        totalPages,
+        currentPage: Number(page),
+        totalProducts,
+        activeCategories
+    };
 };
