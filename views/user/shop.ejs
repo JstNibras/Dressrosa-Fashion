@@ -85,16 +85,19 @@
                         
                         <div class="product-card">
                             <div class="product-image-container">
+                                <% if (product.salePrice < product.regularPrice) { %>
+                                    <% const discountPercent = Math.round(((product.regularPrice - product.salePrice) / product.regularPrice) * 100); %>
+                                    <div class="offer-badge"><%= discountPercent %>% OFF</div>
+                                <% } %>
                                 <a href="/product/<%= product._id %>">
                                     <img src="<%= product.images[0] %>" alt="<%= product.name %>" class="product-image">
                                 </a>
-                                <button class="btn-wishlist" onclick="addToWishlist('<%= product._id %>')" title="Add to Wishlist">
+                                <button class="btn-wishlist" onclick="toggleWishlist('<%= product._id %>', this)" title="Add to Wishlist">
                                     <i class="far fa-heart"></i>
                                 </button>
                             </div>
 
                             <div class="product-details">
-                                <div class="product-brand"><%= product.category ? product.category.name : 'Dressrosa' %></div>
                                 <a href="/product/<%= product._id %>" style="text-decoration: none;">
                                     <h3 class="product-title"><%= product.name %></h3>
                                 </a>
@@ -108,9 +111,7 @@
                                     <% } %>
                                 </div>
 
-                                <button class="btn-add-cart" onclick="addToCart('<%= product._id %>')">
-                                    Add to Cart
-                                </button>
+                                <button class="btn-add-cart" onclick="openQuickAdd('<%= product._id %>')">MOVE TO CART</button>
                             </div>
                         </div>
 
@@ -155,7 +156,7 @@
 
         </main>
     </div>
-
+    <%- include('../layout/quickAdd') %>
     <%- include('../layout/footer') %>
 
     <script>

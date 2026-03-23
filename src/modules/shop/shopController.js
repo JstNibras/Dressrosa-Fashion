@@ -21,3 +21,51 @@ exports.getShopPage = async (req, res) => {
         res.status(500).send("Server Error Loading Shop");
     }
 };
+
+exports.getProductDetails = async (req, res) => {
+    try {
+        const productId = req.params.id;
+
+        const Product = require('../product/productModel');
+        const product = await Product.findById(productId).populate('category');
+
+        if (!product || !product.isActive || !product.category || !product.category.isActive) {
+            return res.redirect('/shop');
+        }
+
+        const relatedProducts = await Product.find({
+            category: product.category._id,
+            _id: { $ne: product._id},
+            isActive: true
+        }).limit(4);
+
+        const totalStock = product.variants
+            .filter(v => v.isActive)
+            .reduce((sum, v) => sum + v.stock, 0);
+
+        res.render('user/product', {
+            product,
+            relatedProducts,
+            totalStock
+        });
+    } catch (error) {
+        console.error("Product Details Error:", error);
+        res.redirect('/shop'); 
+    }
+};
+
+exports.getQuickViewProduct = async (req, res) => {
+    try {
+
+        const Product = require('../product/productModel');
+        const product = await Product.findById(req.params.id).select('name images salePrice regularPrice variants');
+
+        if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
+
+        res.status(200).json({ success: true, product });
+
+    } catch (error) {
+        console.error("Quick View Error:", error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+}

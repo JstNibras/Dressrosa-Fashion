@@ -163,3 +163,76 @@
         </div>
     </div>
 </footer>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    // HIGH-PRECISION AJAX: Handles wishlist clicks globally without reloading
+    async function toggleWishlist(productId, buttonElement) {
+        try {
+            const response = await fetch('/wishlist/toggle', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ productId: productId })
+            });
+
+            const data = await response.json();
+
+            // Handle "Not Logged In"
+            if (response.status === 401) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Oops...',
+                    text: data.message,
+                    confirmButtonText: 'Log In',
+                    confirmButtonColor: '#111'
+                }).then((result) => {
+                    if (result.isConfirmed) window.location.href = '/login';
+                });
+                return;
+            }
+
+            if (data.success) {
+                // Update the global navbar badge
+                document.getElementById('nav-wishlist-badge').innerText = data.wishlistCount;
+
+                // 1. Check if we are on the Wishlist Page (looking for the X button logic)
+                const wishlistCard = document.getElementById('wishlist-card-' + productId);
+                
+                if (wishlistCard && !data.isAdded) {
+                    // We are on the wishlist page -> Destroy the card instantly
+                    wishlistCard.remove();
+                    
+                    // If that was the last item, reload to show the "Empty State" UI
+                    if (data.wishlistCount === 0) {
+                        window.location.reload();
+                    }
+                } else {
+                    // 2. We are on Shop/Home -> Just toggle the Heart Icon Color
+                    const icon = buttonElement.querySelector('i');
+                    if (icon) {
+                        if (data.isAdded) {
+                            icon.classList.replace('far', 'fas');
+                            icon.style.color = '#e74c3c';
+                        } else {
+                            icon.classList.replace('fas', 'far');
+                            icon.style.color = 'inherit';
+                        }
+                    }
+                }
+
+                // Tiny toast notification
+                const Toast = Swal.mixin({
+                    toast: true, position: 'bottom-end', showConfirmButton: false, timer: 1500
+                });
+                Toast.fire({
+                    icon: 'success',
+                    title: data.isAdded ? 'Added to Wishlist' : 'Removed from Wishlist'
+                });
+            }
+        } catch (error) {
+            console.error("Wishlist Error:", error);
+        }
+    }
+</script>

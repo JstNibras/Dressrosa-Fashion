@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title><%= product.name %> - Dressrosa</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/product.css"> </head>
+<body>
+    <%- include('../layout/header') %>
+
+    <div class="breadcrumbs">
+        <a href="/">Home</a> <i class="fas fa-chevron-right"></i> 
+        <a href="/shop">Shop</a> <i class="fas fa-chevron-right"></i> 
+        <a href="/shop?category=<%= product.category._id %>"><%= product.category.name %></a> <i class="fas fa-chevron-right"></i> 
+        <span><%= product.name %></span>
+    </div>
+
+    <div class="pdp-container">
+        <div class="pdp-images">
+            <div class="main-image-container" id="zoomContainer">
+                <img src="<%= product.images[0] %>" alt="<%= product.name %>" id="mainImage">
+            </div>
+            
+            <div class="thumbnail-gallery">
+                <% product.images.forEach((img, index) => { %>
+                    <img src="<%= img %>" class="thumbnail <%= index === 0 ? 'active' : '' %>" onclick="changeMainImage(this, '<%= img %>')">
+                <% }) %>
+            </div>
+        </div>
+
+        <div class="pdp-details">
+            <div class="pdp-brand"><%= product.category.name %></div>
+            <h1 class="pdp-title"><%= product.name %></h1>
+            
+            <div class="pdp-rating">
+                <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
+                <span>4.6 (120 Reviews)</span>
+            </div>
+
+            <div class="pdp-price-row">
+                <span class="pdp-sale-price">₹<%= product.salePrice %></span>
+                <% if (product.salePrice < product.regularPrice) { %>
+                    <span class="pdp-reg-price">₹<%= product.regularPrice %></span>
+                    <span class="pdp-discount">(<%= Math.round(((product.regularPrice - product.salePrice) / product.regularPrice) * 100) %>% OFF)</span>
+                <% } %>
+            </div>
+            <p class="tax-inclusive">Inclusive of all taxes</p>
+
+            <div id="stockStatusText" class="stock-status <%= totalStock > 0 ? 'in-stock' : 'out-of-stock' %>">
+                <%= totalStock > 0 ? 'Available in Stock' : 'Currently Out of Stock' %>
+            </div>
+
+            <hr class="divider">
+
+            <div class="variants-container" id="variantsContainer">
+                </div>
+
+            <div class="action-row">
+                <div class="quantity-selector">
+                    <button type="button" class="qty-btn" onclick="updateQuantity(-1)"><i class="fas fa-minus" style="font-size: 10px;"></i></button>
+                    <input type="text" id="qtyInput" value="1" readonly>
+                    <button type="button" class="qty-btn" onclick="updateQuantity(1)"><i class="fas fa-plus" style="font-size: 10px;"></i></button>
+                </div>
+                
+                <button id="addToCartBtn" class="btn-add-cart" onclick="addToCart('<%= product._id %>')" disabled style="width: 100%; padding: 15px; background: #fff; color: #111; border: 1px solid #111; font-weight: bold; cursor: pointer; transition: 0.3s; margin-bottom: 10px;">
+                    ADD TO CART
+                </button>
+                
+                <button class="btn-wishlist-inline" onclick="toggleWishlist('<%= product._id %>', this)" title="Add to Wishlist"><i class="far fa-heart"></i></button>
+            </div>
+
+            <button id="buyNowBtn" class="btn-buy-now" disabled>BUY IT NOW</button>
+
+            <div class="pdp-description">
+                <h3>Product Details</h3>
+                <p><%= product.description %></p>
+            </div>
+        </div>
+    </div>
+
+    <% if (relatedProducts && relatedProducts.length > 0) { %>
+        <div class="related-products">
+            <h2 style="text-align: center; margin-bottom: 30px; font-size: 24px;">You May Also Like</h2>
+            
+            <div class="product-grid">
+                <% relatedProducts.forEach(rel => { %>
+                    <div class="product-card">
+                        
+                        <div class="product-image-container">
+                            <% if (rel.salePrice < rel.regularPrice) { %>
+                                <% const discountPercent = Math.round(((rel.regularPrice - rel.salePrice) / rel.regularPrice) * 100); %>
+                                <div class="offer-badge"><%= discountPercent %>% OFF</div>
+                            <% } %>
+
+                            <a href="/product/<%= rel._id %>">
+                                <img src="<%= rel.images[0] %>" alt="<%= rel.name %>" class="product-image">
+                            </a>
+                            
+                            <button class="btn-wishlist-card" onclick="toggleWishlist('<%= product._id %>', this)" title="Add to Wishlist">
+                                <i class="far fa-heart"></i>
+                            </button>
+                        </div>
+
+                        <div class="product-card-details">
+                            <a href="/product/<%= rel._id %>" style="text-decoration: none;">
+                                <h3 class="product-card-title"><%= rel.name %></h3>
+                            </a>
+                            
+                            <div class="product-card-price-row">
+                                <% if (rel.salePrice < rel.regularPrice) { %>
+                                    <span class="price-sale">₹<%= rel.salePrice %></span>
+                                    <span class="price-regular">₹<%= rel.regularPrice %></span>
+                                <% } else { %>
+                                    <span class="price-sale">₹<%= rel.regularPrice %></span>
+                                <% } %>
+                            </div>
+
+                            <!-- <button class="btn-add-cart-card" onclick="window.location.href='/product/<%= rel._id %>'">
+                                VIEW OPTIONS
+                            </button> -->
+                        </div>
+
+                    </div>
+                <% }) %>
+            </div>
+        </div>
+    <% } %>
+
+    <%- include('../layout/footer') %>
+
+    <script>
+        // 1. Image Swap & Zoom Logic
+        function changeMainImage(thumbElement, imageUrl) {
+            document.getElementById('mainImage').src = imageUrl;
+            document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
+            thumbElement.classList.add('active');
+        }
+
+        const zoomContainer = document.getElementById('zoomContainer');
+        const mainImage = document.getElementById('mainImage');
+
+        zoomContainer.addEventListener('mousemove', (e) => {
+            const { left, top, width, height } = zoomContainer.getBoundingClientRect();
+            const x = (e.clientX - left) / width * 100;
+            const y = (e.clientY - top) / height * 100;
+            mainImage.style.transformOrigin = `${x}% ${y}%`;
+            mainImage.style.transform = 'scale(2)'; // Zoom level
+        });
+
+        zoomContainer.addEventListener('mouseleave', () => {
+            mainImage.style.transformOrigin = 'center';
+            mainImage.style.transform = 'scale(1)';
+        });
+
+        // 2. Dynamic Variant Engine
+        // Load secure variants from backend (only active ones)
+        const variants = <%- JSON.stringify(product.variants.filter(v => v.isActive)) %>;
+        
+        let selectedColor = null;
+        let selectedSize = null;
+        let currentVariantId = null;
+        let currentQuantity = 1;
+        let currentMaxStock = 0; 
+        const MAX_PER_ORDER = 5;
+
+        function updateQuantity(change) {
+            if (!selectedSize) {
+                // If they haven't picked a size yet, flash the variants box to remind them
+                document.getElementById('variantsContainer').style.outline = '2px solid #e74c3c';
+                setTimeout(() => document.getElementById('variantsContainer').style.outline = 'none', 500);
+                return;
+            }
+            
+            let newQty = currentQuantity + change;
+            
+            // 1. Minimum boundary
+            if (newQty < 1) newQty = 1;
+            
+            // 2. Maximum boundary (Cannot exceed available stock OR max order limit)
+            let limit = Math.min(MAX_PER_ORDER, currentMaxStock); 
+            if (newQty > limit) {
+                newQty = limit;
+            }
+            
+            currentQuantity = newQty;
+            document.getElementById('qtyInput').value = currentQuantity;
+        }
+
+        function renderVariants() {
+            const container = document.getElementById('variantsContainer');
+            if (variants.length === 0) return;
+
+            // Extract unique colors (ignoring empty or 'N/A' colors)
+            const colors = [...new Set(variants.map(v => v.color).filter(c => c && c.trim() !== '' && c.toUpperCase() !== 'N/A'))];
+            
+            let html = '';
+
+            // A. Render Colors (Only if colors exist)
+            if (colors.length > 0) {
+                if (!selectedColor) selectedColor = colors[0]; // Auto-select first color
+                
+                html += `<div class="variant-group"><h4>COLOR</h4><div class="swatch-container">`;
+                colors.forEach(color => {
+                    const isSelected = color === selectedColor ? 'selected' : '';
+                    html += `<button class="color-swatch ${isSelected}" onclick="selectColor('${color}')" style="background-color: ${color.toLowerCase()};" title="${color}"></button>`;
+                });
+                html += `</div></div>`;
+            }
+
+            // B. Render Sizes (Filtered by selected color, or all sizes if no color tracking)
+            const availableSizesForColor = selectedColor 
+                ? variants.filter(v => v.color === selectedColor)
+                : variants;
+
+            if (availableSizesForColor.length > 0) {
+                html += `<div class="variant-group"><h4>SIZE</h4><div class="size-container">`;
+                availableSizesForColor.forEach(v => {
+                    const isSelected = v.size === selectedSize ? 'selected' : '';
+                    const isOutOfStock = v.stock === 0 ? 'out-of-stock-btn' : '';
+                    html += `<button class="size-btn ${isSelected} ${isOutOfStock}" onclick="selectSize('${v.size}', ${v.stock}, '${v._id}')" ${v.stock === 0 ? 'disabled' : ''}>${v.size}</button>`;
+                });
+                html += `</div></div>`;
+            }
+
+            container.innerHTML = html;
+        }
+
+        function selectColor(color) {
+            selectedColor = color;
+            selectedSize = null; // Reset size when color changes
+            currentVariantId = null;
+            updateCartButton(0); // Disable cart until size picked
+            renderVariants();
+        }
+
+        function selectSize(size, stock, variantId) {
+            selectedSize = size;
+            currentVariantId = variantId;
+            updateCartButton(stock);
+            renderVariants(); // Re-render to highlight selected size
+        }
+
+        function updateCartButton(stock) {
+            currentMaxStock = stock;
+            currentQuantity = 1; // Reset to 1 whenever they click a new size
+            
+            const cartBtn = document.getElementById('addToCartBtn');
+            const buyBtn = document.getElementById('buyNowBtn');
+            const qtyInput = document.getElementById('qtyInput');
+            const statusText = document.getElementById('stockStatusText');
+
+            if (stock > 0) {
+                cartBtn.disabled = false;
+                buyBtn.disabled = false;
+                qtyInput.value = currentQuantity;
+                statusText.innerText = `Available in Stock (${stock} left)`;
+                statusText.className = 'stock-status in-stock';
+            } else {
+                cartBtn.disabled = true;
+                buyBtn.disabled = true;
+                qtyInput.value = 0;
+                statusText.innerText = 'Currently Out of Stock';
+                statusText.className = 'stock-status out-of-stock';
+            }
+        }
+
+        // Initialize Variants on page load
+        renderVariants();
+
+        // Handle Add to Cart from PDP
+        async function addToCart(productId) {
+            if (!selectedSize) {
+                Swal.fire({ icon: 'warning', title: 'Wait!', text: 'Please select a size first.' });
+                return;
+            }
+
+            const btn = document.getElementById('addToCartBtn');
+            const originalText = btn.innerText;
+            btn.innerText = 'ADDING...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('/cart/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        productId: productId, 
+                        size: selectedSize, 
+                        quantity: currentQuantity 
+                    })
+                });
+                
+                const data = await response.json();
+
+                if (response.status === 401) {
+                    Swal.fire({
+                        icon: 'info', title: 'Login Required', text: data.message,
+                        confirmButtonText: 'Log In', confirmButtonColor: '#111'
+                    }).then((res) => { if (res.isConfirmed) window.location.href = '/login'; });
+                } else if (data.success) {
+                    Swal.fire({
+                        icon: 'success', title: 'Added to Cart!', showConfirmButton: false, timer: 1500
+                    });
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Oops...', text: data.message });
+                }
+            } catch (error) {
+                console.error(error);
+                Swal.fire({ icon: 'error', title: 'Error', text: 'Something went wrong.' });
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

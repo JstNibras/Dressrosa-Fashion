@@ -7,6 +7,7 @@ const { mongo } = require('mongoose');
 const authRoutes = require('./modules/auth/routes');
 const adminRoutes = require('./modules/admin/routes');
 const shopRoutes = require('./modules/shop/routes');
+const Wishlist = require('./modules/wishlist/wishlistModel');
 const passport = require('passport');
 require('./config/passport');
 
@@ -51,6 +52,23 @@ app.use((req, res, next) => {
         };
     } else {
         res.locals.user = null;
+    }
+    next();
+});
+
+app.use(async (req, res, next) => {
+    res.locals.user = req.session ? req.session.user : null;
+    res.locals.wishlistCount = 0;
+
+    if (req.session && req.session.user) {
+        try {
+            const wishlist = await Wishlist.findOne({ user: req.session.user._id });
+            if (wishlist) {
+                res.locals.wishlistCount = wishlist.products.length;
+            }
+        } catch (error) {
+            console.error("Global Wishlist Error:", error);
+        }
     }
     next();
 });
