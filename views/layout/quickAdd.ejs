@@ -1,0 +1,169 @@
+<!-- GLOBAL QUICK ADD MODAL -->
+<div id="quickAddModal" class="qa-modal-overlay" style="display: none;">
+    <div class="qa-modal-content">
+        <button class="qa-close-btn" onclick="closeQuickAdd()"><i class="fas fa-times"></i></button>
+        
+        <div class="qa-modal-body">
+            <div class="qa-img-wrapper">
+                <img id="qa-img" src="" alt="Product">
+            </div>
+            <div class="qa-details">
+                <h3 id="qa-title">Product Name</h3>
+                <div id="qa-price-row" class="product-price-row" style="margin-bottom: 20px;"></div>
+                
+                <div id="qa-variants-container"></div>
+
+                <button id="qa-confirm-btn" class="btn-buy-now" style="margin-bottom: 0;" disabled>
+                    SELECT SIZE
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let qaVariants = [];
+    let qaSelectedColor = null;
+    let qaSelectedSize = null;
+    let qaVariantId = null;
+
+    async function openQuickAdd(productId) {
+        try {
+            const response = await fetch(`/api/quick-view/${productId}`);
+            const data = await response.json();
+            
+            if (!data.success) return alert("Failed to load product details.");
+
+            const product = data.product;
+            qaVariants = product.variants.filter(v => v.isActive !== false);
+            qaSelectedColor = null; qaSelectedSize = null; qaVariantId = null;
+
+            document.getElementById('qa-img').src = product.images[0];
+            document.getElementById('qa-title').innerText = product.name;
+            
+            let priceHtml = `<span class="price-sale" style="font-size: 20px;">₹${product.salePrice}</span>`;
+            if (product.salePrice < product.regularPrice) {
+                priceHtml += ` <span class="price-regular" style="font-size: 14px; text-decoration: line-through; color: #999;">₹${product.regularPrice}</span>`;
+            }
+            document.getElementById('qa-price-row').innerHTML = priceHtml;
+
+            renderQaVariants();
+            document.getElementById('quickAddModal').style.display = 'flex';
+            document.getElementById('qa-confirm-btn').onclick = () => confirmAddToCart(product._id);
+
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    function closeQuickAdd() {
+        document.getElementById('quickAddModal').style.display = 'none';
+    }
+
+    function renderQaVariants() {
+        const container = document.getElementById('qa-variants-container');
+        if (qaVariants.length === 0) {
+            container.innerHTML = '<p style="color:red;">Item unavailable</p>';
+            return;
+        }
+
+        const colors = [...new Set(qaVariants.map(v => v.color).filter(c => c && c.trim() !== '' && c.toUpperCase() !== 'N/A'))];
+        let html = '';
+
+        if (colors.length > 0) {
+            if (!qaSelectedColor) qaSelectedColor = colors[0];
+            html += `<div class="variant-group"><h4>COLOR</h4><div class="swatch-container">`;
+            colors.forEach(color => {
+                const isSelected = color === qaSelectedColor ? 'selected' : '';
+                html += `<button class="color-swatch ${isSelected}" onclick="selectQaColor('${color}')" style="background-color: ${color.toLowerCase()};"></button>`;
+            });
+            html += `</div></div>`;
+        }
+
+        const availableSizes = qaSelectedColor ? qaVariants.filter(v => v.color === qaSelectedColor) : qaVariants;
+        if (availableSizes.length > 0) {
+            html += `<div class="variant-group" style="margin-bottom: 20px;"><h4>SIZE</h4><div class="size-container">`;
+            availableSizes.forEach(v => {
+                const isSelected = v.size === qaSelectedSize ? 'selected' : '';
+                html += `<button class="size-btn ${isSelected}" onclick="selectQaSize('${v.size}', '${v._id}', ${v.stock})" ${v.stock === 0 ? 'disabled' : ''}>${v.size}</button>`;
+            });
+            html += `</div></div>`;
+        }
+
+        container.innerHTML = html;
+        updateQaButton(0);
+    }
+
+    function selectQaColor(color) { qaSelectedColor = color; qaSelectedSize = null; qaVariantId = null; renderQaVariants(); }
+    function selectQaSize(size, variantId, stock) { qaSelectedSize = size; qaVariantId = variantId; renderQaVariants(); updateQaButton(stock); }
+
+    function updateQaButton(stock) {
+        const btn = document.getElementById('qa-confirm-btn');
+        if (qaSelectedSize && stock > 0) {
+            btn.disabled = false; btn.innerText = 'ADD TO CART'; btn.style.cssText = "width: 100%; height: 50px; background: white !important; color: #e74c3c; border: 1px solid #111; border-radius: 6px; font-weight: 600; cursor: pointer;";
+        } else {
+            btn.disabled = true; btn.innerText = 'SELECT SIZE'; btn.style.cssText = "width: 100%; height: 50px; background: white !important; color: #ccc; border: 1px solid #ccc; border-radius: 6px; font-weight: 600; cursor: not-allowed;";
+        }
+    }
+
+    // HIGH-PRECISION LOGIC: Context-Aware Add to Cart
+    async function confirmAddToCart(productId) {
+        if (!qaSelectedSize) return;
+        const btn = document.getElementById('qa-confirm-btn');
+        btn.innerText = 'ADDING...'; btn.disabled = true;
+
+        try {
+            const response = await fetch('/cart/add', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ productId: productId, size: qaSelectedSize, quantity: 1 })
+            });
+            const data = await response.json();
+
+            // Handle unauthorized (not logged in)
+            if (response.status === 401) {
+                closeQuickAdd();
+                return Swal.fire({
+                    icon: 'warning', title: 'Login Required', text: data.message, confirmButtonText: 'Log In', confirmButtonColor: '#111'
+                }).then((res) => { if (res.isConfirmed) window.location.href = '/login'; });
+            }
+
+            if (data.success) {
+                const cartBadge = document.getElementById('nav-cart-badge');
+                if (cartBadge) {
+                    cartBadge.innerText = data.cartCount;
+                    cartBadge.style.display = data.cartCount > 0 ? 'inline-block' : 'none';
+                }
+                // Check if we are currently on the Wishlist page
+                const isWishlistPage = window.location.pathname.includes('/wishlist');
+                if (isWishlistPage) {
+                    // Execute wishlist cleanup ONLY if we are on the wishlist page
+                    const toggleRes = await fetch('/wishlist/toggle', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ productId: productId })
+                    });
+                    const toggleData = await toggleRes.json();
+                    if (toggleData.success) {
+                        const wishlistBadge = document.getElementById('nav-wishlist-badge');
+                        if (wishlistBadge) {
+                            wishlistBadge.innerText = toggleData.wishlistCount;
+                            wishlistBadge.style.display = toggleData.wishlistCount > 0 ? 'inline-block' : 'none';
+                        }
+                    }
+                    
+                    const wishlistCard = document.getElementById('wishlist-card-' + productId);
+                    if (wishlistCard) wishlistCard.remove();
+                    if (toggleData.wishlistCount === 0) setTimeout(() => window.location.reload(), 1500);
+                }
+
+                Swal.fire({ icon: 'success', title: 'Added to Cart!', showConfirmButton: false, timer: 1500 });
+                closeQuickAdd();
+            } else {
+                Swal.fire({ icon: 'error', title: 'Stock Error', text: data.message });
+                btn.innerText = 'ADD TO CART'; btn.disabled = false;
+            }
+        } catch (error) {
+            console.error(error);
+            btn.innerText = 'ADD TO CART'; btn.disabled = false;
+        }
+    }
+</script>

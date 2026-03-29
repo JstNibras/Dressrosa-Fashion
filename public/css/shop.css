@@ -1,0 +1,418 @@
+/* public/css/shop.css */
+:root {
+    --primary-color: #333;
+    --text-muted: #777;
+    --border-color: #eaeaec;
+    --bg-light: #f9f9f9;
+    --accent-red: #e74c3c;
+}
+
+body {
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #fff;
+    color: var(--primary-color);
+}
+
+/* --- Layout --- */
+.shop-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+    display: flex;
+    gap: 40px;
+}
+
+/* --- Sidebar Filters --- */
+.shop-sidebar {
+    width: 260px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 20px;
+    height: max-content;
+}
+
+.filter-section {
+    padding-bottom: 25px;
+    margin-bottom: 25px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.filter-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 15px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.filter-input, .filter-select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 14px;
+    background-color: var(--bg-light);
+    outline: none;
+    box-sizing: border-box;
+    transition: border 0.2s;
+}
+
+.filter-input:focus, .filter-select:focus {
+    border-color: var(--primary-color);
+}
+
+.price-range-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.btn-apply-filter {
+    width: 100%;
+    padding: 10px;
+    margin-top: 15px;
+    background-color: var(--primary-color);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.btn-apply-filter:hover { opacity: 0.9; }
+
+.btn-clear-filters {
+    display: block;
+    text-align: center;
+    padding: 10px;
+    background-color: #fff;
+    color: var(--accent-red);
+    border: 1px solid var(--accent-red);
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.btn-clear-filters:hover {
+    background-color: var(--accent-red);
+    color: #fff;
+}
+
+/* --- Main Content & Top Bar --- */
+.shop-main {
+    flex-grow: 1;
+}
+
+.shop-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.results-count {
+    font-size: 14px;
+    color: var(--text-muted);
+}
+
+.sort-select {
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    background-color: #fff;
+}
+
+/* --- Product Grid & Cards --- */
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 30px;
+}
+
+.product-card {
+    position: relative;
+    transition: transform 0.2s;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+}
+
+.product-image-container {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    overflow: hidden;
+    border-radius: 6px;
+    background-color: var(--bg-light);
+    margin-bottom: 15px;
+}
+
+/* --- Offer Badge --- */
+.offer-badge {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    background-color: var(--accent-red);
+    color: white;
+    padding: 5px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: 4px;
+    z-index: 10;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.product-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.product-card:hover .product-image {
+    transform: scale(1.05); /* Slight zoom on hover */
+}
+
+/* The Future Wishlist Button */
+.btn-wishlist {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: #fff;
+    border: none;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    color: var(--text-muted);
+    transition: all 0.2s;
+    z-index: 10;
+}
+
+.btn-wishlist:hover {
+    color: var(--accent-red);
+    transform: scale(1.1);
+}
+
+.product-details {
+    text-align: left;
+}
+
+.product-card h3.product-title {
+    font-size: 15px !important;
+    font-weight: 700 !important; 
+    color: #111 !important; 
+    margin: 5px 0 10px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.product-brand {
+    font-size: 11px;
+    color: #999; 
+    text-transform: uppercase;
+    letter-spacing: 0.5px; 
+    margin-bottom: 6px;
+}
+
+.product-price-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.price-sale {
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.price-regular {
+    font-size: 13px;
+    text-decoration: line-through;
+    color: var(--text-muted);
+}
+
+/* The Future Add to Cart Button */
+.btn-add-cart {
+    width: 100%;
+    padding: 10px;
+    background-color: transparent;
+    border: 1px solid var(--primary-color);
+    color: var(--primary-color);
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+}
+
+.product-card:hover .btn-add-cart {
+    background-color: var(--primary-color);
+    color: #fff;
+}
+
+/* --- Pagination --- */
+.pagination {
+    display: flex;
+    justify-content: center;
+    margin-top: 50px;
+    gap: 8px;
+}
+
+.page-link {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--border-color);
+    background: #fff;
+    color: var(--primary-color);
+    text-decoration: none;
+    border-radius: 4px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.page-link:hover, .page-link.active {
+    background: var(--primary-color);
+    color: #fff;
+    border-color: var(--primary-color);
+}
+
+.wishlist-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); /* Shrunk from 260px */
+    gap: 20px; 
+}
+
+.wishlist-grid .product-title {
+    font-size: 14px !important; 
+    margin: 5px 0;
+}
+
+.wishlist-grid .price-sale {
+    font-size: 15px;
+}
+
+.wishlist-grid .price-regular {
+    font-size: 12px;
+    text-decoration: line-through;
+    color: #999;
+}
+
+.wishlist-grid .btn-add-cart {
+    padding: 8px;
+    font-size: 12px;
+    letter-spacing: 0;
+}
+
+.wishlist-grid .btn-remove-wishlist {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+}
+
+.wishlist-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+
+.qa-modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6); z-index: 9999;
+    display: flex; justify-content: center; align-items: center;
+    backdrop-filter: blur(3px);
+}
+
+.qa-modal-content {
+    background: #fff; width: 100%; max-width: 600px;
+    border-radius: 8px; position: relative; overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+/* Simplified Close Button: Matches main page minimalist 'X' */
+.qa-close-btn {
+    position: absolute; top: 15px; right: 15px;
+    background: none; /* No background circle, just simple 'X' */
+    border: none;
+    width: auto; height: auto;
+    cursor: pointer;
+    font-size: 18px; /* Slightly larger icon */
+    color: #777; /* Soft gray for normal */
+    transition: 0.2s;
+    z-index: 10;
+}
+.qa-close-btn:hover { color: #e74c3c; background: none; }
+
+.qa-modal-body { display: flex; }
+.qa-img-wrapper { width: 40%; background: #f9f9f9; }
+.qa-img-wrapper img { width: 100%; height: 100%; object-fit: cover; }
+.qa-details { width: 60%; padding: 30px; }
+
+#qa-title { font-size: 20px; font-weight: 700; margin: 0 0 10px 0; color: #111; }
+
+/* Refined Swatches and Buttons: Matching main page exactly */
+.color-swatch.selected { border: 2px solid #111; box-shadow: 0 0 0 2px #fff inset; }
+
+.size-btn {
+    padding: 10px; /* More compact and square-ish */
+    border: 1px solid #ddd;
+    background: white;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: 0.2s;
+    min-width: 45px; /* Compact width */
+    border-radius: 4px; /* Matches main design */
+}
+.size-btn:hover:not(:disabled) { border-color: #333; }
+.size-btn.selected { border-color: #333; background: #333; color: white; }
+.size-btn:disabled { opacity: 0.4; cursor: not-allowed; text-decoration: line-through; }
+
+/* HIGH-PRECISION MODAL BUTTON REWRITE: Replicates main page minimalist bordered style */
+#qa-confirm-btn {
+    width: 100%; height: 50px;
+    background: white !important; /* Force light background to override solid boxes */
+    color: #e74c3c; /* Bold Red text */
+    border: 1px solid #111; /* Black border */
+    border-radius: 6px; /* Matches layout */
+    font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: 0.2s;
+    letter-spacing: 0.5px;
+    margin-bottom: 0;
+    text-transform: uppercase;
+}
+#qa-confirm-btn:hover:not(:disabled) {
+    background: #f9f9f9 !important; /* override the solid red hover */
+    border-color: #e74c3c; /* Red border on hover for accent */
+    color: #e74c3c; /* keep red text */
+}
+#qa-confirm-btn:disabled {
+    border-color: #ccc;
+    color: #ccc;
+    background: white !important; /* keep background light: override solid gray box in image_7.png */
+    cursor: not-allowed;
+}

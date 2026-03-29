@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shop - Dressrosa</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/shop.css">
+</head>
+<body>
+
+    <%- include('../layout/header') %>
+
+    <div style="background-color: #f9f9f9; padding: 15px 0; border-bottom: 1px solid #eee;">
+        <div style="max-width: 1400px; margin: 0 auto; padding: 0 20px; font-size: 13px; color: #777;">
+            <a href="/" style="color: #333; text-decoration: none;">Home</a> 
+            <i class="fas fa-chevron-right" style="font-size: 10px; margin: 0 8px;"></i> 
+            <span style="font-weight: 500; color: #333;">Shop All</span>
+        </div>
+    </div>
+
+    <div class="shop-container">
+        
+        <aside class="shop-sidebar">
+            <form action="/shop" method="GET" id="filterForm">
+                
+                <div class="filter-section">
+                    <div class="filter-title">Search</div>
+                    <div style="position: relative;">
+                        <input type="text" name="search" value="<%= query.search || '' %>" class="filter-input" placeholder="Find products...">
+                        <i class="fas fa-search" style="position: absolute; right: 12px; top: 12px; color: #aaa;"></i>
+                    </div>
+                </div>
+
+                <div class="filter-section">
+                    <div class="filter-title">Categories</div>
+                    <select name="category" class="filter-select" onchange="this.form.submit()">
+                        <option value="">All Categories</option>
+                        <% categories.forEach(cat => { %>
+                            <option value="<%= cat._id %>" <%= query.category == cat._id ? 'selected' : '' %>><%= cat.name %></option>
+                        <% }) %>
+                    </select>
+                </div>
+
+                <div class="filter-section">
+                    <div class="filter-title">Price Range</div>
+                    <div class="price-range-group">
+                        <input type="number" name="minPrice" value="<%= query.minPrice || '' %>" class="filter-input" placeholder="Min ₹">
+                        <span style="color: #777;">-</span>
+                        <input type="number" name="maxPrice" value="<%= query.maxPrice || '' %>" class="filter-input" placeholder="Max ₹">
+                    </div>
+                    <button type="submit" class="btn-apply-filter">Apply Filters</button>
+                </div>
+
+                <input type="hidden" name="sort" id="hiddenSort" value="<%= query.sort || '' %>">
+
+                <% if (query.search || query.category || query.minPrice || query.maxPrice || query.sort) { %>
+                    <a href="/shop" class="btn-clear-filters">Clear All Filters</a>
+                <% } %>
+            </form>
+        </aside>
+
+        <main class="shop-main">
+            
+            <div class="shop-topbar">
+                <div class="results-count">
+                    Showing <strong><%= products.length %></strong> of <strong><%= totalProducts %></strong> Products
+                </div>
+                
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 14px; color: #777;">Sort By:</span>
+                    <select class="sort-select" onchange="document.getElementById('hiddenSort').value = this.value; document.getElementById('filterForm').submit();">
+                        <option value="">New Arrivals</option>
+                        <option value="price_asc" <%= query.sort === 'price_asc' ? 'selected' : '' %>>Price: Low to High</option>
+                        <option value="price_desc" <%= query.sort === 'price_desc' ? 'selected' : '' %>>Price: High to Low</option>
+                        <option value="az" <%= query.sort === 'az' ? 'selected' : '' %>>Name: A to Z</option>
+                        <option value="za" <%= query.sort === 'za' ? 'selected' : '' %>>Name: Z to A</option>
+                    </select>
+                </div>
+            </div>
+
+            <% if (products.length > 0) { %>
+                <div class="product-grid">
+                    <% products.forEach(product => { %>
+                        
+                        <div class="product-card">
+                            <div class="product-image-container">
+                                <% if (product.salePrice < product.regularPrice) { %>
+                                    <% const discountPercent = Math.round(((product.regularPrice - product.salePrice) / product.regularPrice) * 100); %>
+                                    <div class="offer-badge"><%= discountPercent %>% OFF</div>
+                                <% } %>
+                                <a href="/product/<%= product._id %>">
+                                    <img src="<%= product.images[0] %>" alt="<%= product.name %>" class="product-image">
+                                </a>
+                                <button class="btn-wishlist" onclick="toggleWishlist('<%= product._id %>', this)" title="Add to Wishlist">
+                                    <i class="far fa-heart"></i>
+                                </button>
+                            </div>
+
+                            <div class="product-details">
+                                <a href="/product/<%= product._id %>" style="text-decoration: none;">
+                                    <h3 class="product-title"><%= product.name %></h3>
+                                </a>
+                                
+                                <div class="product-price-row">
+                                    <% if (product.salePrice < product.regularPrice) { %>
+                                        <span class="price-sale">₹<%= product.salePrice %></span>
+                                        <span class="price-regular">₹<%= product.regularPrice %></span>
+                                    <% } else { %>
+                                        <span class="price-sale">₹<%= product.regularPrice %></span>
+                                    <% } %>
+                                </div>
+
+                                <button class="btn-add-cart" onclick="openQuickAdd('<%= product._id %>')">MOVE TO CART</button>
+                            </div>
+                        </div>
+
+                    <% }) %>
+                </div>
+            <% } else { %>
+                <div style="text-align: center; padding: 80px 20px; border: 1px dashed #ddd; border-radius: 8px;">
+                    <i class="fas fa-box-open" style="font-size: 48px; color: #ddd; margin-bottom: 20px;"></i>
+                    <h3 style="margin: 0 0 10px 0;">No matching products found.</h3>
+                    <p style="color: #777; margin-bottom: 20px;">Try adjusting your filters or search term.</p>
+                    <a href="/shop" class="btn-clear-filters" style="display: inline-block; width: auto; padding: 10px 30px;">Clear Filters</a>
+                </div>
+            <% } %>
+
+            <% if (totalPages > 1) { %>
+                <div class="pagination">
+                    <% 
+                        const buildUrl = (pageNum) => {
+                            let url = `/shop?page=${pageNum}`;
+                            if (query.search) url += `&search=${query.search}`;
+                            if (query.category) url += `&category=${query.category}`;
+                            if (query.minPrice) url += `&minPrice=${query.minPrice}`;
+                            if (query.maxPrice) url += `&maxPrice=${query.maxPrice}`;
+                            if (query.sort) url += `&sort=${query.sort}`;
+                            return url;
+                        }
+                    %>
+
+                    <% if (currentPage > 1) { %>
+                        <a href="<%= buildUrl(currentPage - 1) %>" class="page-link"><i class="fas fa-chevron-left"></i></a>
+                    <% } %>
+
+                    <% for(let i = 1; i <= totalPages; i++) { %>
+                        <a href="<%= buildUrl(i) %>" class="page-link <%= currentPage === i ? 'active' : '' %>"><%= i %></a>
+                    <% } %>
+
+                    <% if (currentPage < totalPages) { %>
+                        <a href="<%= buildUrl(currentPage + 1) %>" class="page-link"><i class="fas fa-chevron-right"></i></a>
+                    <% } %>
+                </div>
+            <% } %>
+
+        </main>
+    </div>
+    <%- include('../layout/quickAdd') %>
+    <%- include('../layout/footer') %>
+
+    <script>
+        function addToWishlist(productId) {
+            console.log('Wishlist clicked for:', productId);
+            // We will build the AJAX call for this later
+        }
+
+        function addToCart(productId) {
+            console.log('Add to cart clicked for:', productId);
+            // We will build the AJAX call for this later
+        }
+    </script>
+</body>
+</html>

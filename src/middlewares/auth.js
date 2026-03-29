@@ -1,6 +1,6 @@
 exports.isUser = async (req, res, next) => {
     if (req.session.user) {
-        const User = require('../modules/auth/userModel');
+        const User = require('../models/userModel');
         const user = await User.findById(req.session.user.id);
         
         if (user && !user.isBlocked) {

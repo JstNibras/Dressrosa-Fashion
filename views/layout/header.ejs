@@ -32,9 +32,31 @@
     </nav>
 
     <div class="nav-actions">
-      <a href="/cart" class="icon-link"><i class="fas fa-shopping-bag"></i></a>
-      <a href="/wishlist" class="icon-link"><i class="far fa-heart"></i></a>
-      <a href="/profile" class="icon-link"><i class="far fa-user"></i></a>
+    <a href="/cart" class="nav-icon" style="position: relative; display: inline-block;">
+        <i class="fas fa-shopping-cart"></i>
+        <span id="nav-cart-badge" class="badge" style="
+            display: <%= locals.cartCount > 0 ? 'inline-block' : 'none' %>;
+            position: absolute; top: -8px; right: -10px;
+            background-color: #e74c3c; color: white;
+            border-radius: 50%; padding: 2px 6px;
+            font-size: 10px; font-weight: bold;
+        ">
+            <%= locals.cartCount || 0 %>
+        </span>
+    </a>
+      <a href="/wishlist" class="nav-icon" style="position: relative; display: inline-block;">
+        <i class="far fa-heart"></i>
+        <span id="nav-wishlist-badge" class="badge" style="
+            display: <%= locals.wishlistCount > 0 ? 'inline-block' : 'none' %>;
+            position: absolute; top: -8px; right: -10px;
+            background-color: #e74c3c; color: white;
+            border-radius: 50%; padding: 2px 6px;
+            font-size: 10px; font-weight: bold;
+        ">
+            <%= locals.wishlistCount || 0 %>
+        </span>
+    </a>
+        <a href="/profile" class="icon-link"><i class="far fa-user"></i></a>
       <% if (user) { %>
         <a href="/profile" title="My Profile">
             <i class="icon-user"></i> <span><%= user.name %></span>

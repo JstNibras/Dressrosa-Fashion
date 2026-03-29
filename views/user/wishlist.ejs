@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>My Wishlist - Dressrosa</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/shop.css"> <style>
+        /* Specific X Button Style */
+        .btn-remove-wishlist {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            color: #111;
+            font-size: 14px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: all 0.2s;
+            z-index: 10;
+        }
+        .btn-remove-wishlist:hover {
+            background: #e74c3c;
+            color: white;
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+    <%- include('../layout/header') %>
+
+    <div class="shop-container" style="display: block; min-height: 60vh;">
+        <h2 style="text-align: center; margin-bottom: 40px; font-size: 28px;">My Wishlist</h2>
+
+        <% if (products.length > 0) { %>
+            <div class="wishlist-grid">
+                <% products.forEach(product => { %>
+                    <div class="product-card" id="wishlist-card-<%= product._id %>">
+                        
+                        <div class="product-image-container">
+                            <button class="btn-remove-wishlist" onclick="toggleWishlist('<%= product._id %>', this)" title="Remove from Wishlist">
+                                <i class="fas fa-times"></i>
+                            </button>
+
+                            <a href="/product/<%= product._id %>">
+                                <img src="<%= product.images[0] %>" alt="<%= product.name %>" class="product-image">
+                            </a>
+                        </div>
+
+                        <div class="product-details">
+                            <a href="/product/<%= product._id %>" style="text-decoration: none;">
+                                <h3 class="product-title"><%= product.name %></h3>
+                            </a>
+                            <div class="product-price-row">
+                                <% if (product.salePrice < product.regularPrice) { %>
+                                    <span class="price-sale">₹<%= product.salePrice %></span>
+                                    <span class="price-regular">₹<%= product.regularPrice %></span>
+                                <% } else { %>
+                                    <span class="price-sale">₹<%= product.regularPrice %></span>
+                                <% } %>
+                            </div>
+                            <button class="btn-add-cart" onclick="openQuickAdd('<%= product._id %>')">MOVE TO CART</button>
+                        </div>
+                    </div>
+                <% }) %>
+            </div>
+        <% } else { %>
+            <div style="text-align: center; padding: 80px 20px;">
+                <i class="far fa-heart" style="font-size: 48px; color: #ddd; margin-bottom: 20px;"></i>
+                <h3 style="margin: 0 0 10px 0;">Your wishlist is empty.</h3>
+                <p style="color: #777; margin-bottom: 20px;">Save items you love here to buy them later.</p>
+                <a href="/shop" style="display: inline-block; padding: 10px 30px; background: #111; color: white; text-decoration: none; border-radius: 4px;">Explore Shop</a>
+            </div>
+        <% } %>
+    </div>
+    <%- include('../layout/quickAdd') %>
+    <%- include('../layout/footer') %>
+</body>
+</html>

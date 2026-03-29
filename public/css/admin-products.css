@@ -1,0 +1,281 @@
+@import url('/css/admin-users.css'); 
+
+/* --- PRODUCT SPECIFIC STYLES --- */
+
+.prod-img {
+    width: 50px;
+    height: 65px; /* Taller ratio for clothing */
+    border-radius: 4px;
+    object-fit: cover;
+    background-color: #f1f1f1;
+    border: 1px solid #ddd;
+}
+
+.prod-info {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.discount-badge {
+    background-color: #e60039;
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 3px;
+    align-self: flex-start;
+}
+
+.price-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.sale-price {
+    font-weight: bold;
+    color: #000;
+}
+
+.stock-badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.in-stock { background-color: #e8f5e9; color: #43a047; }
+.out-of-stock { background-color: #ffebee; color: #e53935; }
+.btn-add-new { background-color: #000000; } 
+
+
+.modal-content.scrollable-modal {
+    width: 600px; 
+    max-height: 90vh;
+    overflow-y: auto; 
+    padding-right: 20px;
+}
+
+.scrollable-modal::-webkit-scrollbar { width: 6px; }
+.scrollable-modal::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+.scrollable-modal::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
+
+.form-row {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.half-width {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+/* --- DYNAMIC VARIANTS SECTION --- */
+
+.variants-section {
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 15px;
+    margin-top: 10px;
+    margin-bottom: 20px;
+}
+
+.variants-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 10px;
+}
+
+.variants-header h4 {
+    margin: 0;
+    font-size: 14px;
+    color: #333;
+}
+
+.btn-add-variant {
+    background-color: #000;
+    color: #fff;
+    font-size: 10px;
+    padding: 5px 10px;
+}
+
+.variant-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    align-items: center;
+}
+
+.variant-row .form-input {
+    margin-bottom: 0;
+    padding: 8px;
+    font-size: 13px;
+}
+
+.var-size, .var-color { flex: 2; }
+.var-stock { flex: 1; }
+
+.btn-remove-var {
+    background: none;
+    border: none;
+    color: #e60039;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 5px;
+    transition: 0.2s;
+}
+
+.btn-remove-var:hover { color: #b3002c; }
+
+/* --- MODAL STYLES --- */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background: #fff;
+    padding: 30px;
+    border-radius: 8px;
+    width: 100%;
+    max-width: 600px;
+    position: relative;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 10px;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #555;
+    transition: 0.2s;
+}
+
+.close-btn:hover {
+    color: #e60039;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #333;
+}
+
+.form-input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    background-color: #f9f9f9;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #888;
+    background-color: #fff;
+}
+
+.file-input {
+    padding: 5px 0;
+    background-color: transparent;
+    border: none;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #ddd;
+}
+
+/* --- SLOT-BASED IMAGE UPLOAD --- */
+.image-upload-container {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+    justify-content: space-between;
+}
+
+.image-upload-box {
+    flex: 1;
+    height: 150px;
+    border: 2px dashed #d1d5db;
+    border-radius: 8px;
+    background-color: #f8fafc;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    transition: all 0.2s;
+}
+
+.image-upload-box:hover {
+    border-color: #5b67e6;
+    background-color: #f0f4ff;
+}
+
+.upload-input {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 10;
+}
+
+.upload-label {
+    color: #6b7280;
+    font-size: 13px;
+    font-weight: 500;
+    z-index: 5;
+    pointer-events: none;
+}
+
+.upload-preview {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 8;
+    display: none; /* Hidden until an image is selected */
+}

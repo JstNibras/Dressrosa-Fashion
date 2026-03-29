@@ -4,8 +4,11 @@ const session = require('express-session');
 const { MongoStore } = require('connect-mongo');
 const cookieParser = require('cookie-parser');
 const { mongo } = require('mongoose');
-const authRoutes = require('./modules/auth/routes');
-const adminRoutes = require('./modules/admin/routes');
+const authRoutes = require('./routes/authRoutes');
+const adminRoutes = require('./routes/adminRoutes');
+const shopRoutes = require('./routes/shopRoutes');
+const Wishlist = require('./models/wishlistModel');
+const Cart = require('./models/cartModel')
 const passport = require('passport');
 require('./config/passport');
 
@@ -54,12 +57,57 @@ app.use((req, res, next) => {
     next();
 });
 
+app.use(async (req, res, next) => {
+    res.locals.user = req.session ? req.session.user : null;
+    res.locals.wishlistCount = 0;
+
+    if (req.session && req.session.user) {
+        try {
+            const wishlist = await Wishlist.findOne({ user: req.session.user._id });
+            if (wishlist) {
+                res.locals.wishlistCount = wishlist.products.length;
+            }
+        } catch (error) {
+            console.error("Global Wishlist Error:", error);
+        }
+    }
+    next();
+});
+
+app.use(async (req, res, next) => {
+
+    if (!res.locals) res.locals = {};
+
+    try {
+        let userId;
+        const currentUser = req.user || (req.session && req.session.user);
+        if (currentUser) {
+            userId = typeof currentUser === 'string' ? currentUser : (currentUser._id || currentUser.id);
+        }
+
+        if (userId) {
+            const cart = await Cart.findOne({ user: userId });
+            res.locals.cartCount = cart && cart.items ? cart.items.length : 0;
+        } else {
+            res.locals.cartCount = 0;
+        }
+        next();
+    } catch (error) {
+        console.error("Global Badge Count Error:", error);
+        res.locals.cartCount = 0;
+        next();
+    }
+});
+
 
 app.use('/', adminRoutes);
 app.use('/', authRoutes);
+app.use('/', shopRoutes);
 
 
-app.use('/', require('./modules/profile/routes'));
+app.use('/', require('./routes/profileRoutes'));
+app.use('/', require('./routes/categoryRoutes'));
+app.use('/', require('./routes/productRoutes'));
 
 
 module.exports = app;

@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Shopping Cart - Dressrosa</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/cart.css">
+</head>
+<body>
+    <%- include('../layout/header') %>
+
+    <div class="cart-wrapper">
+        <% if (cartItems.length > 0) { %>
+            <div class="cart-left">
+                <div class="address-block">
+                    <% if (defaultAddress) { %>
+                        <div class="address-details" id="active-address-display">
+                            <h4 id="display-name-pin" data-address-id="<%= defaultAddress._id %>">
+                                Deliver To: <%= defaultAddress.firstName %> <%= defaultAddress.lastName %>, <%= defaultAddress.pincode %>
+                            </h4>
+                            <p id="display-full-address">
+                                <%= defaultAddress.houseNo %>, <%= defaultAddress.city %>, <%= defaultAddress.district %>, <%= defaultAddress.state %>
+                            </p>
+                        </div>
+                        <button class="btn-change-text" onclick="openAddressModal()">CHANGE</button>
+                    <% } else { %>
+                        <div class="address-details">
+                            <h4>No Address Found</h4>
+                            <p>Please add a delivery address to proceed.</p>
+                        </div>
+                        <button class="btn-change-text" onclick="window.location.href='/profile/addresses'">ADD NEW</button>
+                    <% } %>
+                </div>
+
+                
+                <% cartItems.forEach(item => { %>
+                    <div class="cart-item-card <%= item.isOutOfStock ? 'oos-dim' : '' %>">
+                        <div class="cart-item-main">
+                            <div class="cart-item-img">
+                                <a href="/product/<%= item.productId %>">
+                                    <img src="<%= item.image %>" alt="<%= item.name %>">
+                                </a>
+                            </div>
+                            
+                            <div class="cart-item-info">
+                                <div class="info-top">
+                                    <h3 class="item-title"><%= item.name %></h3>
+                                    <div class="item-price-col">
+                                        <span class="sale-price">₹ <%= item.price %></span>
+                                        <span class="mrp-text">MRP incl. of all taxes</span>
+                                    </div>
+                                </div>
+                                <p class="item-category"><%= item.categoryName %></p>
+                                
+                                <div class="item-selectors">
+                                    <div class="select-box">
+                                        <label>Size:</label>
+                                        <select class="size-select" onchange="updateCartSize('<%= item._id %>', this.value)">
+                                            <% item.availableSizes.forEach(v => { %>
+                                                <option value="<%= v.size %>" <%= item.size === v.size ? 'selected' : '' %> <%= v.stock === 0 ? 'disabled' : '' %>>
+                                                    <%= v.size %> <%= v.stock === 0 ? '(OOS)' : '' %>
+                                                </option>
+                                            <% }) %>
+                                        </select>
+                                    </div>
+                                    <div class="select-box">
+                                        <label>Qty:</label>
+                                        <select class="qty-select" onchange="updateCartQty('<%= item._id %>', this.value)" <%= item.isOutOfStock ? 'disabled' : '' %>>
+                                            <% const maxQty = Math.min(5, item.liveStock > 0 ? item.liveStock : 5); %>
+                                            <% for(let i=1; i<=maxQty; i++) { %>
+                                                <option value="<%= i %>" <%= item.quantity === i ? 'selected' : '' %>><%= i %></option>
+                                            <% } %>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <% if (item.isOutOfStock) { %>
+                                    <p class="error-text"><i class="fas fa-exclamation-circle"></i> Out of Stock</p>
+                                <% } else if (item.hasStockIssue) { %>
+                                    <p class="error-text"><i class="fas fa-exclamation-circle"></i> Only <%= item.liveStock %> left in stock!</p>
+                                <% } %>
+                            </div>
+                        </div>
+
+                        <div class="cart-item-actions">
+                            <button class="btn-action" onclick="removeCartItem('<%= item._id %>')">REMOVE</button>
+                        </div>
+                    </div>
+                <% }) %>
+            </div>
+
+            <!-- RIGHT COLUMN: Billing -->
+            <div class="cart-right">
+                <button class="btn-primary btn-block mb-15" <%= !isCheckoutValid ? 'disabled' : '' %>>PLACE ORDER</button>
+
+                <!-- Accordions -->
+                <div class="accordion-box">
+                    <div class="accordion-header"><i class="fas fa-tag"></i> Apply Coupon <i class="fas fa-chevron-down right-icon"></i></div>
+                </div>
+                <div class="accordion-box mb-15">
+                    <div class="accordion-header"><i class="fas fa-wallet"></i> Wallet Money <i class="fas fa-chevron-down right-icon"></i></div>
+                </div>
+
+                <!-- Billing Summary -->
+                <div class="billing-card">
+                    <h4>BILLING DETAILS</h4>
+                    <div class="billing-row">
+                        <span>Cart Total <small>(Excl. of all taxes)</small></span>
+                        <span>₹ <%= (cartTotal * 0.95).toFixed(2) %></span> <!-- Example 5% GST reverse calc -->
+                    </div>
+                    <div class="billing-row">
+                        <span>GST</span>
+                        <span>₹ <%= (cartTotal * 0.05).toFixed(2) %></span>
+                    </div>
+                    <div class="billing-row">
+                        <span>Shipping Charges</span>
+                        <span class="text-teal">Free</span>
+                    </div>
+                    <hr class="divider">
+                    <div class="billing-row total-row">
+                        <span>Total Amount</span>
+                        <span>₹ <%= cartTotal.toFixed(2) %></span>
+                    </div>
+                </div>
+
+                <button class="btn-primary btn-block mt-15" <%= !isCheckoutValid ? 'disabled' : '' %>>PLACE ORDER</button>
+            </div>
+
+        <% } else { %>
+            <div class="empty-cart-state">
+                <i class="fas fa-shopping-cart"></i>
+                <h2>Your cart is empty</h2>
+                <button onclick="window.location.href='/shop'" class="btn-primary" style="width: auto; padding: 10px 30px;">Continue Shopping</button>
+            </div>
+        <% } %>
+    </div>
+
+    <%- include('../layout/footer') %>
+
+    <div id="addressModal" class="address-modal-overlay" style="display: none;">
+        <div class="address-modal-content">
+            <div class="modal-header">
+                <h3>Select Delivery Address</h3>
+                <button class="close-btn" onclick="closeAddressModal()"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <div class="modal-body">
+                <% if (addresses && addresses.length > 0) { %>
+                    <% addresses.forEach(addr => { %>
+                        <div class="address-card" id="addr-card-<%= addr._id %>">
+                            <div class="addr-info">
+                                <h4><%= addr.firstName %> <%= addr.lastName %> <span class="badge"><%= addr.type %></span></h4>
+                                <p><%= addr.houseNo %></p>
+                                <p><%= addr.city %>, <%= addr.district %>, <%= addr.state %> - <%= addr.pincode %></p>
+                                <p>Phone: <%= addr.mobile %></p>
+                            </div>
+                            <div class="addr-actions">
+                                <button class="btn-primary" onclick="selectAddress(
+                                    '<%= addr._id %>', 
+                                    '<%= addr.firstName %> <%= addr.lastName %>', 
+                                    '<%= addr.pincode %>', 
+                                    '<%= addr.houseNo %>', 
+                                    '<%= addr.city %>', 
+                                    '<%= addr.district %>',
+                                    '<%= addr.state %>'
+                                )">DELIVER HERE</button>
+                            </div>
+                        </div>
+                    <% }) %>
+                <% } %>
+                <button class="btn-outline-block mt-15" onclick="window.location.href='/profile/addresses'">+ ADD NEW ADDRESS</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        async function updateCartSize(itemId, newSize) {
+            try {
+                const response = await fetch('/cart/update-size', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ itemId, newSize })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    window.location.reload(); 
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Oops...', text: data.message });
+                    setTimeout(() => window.location.reload(), 1500);
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        async function updateCartQty(itemId, newQuantity) {
+            try {
+                const response = await fetch('/cart/update-quantity', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ itemId, quantity: newQuantity })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    // Reload to recalculate all complex GST & Totals
+                    window.location.reload(); 
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Oops...', text: data.message });
+                    // Reset the dropdown to previous value by reloading
+                    setTimeout(() => window.location.reload(), 1500);
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        // 2. Handle Item Removal
+        function removeCartItem(itemId) {
+            Swal.fire({
+                title: 'Remove Item?',
+                text: "Are you sure you want to remove this from your cart?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#00827f',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, remove it!'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    try {
+                        const response = await fetch('/cart/remove', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ itemId })
+                        });
+                        const data = await response.json();
+                        
+                        if (data.success) window.location.reload();
+                    } catch (error) {
+                        console.error(error);
+                    }
+                }
+            });
+        }
+
+        // Address Modal Engine
+        function openAddressModal() {
+            document.getElementById('addressModal').style.display = 'flex';
+        }
+
+        function closeAddressModal() {
+            document.getElementById('addressModal').style.display = 'none';
+        }
+
+        function selectAddress(id, fullName, pincode, houseNo, city, district, state) {
+            const namePinEl = document.getElementById('display-name-pin');
+            const fullAddressEl = document.getElementById('display-full-address');
+            
+            namePinEl.innerHTML = `Deliver To: ${fullName}, ${pincode}`;
+            namePinEl.setAttribute('data-address-id', id);
+            
+            fullAddressEl.innerHTML = `${houseNo}, ${city}, ${district}, ${state}`;
+            
+            closeAddressModal();
+            
+            Swal.fire({
+                toast: true, position: 'top-end', icon: 'success',
+                title: 'Delivery address updated', showConfirmButton: false, timer: 1500
+            });
+        }
+    </script>
+</body>
+</html>

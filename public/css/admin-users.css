@@ -205,28 +205,44 @@ body, html {
     background-color: #009955; /* Green */
 }
 
-/* --- PAGINATION --- */
+/* --- PAGINATION STYLES --- */
 .pagination {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 12px;
-    margin-top: 50px;
-    font-size: 14px;
+    gap: 8px;
+    margin-top: 30px;
+    padding-bottom: 20px;
 }
 
 .page-item {
-    color: #333;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-width: 35px;
+    height: 35px;
+    padding: 0 12px;
+    background-color: #f1f1f1;
+    color: #555;
     text-decoration: none;
-    cursor: pointer;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: bold;
+    transition: all 0.2s ease-in-out;
+}
+
+.page-item:hover {
+    background-color: #d1d1d1;
+    color: #000;
 }
 
 .page-item.active {
-    border: 1px solid #333;
-    padding: 2px 8px;
-    font-weight: bold;
+    background-color: #000000;
+    color: #ffffff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    pointer-events: none; /* Prevents clicking the page you are already on */
 }
 
-.page-dots {
-    letter-spacing: 2px;
+.page-item i {
+    font-size: 11px; /* perfectly sizes the FontAwesome chevron arrows */
 }
