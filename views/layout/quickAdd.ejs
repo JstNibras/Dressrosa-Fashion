@@ -128,9 +128,13 @@
             }
 
             if (data.success) {
+                const cartBadge = document.getElementById('nav-cart-badge');
+                if (cartBadge) {
+                    cartBadge.innerText = data.cartCount;
+                    cartBadge.style.display = data.cartCount > 0 ? 'inline-block' : 'none';
+                }
                 // Check if we are currently on the Wishlist page
                 const isWishlistPage = window.location.pathname.includes('/wishlist');
-
                 if (isWishlistPage) {
                     // Execute wishlist cleanup ONLY if we are on the wishlist page
                     const toggleRes = await fetch('/wishlist/toggle', {
@@ -138,7 +142,13 @@
                         body: JSON.stringify({ productId: productId })
                     });
                     const toggleData = await toggleRes.json();
-                    if (toggleData.success) document.getElementById('nav-wishlist-badge').innerText = toggleData.wishlistCount;
+                    if (toggleData.success) {
+                        const wishlistBadge = document.getElementById('nav-wishlist-badge');
+                        if (wishlistBadge) {
+                            wishlistBadge.innerText = toggleData.wishlistCount;
+                            wishlistBadge.style.display = toggleData.wishlistCount > 0 ? 'inline-block' : 'none';
+                        }
+                    }
                     
                     const wishlistCard = document.getElementById('wishlist-card-' + productId);
                     if (wishlistCard) wishlistCard.remove();

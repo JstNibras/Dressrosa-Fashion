@@ -298,6 +298,12 @@
                         confirmButtonText: 'Log In', confirmButtonColor: '#111'
                     }).then((res) => { if (res.isConfirmed) window.location.href = '/login'; });
                 } else if (data.success) {
+                    const cartBadge = document.getElementById('nav-cart-badge');
+                    if (cartBadge) {
+                        cartBadge.innerText = data.cartCount;
+                        cartBadge.style.display = data.cartCount > 0 ? 'inline-block' : 'none';
+                    }
+                    
                     Swal.fire({
                         icon: 'success', title: 'Added to Cart!', showConfirmButton: false, timer: 1500
                     });

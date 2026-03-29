@@ -195,7 +195,11 @@
 
             if (data.success) {
                 // Update the global navbar badge
-                document.getElementById('nav-wishlist-badge').innerText = data.wishlistCount;
+                const wishlistBadge = document.getElementById('nav-wishlist-badge');
+                if (wishlistBadge) {
+                    wishlistBadge.innerText = data.wishlistCount;
+                    wishlistBadge.style.display = data.wishlistCount > 0 ? 'inline-block' : 'none';
+                }
 
                 // 1. Check if we are on the Wishlist Page (looking for the X button logic)
                 const wishlistCard = document.getElementById('wishlist-card-' + productId);

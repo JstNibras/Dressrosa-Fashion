@@ -13,11 +13,23 @@
         <% if (cartItems.length > 0) { %>
             <div class="cart-left">
                 <div class="address-block">
-                    <div class="address-details">
-                        <h4>Deliver To: John Doe, 679328</h4>
-                        <p>123 Main Street, City, State</p>
-                    </div>
-                    <button class="btn-change-text">CHANGE</button>
+                    <% if (defaultAddress) { %>
+                        <div class="address-details" id="active-address-display">
+                            <h4 id="display-name-pin" data-address-id="<%= defaultAddress._id %>">
+                                Deliver To: <%= defaultAddress.firstName %> <%= defaultAddress.lastName %>, <%= defaultAddress.pincode %>
+                            </h4>
+                            <p id="display-full-address">
+                                <%= defaultAddress.houseNo %>, <%= defaultAddress.city %>, <%= defaultAddress.district %>, <%= defaultAddress.state %>
+                            </p>
+                        </div>
+                        <button class="btn-change-text" onclick="openAddressModal()">CHANGE</button>
+                    <% } else { %>
+                        <div class="address-details">
+                            <h4>No Address Found</h4>
+                            <p>Please add a delivery address to proceed.</p>
+                        </div>
+                        <button class="btn-change-text" onclick="window.location.href='/profile/addresses'">ADD NEW</button>
+                    <% } %>
                 </div>
 
                 
@@ -125,6 +137,42 @@
 
     <%- include('../layout/footer') %>
 
+    <div id="addressModal" class="address-modal-overlay" style="display: none;">
+        <div class="address-modal-content">
+            <div class="modal-header">
+                <h3>Select Delivery Address</h3>
+                <button class="close-btn" onclick="closeAddressModal()"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <div class="modal-body">
+                <% if (addresses && addresses.length > 0) { %>
+                    <% addresses.forEach(addr => { %>
+                        <div class="address-card" id="addr-card-<%= addr._id %>">
+                            <div class="addr-info">
+                                <h4><%= addr.firstName %> <%= addr.lastName %> <span class="badge"><%= addr.type %></span></h4>
+                                <p><%= addr.houseNo %></p>
+                                <p><%= addr.city %>, <%= addr.district %>, <%= addr.state %> - <%= addr.pincode %></p>
+                                <p>Phone: <%= addr.mobile %></p>
+                            </div>
+                            <div class="addr-actions">
+                                <button class="btn-primary" onclick="selectAddress(
+                                    '<%= addr._id %>', 
+                                    '<%= addr.firstName %> <%= addr.lastName %>', 
+                                    '<%= addr.pincode %>', 
+                                    '<%= addr.houseNo %>', 
+                                    '<%= addr.city %>', 
+                                    '<%= addr.district %>',
+                                    '<%= addr.state %>'
+                                )">DELIVER HERE</button>
+                            </div>
+                        </div>
+                    <% }) %>
+                <% } %>
+                <button class="btn-outline-block mt-15" onclick="window.location.href='/profile/addresses'">+ ADD NEW ADDRESS</button>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         async function updateCartSize(itemId, newSize) {
@@ -194,6 +242,32 @@
                         console.error(error);
                     }
                 }
+            });
+        }
+
+        // Address Modal Engine
+        function openAddressModal() {
+            document.getElementById('addressModal').style.display = 'flex';
+        }
+
+        function closeAddressModal() {
+            document.getElementById('addressModal').style.display = 'none';
+        }
+
+        function selectAddress(id, fullName, pincode, houseNo, city, district, state) {
+            const namePinEl = document.getElementById('display-name-pin');
+            const fullAddressEl = document.getElementById('display-full-address');
+            
+            namePinEl.innerHTML = `Deliver To: ${fullName}, ${pincode}`;
+            namePinEl.setAttribute('data-address-id', id);
+            
+            fullAddressEl.innerHTML = `${houseNo}, ${city}, ${district}, ${state}`;
+            
+            closeAddressModal();
+            
+            Swal.fire({
+                toast: true, position: 'top-end', icon: 'success',
+                title: 'Delivery address updated', showConfirmButton: false, timer: 1500
             });
         }
     </script>
