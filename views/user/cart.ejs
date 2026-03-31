@@ -12,27 +12,7 @@
     <div class="cart-wrapper">
         <% if (cartItems.length > 0) { %>
             <div class="cart-left">
-                <div class="address-block">
-                    <% if (defaultAddress) { %>
-                        <div class="address-details" id="active-address-display">
-                            <h4 id="display-name-pin" data-address-id="<%= defaultAddress._id %>">
-                                Deliver To: <%= defaultAddress.firstName %> <%= defaultAddress.lastName %>, <%= defaultAddress.pincode %>
-                            </h4>
-                            <p id="display-full-address">
-                                <%= defaultAddress.houseNo %>, <%= defaultAddress.city %>, <%= defaultAddress.district %>, <%= defaultAddress.state %>
-                            </p>
-                        </div>
-                        <button class="btn-change-text" onclick="openAddressModal()">CHANGE</button>
-                    <% } else { %>
-                        <div class="address-details">
-                            <h4>No Address Found</h4>
-                            <p>Please add a delivery address to proceed.</p>
-                        </div>
-                        <button class="btn-change-text" onclick="window.location.href='/profile/addresses'">ADD NEW</button>
-                    <% } %>
-                </div>
-
-                
+                    
                 <% cartItems.forEach(item => { %>
                     <div class="cart-item-card <%= item.isOutOfStock ? 'oos-dim' : '' %>">
                         <div class="cart-item-main">

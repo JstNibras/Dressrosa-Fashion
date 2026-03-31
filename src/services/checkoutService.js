@@ -5,34 +5,44 @@ const Product = require('../models/productModel');
 
 exports.placeOrder = async (userId, addressId, paymentMethod) => {
     try {
-        const cart = await Cart.findOne({ user: userId }).populate('items.product');
+        const cartDoc = await Cart.findOne({ user: userId }).populate('items.product');
         const addressDoc = await Address.findById(addressId);
 
-        if (!cart || cart.items.length === 0) throw new Error("Cart is empty");
+        if (!cartDoc || cartDoc.items.length === 0) throw new Error("Cart is empty");
         if (!addressDoc) throw new Error("Delivery address not found");
 
+        const pureCart = JSON.parse(JSON.stringify(cartDoc));
+
         let subtotal = 0;
+        const validItems = pureCart.items.filter(item => item.product != null);
+        if (validItems.length === 0) throw new Error("No valid items found in cart during checkout.");
 
-        const validItems = cart.items.filter(item => item.product != null);
-        if (validItems.length === 0) throw new Error("NO valid items found in cart during checkout.");
+        const orderItems = validItems.map(item => {
+            const product = item.product;
 
-        const orderItems = cart.items.map(item => {
-            const itemTotal = item.quantity * item.product.salePrice;
+            const variant = product.variants.find(v => 
+                String(v.size).trim().toLowerCase() === String(item.size).trim().toLowerCase()
+            );
+
+            if (!variant || variant.stock < item.quantity) {
+                throw new Error(`Transaction Failed: ${product.name} (Size: ${item.size}) only has ${variant ? variant.stock : 0} left in stock.`);
+            }
+
+            const itemTotal = item.quantity * product.salePrice;
             subtotal += itemTotal;
 
             let productImage = '/images/default-product.png'; 
-            
-            if (item.product.images && item.product.images.length > 0) {
-                productImage = item.product.images[0];
-            } else if (item.product.image && item.product.image.length > 0) {
-                productImage = item.product.image[0]; 
+            if (product.images && product.images.length > 0) {
+                productImage = product.images[0];
+            } else if (product.image && product.image.length > 0) {
+                productImage = product.image[0]; 
             }
 
             return {
-                productId: item.product._id,
-                name: item.product.name,
+                productId: product._id,
+                name: product.name,
                 image: productImage,
-                price: item.product.salePrice,
+                price: product.salePrice,
                 size: item.size,
                 quantity: item.quantity,
                 itemTotal: itemTotal
@@ -55,24 +65,26 @@ exports.placeOrder = async (userId, addressId, paymentMethod) => {
                 pincode: addressDoc.pincode,
                 phone: addressDoc.mobile
             },
-            pricing: { subtotal, shipping: 0, toatal: finalTotal },
+            pricing: { subtotal, shipping: 0, total: finalTotal },
             paymentMethod: paymentMethod,
             paymentStatus: paymentMethod === 'COD' ? 'Pending' : 'Completed'
         });
 
         await newOrder.save();
 
-        for (let item of cart.items) {
+        for (let item of validItems) {
             await Product.updateOne(
                 { _id: item.product._id, "variants.size": item.size },
-                { $inc: { "cariants.$stock": -item.quantity } }
+                { $inc: { "variants.$.stock": -item.quantity } }
             );
         }
 
-        cart.items = [];
-        await cart.save();
+        // 5. Empty the Cart (Using the original Mongoose Document)
+        cartDoc.items = [];
+        await cartDoc.save();
 
         return newOrder;
+
     } catch (error) {
         console.error("Checkout Service Error:", error);
         throw error;
