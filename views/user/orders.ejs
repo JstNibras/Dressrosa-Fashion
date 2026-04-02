@@ -1,0 +1,58 @@
+<%- include('../layout/header') %>
+<link rel="stylesheet" href="/css/orders.css">
+
+<div class="orders-container">
+    <div class="orders-header">
+        <h2>My Orders</h2>
+        <form action="/profile/orders" method="GET" class="order-search-form">
+            <input type="text" name="search" placeholder="Search by Order ID or Product Name" value="<%= searchQuery %>">
+            <button type="submit" class="btn-search"><i class="fas fa-search"></i> Search</button>
+        </form>
+    </div>
+
+    <% if (orders.length === 0) { %>
+        <div style="text-align: center; padding: 50px; background: #f9f9f9; border-radius: 8px;">
+            <i class="fas fa-box-open" style="font-size: 40px; color: #ccc; margin-bottom: 15px;"></i>
+            <h3>No Orders Found</h3>
+            <a href="/shop" class="btn-primary-custom" style="display: inline-block; margin-top: 15px;">Start Shopping</a>
+        </div>
+    <% } else { %>
+        <% orders.forEach(order => { %>
+            <div class="order-card">
+                <div class="order-card-header">
+                    <div>
+                        <strong>Order ID:</strong> <%= order.orderId %><br>
+                        <span style="color: #666; font-size: 12px;">Placed on: <%= new Date(order.createdAt).toLocaleDateString() %></span>
+                    </div>
+                    <div style="text-align: right;">
+                        <strong>Order Total: ₹<%= order.pricing.total %></strong>
+                    </div>
+                </div>
+
+                <div class="order-card-body">
+                    <% order.items.forEach(item => { %>
+                        <div class="order-item-row">
+                            <img src="<%= item.image %>" alt="<%= item.name %>" class="order-item-image">
+                            
+                            <div class="order-item-details">
+                                <h4 style="margin: 0 0 5px 0;"><%= item.name %></h4>
+                                <p style="margin: 0; font-size: 12px; color: #666;">Size: <%= item.size %> | Qty: <%= item.quantity %></p>
+                                <span class="status-badge status-<%= item.itemStatus %>" style="display: inline-block; margin-top: 8px;">
+                                    <%= item.itemStatus %>
+                                </span>
+                            </div>
+
+                            <div class="order-item-actions" style="text-align: right;">
+                                <p style="margin: 0 0 10px 0; font-weight: 600;">₹<%= item.itemTotal %></p>
+                                <a href="/profile/orders/<%= order.orderId %>/<%= item._id %>" class="btn-secondary-custom" style="padding: 8px 15px; font-size: 12px; display: inline-block;">
+                                    View Details
+                                </a>
+                            </div>
+                        </div>
+                    <% }) %>
+                </div>
+            </div>
+        <% }) %>
+    <% } %>
+</div>
+<%- include('../layout/footer') %>

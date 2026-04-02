@@ -11,7 +11,14 @@ const orderSchema = new mongoose.Schema({
         price: Number,
         size: String,
         quantity: Number,
-        itemTotal: Number
+        itemTotal: Number,
+        itemStatus: { 
+            type: String, 
+            enum: ['Placed', 'Shipped', 'Delivered', 'Cancelled', 'Returned'], 
+            default: 'Placed' 
+        },
+        cancellationReason: { type: String, default: null},
+        returnReason: { type: String, default: null }
     }],
 
     shippingAddress: {
