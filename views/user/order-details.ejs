@@ -87,10 +87,11 @@
         <div class="od-tracker-section">
             <% 
                 const s = item.itemStatus;
-                // Define boolean states for clean logic
+                // Boolean states for the linear flow
                 const isPlaced = true;
-                const isShipped = s === 'Shipped' || s === 'Delivered' || s === 'Returned';
-                const isDelivered = s === 'Delivered' || s === 'Returned';
+                const isShipped = ['Shipped', 'Delivered', 'Return Requested', 'Returned', 'Return Rejected'].includes(s);
+                const isDelivered = ['Delivered', 'Return Requested', 'Returned', 'Return Rejected'].includes(s);
+                const hasReturnAction = ['Return Requested', 'Returned', 'Return Rejected'].includes(s);
             %>
 
             <% if (s === 'Cancelled') { %>
@@ -101,8 +102,8 @@
                         <p class="track-desc"><%= orderDate %></p>
                     </div>
                 </div>
-                <div class="track-step cancelled">
-                    <div class="track-icon"></div><div class="track-line"></div>
+                <div class="track-step cancelled" style="padding-bottom: 0;">
+                    <div class="track-icon"></div><div class="track-line" style="display: none;"></div>
                     <div class="track-content">
                         <h4 class="track-title" style="color: #d32f2f;">Cancelled</h4>
                         <p class="track-desc">Reason: <%= item.cancellationReason %></p>
@@ -122,16 +123,15 @@
                     <div class="track-content">
                         <h4 class="track-title">Shipped</h4>
                         <% if (isShipped) { %>
-                            <p class="track-desc">Courier Partner: Express Logistics | Tracking ID: <%= Math.floor(Math.random() * 9000000000) + 1000000000 %></p>
-                            <a href="#" class="track-link">Track Shipment</a>
+                            <p class="track-desc">Courier Partner: Express Logistics</p>
                         <% } else { %>
                             <p class="track-desc">Pending dispatch</p>
                         <% } %>
                     </div>
                 </div>
 
-                <div class="track-step <%= isDelivered ? 'active' : '' %> <%= s === 'Returned' ? 'active-line' : '' %>">
-                    <div class="track-icon"></div><div class="track-line"></div>
+                <div class="track-step <%= isDelivered ? 'active' : '' %> <%= hasReturnAction ? 'active-line' : '' %>" style="<%= !hasReturnAction ? 'padding-bottom: 0;' : '' %>">
+                    <div class="track-icon"></div><div class="track-line" style="<%= !hasReturnAction ? 'display: none;' : '' %>"></div>
                     <div class="track-content">
                         <h4 class="track-title">Delivered</h4>
                         <% if (isDelivered) { %>
@@ -140,12 +140,31 @@
                     </div>
                 </div>
 
-                <% if (s === 'Returned') { %>
-                    <div class="track-step returned">
-                        <div class="track-icon"></div><div class="track-line"></div>
+                <% if (s === 'Return Requested') { %>
+                    <div class="track-step active" style="padding-bottom: 0;">
+                        <div class="track-icon" style="background: #f57c00; box-shadow: 0 0 0 4px #fff, 0 0 0 5px #f57c00;"></div>
+                        <div class="track-line" style="display: none;"></div>
                         <div class="track-content">
-                            <h4 class="track-title" style="color: #7b1fa2;">Returned</h4>
+                            <h4 class="track-title" style="color: #f57c00;">Return Requested</h4>
                             <p class="track-desc">Reason: <%= item.returnReason %></p>
+                            <p class="track-desc" style="font-weight: 600; color: #f57c00; margin-top: 5px;"><i class="fas fa-clock"></i> Awaiting Admin Approval...</p>
+                        </div>
+                    </div>
+                <% } else if (s === 'Returned') { %>
+                    <div class="track-step returned" style="padding-bottom: 0;">
+                        <div class="track-icon"></div><div class="track-line" style="display: none;"></div>
+                        <div class="track-content">
+                            <h4 class="track-title" style="color: #7b1fa2;">Return Approved & Refunded</h4>
+                            <p class="track-desc">Your return request was accepted.</p>
+                        </div>
+                    </div>
+                <% } else if (s === 'Return Rejected') { %>
+                    <div class="track-step cancelled" style="padding-bottom: 0;">
+                        <div class="track-icon"></div><div class="track-line" style="display: none;"></div>
+                        <div class="track-content">
+                            <h4 class="track-title" style="color: #d32f2f;">Return Request Denied</h4>
+                            <p class="track-desc"><strong>Admin Note:</strong> <%= item.adminRejectReason %></p>
+                            <p class="track-desc" style="margin-top: 5px;">If you have questions, please contact support.</p>
                         </div>
                     </div>
                 <% } %>

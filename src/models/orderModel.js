@@ -14,11 +14,12 @@ const orderSchema = new mongoose.Schema({
         itemTotal: Number,
         itemStatus: { 
             type: String, 
-            enum: ['Placed', 'Shipped', 'Delivered', 'Cancelled', 'Returned'], 
+            enum: ['Placed', 'Shipped', 'Delivered', 'Cancelled', 'Return Requested', 'Returned', 'Return Rejected'], 
             default: 'Placed' 
         },
         cancellationReason: { type: String, default: null},
-        returnReason: { type: String, default: null }
+        returnReason: { type: String, default: null },
+        adminRejectReason: { type: String, default: null }
     }],
 
     shippingAddress: {
