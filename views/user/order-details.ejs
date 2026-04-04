@@ -1,0 +1,244 @@
+<%- include('../layout/header') %>
+<link rel="stylesheet" href="/css/orders.css">
+
+<style>
+    /* Full-Width Card Layout CSS */
+    .od-container { max-width: 900px; margin: 30px auto; padding: 0 20px; font-family: 'Poppins', sans-serif; }
+    .od-breadcrumb { font-size: 12px; color: #888; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .od-breadcrumb a { color: #888; text-decoration: none; }
+    .od-breadcrumb a:hover { color: #111; }
+    
+    .od-main-card { border: 1px solid #eaeaec; background: #fff; border-radius: 4px; overflow: hidden; }
+    
+    /* Top Bar */
+    .od-header-bar { background: #f4f4f5; padding: 15px 20px; display: flex; justify-content: space-between; border-bottom: 1px solid #eaeaec; font-size: 14px; color: #333; }
+    
+    /* Product Section */
+    .od-product-section { padding: 25px 20px; display: flex; gap: 20px; border-bottom: 1px solid #eaeaec; }
+    .od-product-img { width: 90px; height: 120px; object-fit: cover; border-radius: 4px; border: 1px solid #eee; }
+    .od-product-info { flex-grow: 1; }
+    .od-product-title { margin: 0 0 5px 0; font-size: 16px; font-weight: 500; color: #282c3f; }
+    .od-product-meta { font-size: 13px; color: #686b78; margin: 0 0 8px 0; }
+    .od-product-price { font-size: 16px; font-weight: 600; color: #282c3f; margin: 0; }
+    
+    /* Tracker Section (Matching Reference) */
+    .od-tracker-section { padding: 30px 40px; border-bottom: 1px solid #eaeaec; }
+    .track-step { display: flex; align-items: flex-start; position: relative; padding-bottom: 50px; }
+    .track-step:last-child { padding-bottom: 0; }
+    
+    .track-icon { width: 14px; height: 14px; border-radius: 50%; background: #d4d5d9; z-index: 2; position: relative; margin-top: 4px; box-shadow: 0 0 0 4px #fff; }
+    .track-step.active .track-icon { background: #00827f; }
+    .track-step.cancelled .track-icon { background: #d32f2f; }
+    .track-step.returned .track-icon { background: #7b1fa2; }
+    
+    .track-line { position: absolute; left: 6px; top: 18px; bottom: -4px; width: 2px; background: #d4d5d9; z-index: 1; }
+    .track-step.active-line .track-line { background: #00827f; }
+    .track-step:last-child .track-line { display: none; }
+    
+    .track-content { margin-left: 30px; }
+    .track-title { font-size: 15px; font-weight: 500; color: #282c3f; margin: 0 0 4px 0; }
+    .track-desc { font-size: 13px; color: #686b78; margin: 0; line-height: 1.5; }
+    .track-link { color: #00827f; font-size: 13px; text-decoration: none; font-weight: 500; display: inline-block; margin-top: 8px; }
+    
+    /* Info Grid (Bottom) */
+    .od-info-grid { display: grid; grid-template-columns: 1fr 1fr; padding: 25px 20px; background: #fafafc; }
+    .od-info-block h4 { font-size: 12px; color: #535766; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 10px 0; }
+    .od-info-block p { font-size: 14px; color: #282c3f; margin: 0 0 4px 0; line-height: 1.5; }
+</style>
+
+<div class="od-container">
+    <div class="od-breadcrumb">
+        <a href="/profile/orders">My Orders</a> / <strong>Order Details</strong>
+    </div>
+
+    <div class="od-main-card">
+        <% 
+            const orderDate = new Date(order.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        %>
+        <div class="od-header-bar">
+            <div><strong>Order ID :</strong> <%= order.orderId %></div>
+            <div><strong>Date :</strong> <%= orderDate %></div>
+        </div>
+
+        <div class="od-product-section">
+            <img src="<%= item.image %>" alt="<%= item.name %>" class="od-product-img">
+            
+            <div class="od-product-info">
+                <h3 class="od-product-title"><%= item.name %></h3>
+                <p class="od-product-meta">Size: <%= item.size %> &nbsp;|&nbsp; Qty: <%= item.quantity %></p>
+                <p class="od-product-price">₹<%= item.itemTotal %></p>
+                
+                <div style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
+                    <% if (item.itemStatus === 'Delivered' || item.itemStatus === 'Returned') { %>
+                        <a href="/orders/invoice/<%= order.orderId %>/<%= item._id %>" target="_blank" class="btn-action-small" style="text-decoration: none; color: #00827f; border-color: #00827f; display: inline-flex; align-items: center; gap: 5px;">
+                            <i class="fas fa-file-pdf"></i> Download Invoice
+                        </a>
+                    <% } %>
+
+                    <% if (item.itemStatus === 'Placed' || item.itemStatus === 'Shipped') { %>
+                        <button class="btn-action-small" style="color: #d32f2f; border-color: #d32f2f;" onclick="handleItemAction('<%= order.orderId %>', '<%= item._id %>', 'cancel')">Cancel Item</button>
+                    <% } else if (item.itemStatus === 'Delivered') { %>
+                        <button class="btn-action-small" style="color: #f57c00; border-color: #f57c00;" onclick="handleItemAction('<%= order.orderId %>', '<%= item._id %>', 'return')">Return Item</button>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+
+        <div class="od-tracker-section">
+            <% 
+                const s = item.itemStatus;
+                // Boolean states for the linear flow
+                const isPlaced = true;
+                const isShipped = ['Shipped', 'Delivered', 'Return Requested', 'Returned', 'Return Rejected'].includes(s);
+                const isDelivered = ['Delivered', 'Return Requested', 'Returned', 'Return Rejected'].includes(s);
+                const hasReturnAction = ['Return Requested', 'Returned', 'Return Rejected'].includes(s);
+            %>
+
+            <% if (s === 'Cancelled') { %>
+                <div class="track-step active active-line">
+                    <div class="track-icon"></div><div class="track-line"></div>
+                    <div class="track-content">
+                        <h4 class="track-title">Order Placed</h4>
+                        <p class="track-desc"><%= orderDate %></p>
+                    </div>
+                </div>
+                <div class="track-step cancelled" style="padding-bottom: 0;">
+                    <div class="track-icon"></div><div class="track-line" style="display: none;"></div>
+                    <div class="track-content">
+                        <h4 class="track-title" style="color: #d32f2f;">Cancelled</h4>
+                        <p class="track-desc">Reason: <%= item.cancellationReason %></p>
+                    </div>
+                </div>
+            <% } else { %>
+                <div class="track-step active <%= isShipped ? 'active-line' : '' %>">
+                    <div class="track-icon"></div><div class="track-line"></div>
+                    <div class="track-content">
+                        <h4 class="track-title">Order Placed</h4>
+                        <p class="track-desc"><%= orderDate %></p>
+                    </div>
+                </div>
+
+                <div class="track-step <%= isShipped ? 'active' : '' %> <%= isDelivered ? 'active-line' : '' %>">
+                    <div class="track-icon"></div><div class="track-line"></div>
+                    <div class="track-content">
+                        <h4 class="track-title">Shipped</h4>
+                        <% if (isShipped) { %>
+                            <p class="track-desc">Courier Partner: Express Logistics</p>
+                        <% } else { %>
+                            <p class="track-desc">Pending dispatch</p>
+                        <% } %>
+                    </div>
+                </div>
+
+                <div class="track-step <%= isDelivered ? 'active' : '' %> <%= hasReturnAction ? 'active-line' : '' %>" style="<%= !hasReturnAction ? 'padding-bottom: 0;' : '' %>">
+                    <div class="track-icon"></div><div class="track-line" style="<%= !hasReturnAction ? 'display: none;' : '' %>"></div>
+                    <div class="track-content">
+                        <h4 class="track-title">Delivered</h4>
+                        <% if (isDelivered) { %>
+                            <p class="track-desc">Package was handed directly to resident.</p>
+                        <% } %>
+                    </div>
+                </div>
+
+                <% if (s === 'Return Requested') { %>
+                    <div class="track-step active" style="padding-bottom: 0;">
+                        <div class="track-icon" style="background: #f57c00; box-shadow: 0 0 0 4px #fff, 0 0 0 5px #f57c00;"></div>
+                        <div class="track-line" style="display: none;"></div>
+                        <div class="track-content">
+                            <h4 class="track-title" style="color: #f57c00;">Return Requested</h4>
+                            <p class="track-desc">Reason: <%= item.returnReason %></p>
+                            <p class="track-desc" style="font-weight: 600; color: #f57c00; margin-top: 5px;"><i class="fas fa-clock"></i> Awaiting Admin Approval...</p>
+                        </div>
+                    </div>
+                <% } else if (s === 'Returned') { %>
+                    <div class="track-step returned" style="padding-bottom: 0;">
+                        <div class="track-icon"></div><div class="track-line" style="display: none;"></div>
+                        <div class="track-content">
+                            <h4 class="track-title" style="color: #7b1fa2;">Return Approved & Refunded</h4>
+                            <p class="track-desc">Your return request was accepted.</p>
+                        </div>
+                    </div>
+                <% } else if (s === 'Return Rejected') { %>
+                    <div class="track-step cancelled" style="padding-bottom: 0;">
+                        <div class="track-icon"></div><div class="track-line" style="display: none;"></div>
+                        <div class="track-content">
+                            <h4 class="track-title" style="color: #d32f2f;">Return Request Denied</h4>
+                            <p class="track-desc"><strong>Admin Note:</strong> <%= item.adminRejectReason %></p>
+                            <p class="track-desc" style="margin-top: 5px;">If you have questions, please contact support.</p>
+                        </div>
+                    </div>
+                <% } %>
+            <% } %>
+        </div>
+
+        <div class="od-info-grid">
+            <div class="od-info-block">
+                <h4>Delivery Address</h4>
+                <p><strong><%= order.shippingAddress.name %></strong></p>
+                <p><%= order.shippingAddress.street %></p>
+                <p><%= order.shippingAddress.city %>, <%= order.shippingAddress.district %></p>
+                <p><%= order.shippingAddress.state %> - <strong><%= order.shippingAddress.pincode %></strong></p>
+                <p style="margin-top: 8px;">Phone: <%= order.shippingAddress.phone %></p>
+            </div>
+            
+            <div class="od-info-block" style="border-left: 1px solid #eaeaec; padding-left: 20px;">
+                <h4>Payment Details</h4>
+                <p>Payment Method: <strong><%= order.paymentMethod %></strong></p>
+                <p>Overall Order Status: <strong><%= order.orderStatus %></strong></p>
+                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed #ccc;">
+                    <p style="display: flex; justify-content: space-between; font-size: 13px; color: #666;">
+                        <span>Item Price</span> <span>₹<%= item.price %></span>
+                    </p>
+                    <p style="display: flex; justify-content: space-between; font-size: 13px; color: #666;">
+                        <span>Quantity</span> <span>x <%= item.quantity %></span>
+                    </p>
+                    <p style="display: flex; justify-content: space-between; font-weight: 600; margin-top: 10px; color: #282c3f;">
+                        <span>Total Paid</span> <span>₹<%= item.itemTotal %></span>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    async function handleItemAction(orderId, itemId, actionType) {
+        const isCancel = actionType === 'cancel';
+        const title = isCancel ? 'Cancel Item' : 'Return Item';
+        const url = isCancel ? '/orders/cancel-item' : '/orders/return-item';
+
+        const { value: reason } = await Swal.fire({
+            title: title,
+            input: 'textarea',
+            inputLabel: isCancel ? 'Reason for cancellation (Optional)' : 'Reason for return (Mandatory)',
+            inputPlaceholder: 'Type your reason here...',
+            showCancelButton: true,
+            confirmButtonColor: isCancel ? '#d32f2f' : '#f57c00',
+            confirmButtonText: `Yes, ${title}`,
+            inputValidator: (value) => {
+                if (!isCancel && !value) { return 'You need to write a reason to process a return!'; }
+            }
+        });
+
+        if (reason !== undefined) {
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ orderId, itemId, reason })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    await Swal.fire('Success!', data.message, 'success');
+                    window.location.reload(); 
+                } else {
+                    Swal.fire('Error', data.message, 'error');
+                }
+            } catch (error) { Swal.fire('Error', 'Something went wrong', 'error'); }
+        }
+    }
+</script>
+
+<%- include('../layout/footer') %>
