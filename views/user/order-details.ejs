@@ -209,34 +209,78 @@
         const title = isCancel ? 'Cancel Item' : 'Return Item';
         const url = isCancel ? '/orders/cancel-item' : '/orders/return-item';
 
-        const { value: reason } = await Swal.fire({
+        // HIGH-PRECISION UPGRADE: Pre-defined Dropdown Options
+        const cancelOptions = {
+            'Changed my mind': 'Changed my mind',
+            'Ordered by mistake': 'Ordered by mistake',
+            'Delivery time is too long': 'Delivery time is too long',
+            'Found a better price elsewhere': 'Found a better price elsewhere',
+            'Other': 'Other (Please specify)'
+        };
+
+        const returnOptions = {
+            'Wrong size or fit': 'Wrong size or fit',
+            'Product damaged or defective': 'Product damaged or defective',
+            'Item does not match description': 'Item does not match description',
+            'Received wrong item': 'Received wrong item',
+            'Quality is not as expected': 'Quality is not as expected',
+            'Other': 'Other (Please specify)'
+        };
+
+        // 1. Show Dropdown Popup
+        const { value: selectedReason } = await Swal.fire({
             title: title,
-            input: 'textarea',
-            inputLabel: isCancel ? 'Reason for cancellation (Optional)' : 'Reason for return (Mandatory)',
-            inputPlaceholder: 'Type your reason here...',
+            input: 'select',
+            inputOptions: isCancel ? cancelOptions : returnOptions,
+            inputPlaceholder: 'Select a reason...',
             showCancelButton: true,
             confirmButtonColor: isCancel ? '#d32f2f' : '#f57c00',
             confirmButtonText: `Yes, ${title}`,
             inputValidator: (value) => {
-                if (!isCancel && !value) { return 'You need to write a reason to process a return!'; }
+                if (!value) { return 'You need to select a reason from the list!'; }
             }
         });
 
-        if (reason !== undefined) {
-            try {
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ orderId, itemId, reason })
-                });
-                const data = await response.json();
-                if (data.success) {
-                    await Swal.fire('Success!', data.message, 'success');
-                    window.location.reload(); 
-                } else {
-                    Swal.fire('Error', data.message, 'error');
+        // Exit if user clicked cancel on the popup
+        if (!selectedReason) return; 
+
+        let finalReason = selectedReason;
+
+        // 2. Chained Popup: If they select 'Other', ask for text input
+        if (selectedReason === 'Other') {
+            const { value: typedReason } = await Swal.fire({
+                title: 'Please specify',
+                input: 'textarea',
+                inputPlaceholder: 'Type your exact reason here...',
+                showCancelButton: true,
+                confirmButtonColor: isCancel ? '#d32f2f' : '#f57c00',
+                confirmButtonText: `Submit ${title}`,
+                inputValidator: (value) => {
+                    if (!isCancel && !value.trim()) { return 'You must write a reason to process a return!'; }
                 }
-            } catch (error) { Swal.fire('Error', 'Something went wrong', 'error'); }
+            });
+
+            if (typedReason === undefined) return; // Exit if user cancelled the text popup
+            finalReason = typedReason.trim() || 'Other'; 
+        }
+
+        // 3. Send AJAX Request to Backend
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ orderId, itemId, reason: finalReason })
+            });
+            const data = await response.json();
+            
+            if (data.success) {
+                await Swal.fire('Success!', data.message, 'success');
+                window.location.reload(); 
+            } else {
+                Swal.fire('Error', data.message, 'error');
+            }
+        } catch (error) { 
+            Swal.fire('Error', 'Something went wrong', 'error'); 
         }
     }
 </script>
