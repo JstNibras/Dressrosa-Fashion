@@ -121,7 +121,7 @@
             
             <div class="summary-row">
                 <span>Cart Total (Excl. of all taxes)</span>
-                <span id="summary-subtotal">₹<%= cartTotal.toFixed(2) %></span>
+                <span id="summary-subtotal">₹<%= (cartTotal * 0.95).toFixed(2) %></span>
             </div>
             
             <div class="summary-row">
@@ -132,7 +132,7 @@
             <% 
                 const gstRate = 0.05; 
                 const gstAmount = cartTotal * gstRate;
-                const finalAmount = cartTotal + gstAmount;
+                const finalAmount = (cartTotal * 0.95) + gstAmount;
             %>
             <div class="summary-row">
                 <span>Estimated GST (5%)</span>

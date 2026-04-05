@@ -50,3 +50,4 @@ exports.placeOrder = async (req, res) => {
 exports.getOrderSuccess = async (req, res) => {
     res.render('user/order-success', { orderId: req.query.orderId });
 }
+
