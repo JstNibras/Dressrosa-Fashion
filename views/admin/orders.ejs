@@ -119,9 +119,26 @@
                                         </td>
                                         
                                         <td>
-                                            <span class="status-select status-<%= order.orderStatus %>" style="display: inline-block; padding: 4px 10px; border-radius: 4px; pointer-events: none;">
+                                            <span class="status-select status-<%= order.orderStatus %>" style="display: inline-block; padding: 4px 10px; border-radius: 4px; pointer-events: none; margin-bottom: 6px;">
                                                 <%= order.orderStatus %>
                                             </span>
+                                            <br>
+                                            
+                                            <% 
+                                                const statusTally = {};
+                                                order.items.forEach(item => {
+                                                    statusTally[item.itemStatus] = (statusTally[item.itemStatus] || 0) + 1;
+                                                });
+                                            %>
+                                            
+                                            <div style="font-size: 11px; color: #666; line-height: 1.4; border-top: 1px dashed #ddd; padding-top: 4px;">
+                                                <% Object.keys(statusTally).forEach(status => { %>
+                                                    <% const color = status === 'Return Requested' ? '#f57c00' : (status === 'Cancelled' ? '#d32f2f' : '#666'); %>
+                                                    <div style="color: <%= color %>; font-weight: <%= status === 'Return Requested' ? '600' : 'normal' %>;">
+                                                        <%= statusTally[status] %>x <%= status %>
+                                                    </div>
+                                                <% }) %>
+                                            </div>
                                         </td>
                                         
                                         <td>

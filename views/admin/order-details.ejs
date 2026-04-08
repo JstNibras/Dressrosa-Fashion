@@ -107,9 +107,9 @@
                         <div class="filter-card" style="display: block; margin-bottom: 0;">
                             <h3 style="margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 10px;">Customer Info</h3>
                             <% if (order.user) { %>
-                                <p style="margin: 10px 0 5px 0;"><strong>Name:</strong> <%= order.user.firstName %> <%= order.user.lastName %></p>
+                                <p style="margin: 10px 0 5px 0;"><strong>Name:</strong> <%= order.user.firstName || order.user.name || 'N/A' %> <%= order.user.lastName || '' %></p>
                                 <p style="margin: 5px 0;"><strong>Email:</strong> <%= order.user.email %></p>
-                                <p style="margin: 5px 0;"><strong>Phone:</strong> <%= order.user.mobile %></p>
+                                <p style="margin: 5px 0;"><strong>Phone:</strong> <%= order.user.mobile || order.user.phone || 'N/A' %></p>
                             <% } else { %>
                                 <p style="color: #d32f2f;">User Account Deleted</p>
                             <% } %>

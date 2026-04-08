@@ -53,7 +53,23 @@ exports.cancelOrderItem = async (orderId, itemId, userId, reason) => {
     }
 
     item.itemStatus = 'Cancelled';
-    item.cancellationReason = reason || 'No reason provided';
+    item.cancellationReason = reason;
+
+    order.markModified('items');
+
+    const activeItems = order.items.filter(i => i.itemStatus !== 'Cancelled' && i.itemStatus !== 'Returned');
+
+    if (activeItems.length === 0) {
+        const hasReturned = order.items.some(i => i.itemStatus === 'Returned');
+        order.orderStatus = hasReturned ? 'Returned' : 'Cancelled';
+    } else {
+        const allDelivered = activeItems.every(i => ['Delivered', 'Return Requested', 'Return Rejected'].includes(i.itemStatus));
+        const anyShipped = activeItems.some(i => i.itemStatus === 'Shipped');
+
+        if (allDelivered) order.orderStatus = 'Delivered';
+        else if (anyShipped) order.orderStatus = 'Shipped';
+        else order.orderStatus = 'Placed';
+    }
 
     await Product.updateOne(
         { _id: item.productId, "variants.size": item.size },
@@ -167,14 +183,16 @@ exports.updateOrderItemStatusAdmin = async (orderId, itemId, newStatus) => {
 
         item.itemStatus = newStatus;
 
+        order.markModified('items');
+
         const activeItems = order.items.filter(i => i.itemStatus !== 'Cancelled' && i.itemStatus !== 'Returned');
 
         if (activeItems.length === 0) {
-            const allReturned = order.items.every(i => i.itemStatus === 'Returned' || i.itemStatus === 'Cancelled');
-            order.orderStatus = allReturned ? 'Returned' : 'Cancelled';
+            const hasReturned = order.items.some(i => i.itemStatus === 'Returned');
+            order.orderStatus = hasReturned ? 'Returned' : 'Cancelled';
         } else {
-            const allDelivered = activeItems.every(i => i.itemStatus === 'Delivered');
-            const anyShipped = activeItems.some(i => i.itemStatus === 'Shipped' || i.itemStatus === 'Delivered');
+            const allDelivered = activeItems.every(i => ['Delivered', 'Return Requested', 'Return Rejected'].includes(i.itemStatus));
+            const anyShipped = activeItems.some(i => i.itemStatus === 'Shipped');
 
             if (allDelivered) {
                 order.orderStatus = 'Delivered';
@@ -193,27 +211,61 @@ exports.updateOrderItemStatusAdmin = async (orderId, itemId, newStatus) => {
 };
 
 exports.processReturnRequestAdmin = async (orderId, itemId, action, rejectReason) => {
-    const order = await Order.findOne({ orderId: orderId });
-    if (!order) throw new Error("Order not found");
+    try {
+        const order = await Order.findOne({ orderId: orderId });
+        if (!order) throw new Error("Order not found");
 
-    const item = order.items.id(itemId);
-    if (!item || item.itemStatus !== 'Return Requested') throw new Error("No pending return request for this item");
+        const item = order.items.id(itemId);
+        if (!item || item.itemStatus !== 'Return Requested') throw new Error("No pending return request for this item");
 
-    if (action === 'approve') {
-        item.itemStatus = 'Returned';
+        if (action === 'approve') {
+            item.itemStatus = 'Returned';
 
-        const Product = require('../models/productModel');
-        await Product.updateOne(
-            { _id: item.productId, "variants.size": item.size },
-            { $inc: { "variants.$.stock": item.quantity } }
-        );
-    } else if (action === 'reject') {
-        if (!rejectReason || rejectReason.trim() === '') throw new Error("Rejection reason is required.");
-        item.itemStatus = 'Return Rejected';
-        item.adminRejectReason = rejectReason;
+            try {
+                const Product = require('../models/productModel');
+                const prodId = item.product || item.productId;
+
+                if (prodId) {
+                    await Product.updateOne(
+                        { _id: prodId, "variants.size": item.size },
+                        { $inc: { "variants.$.stock": item.quantity } }
+                    );
+                }
+            } catch (stockError) {
+                console.error("Failed to restore stock, but continuing with return:", stockError);
+            }
+        } else if (action === 'reject') {
+            if (!rejectReason || rejectReason.trim() === '') throw new Error("Rejection reason is required.");
+            item.itemStatus = 'Return Rejected';
+            item.adminRejectReason = rejectReason;
+        }
+
+        order.markModified('items');
+
+        const activeItems = order.items.filter(i => i.itemStatus !== 'Cancelled' && i.itemStatus !== 'Returned');
+
+        if (activeItems.length === 0) {
+            const hasReturned = order.items.some(i => i.itemStatus === 'Returned');
+            order.orderStatus = hasReturned ? 'Returned' : 'Cancelled';
+        } else {
+            const allDelivered = activeItems.every(i => ['Delivered', 'Return Requested', 'Return Rejected'].includes(i.itemStatus));
+            const anyShipped = activeItems.some(i => i.itemStatus === 'Shipped');
+
+            if (allDelivered) {
+                order.orderStatus = 'Delivered';
+            } else if (anyShipped) {
+                order.orderStatus = 'Shipped';
+            } else {
+                order.orderStatus = 'Placed';
+            }
+        }
+
+        await order.save();
+        return item;
+
+    } catch (error) {
+        console.error("Return Process Database Error:", error);
+        throw new Error(error.message || "Database failed to process the return.");
     }
-
-    await order.save();
-    return item;
 }
 
