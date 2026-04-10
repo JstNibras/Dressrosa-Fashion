@@ -18,6 +18,7 @@ router.get('/order-failed', isUser, noCache, checkoutController.getOrderFailedPa
 router.get('/profile/orders', isUser, orderController.getOrdersPage);
 router.get('/profile/orders/:orderId/:itemId', isUser, orderController.getOrderDetailsPage);
 router.get('/orders/invoice/:orderId/:itemId', isUser, orderController.downloadInvoice);
+router.get('/checkout/available-coupons', isUser, checkoutController.getAvailableCoupons);
 
 router.post('/wishlist/toggle', wishlistController.toggleWishlist);
 router.post('/cart/update-quantity', cartController.updateQuantity);
@@ -30,5 +31,7 @@ router.post('/place-order', checkoutController.placeOrder);
 router.post('/verify-payment', checkoutController.verifyPayment);
 router.post('/orders/cancel-item', isUser, orderController.cancelItem);
 router.post('/orders/return-item', isUser, orderController.returnItem);
+router.post('/checkout/apply-coupon', isUser, checkoutController.applyCoupon);
+router.post('/checkout/remove-coupon', isUser, checkoutController.removeCoupon);
 
 module.exports = router;

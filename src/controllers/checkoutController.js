@@ -1,6 +1,7 @@
 const Address = require('../models/addressModel');
 const cartService = require('../services/cartService');
 const checkoutService = require('../services/checkoutService');
+const Coupon = require('../models/couponModel');
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
 
@@ -65,10 +66,13 @@ exports.placeOrder = async (req, res) => {
             return res.status(400).json({ success: false, message: "Missing address or payment method"});
         }
 
-        const order = await checkoutService.placeOrder(userId, addressId, paymentMethod);
-
         if (paymentMethod === 'COD') {
-            const order = await checkoutService.placeOrder(userId, addressId, paymentMethod);
+            const appliedCoupon = req.session.appliedCoupon || null;
+
+            const order = await checkoutService.placeOrder(userId, addressId, paymentMethod, appliedCoupon);
+
+            req.session.appliedCoupon = null;
+
             return res.status(200).json({ success: true, orderId: order.orderId });
         }
 
@@ -88,8 +92,11 @@ exports.createRazorpayOrder = async (req, res) => {
             return res.status(400).json({ success: false, message: "Invalid cart items" });
         }
 
+        let finalAmount = cartData.cartTotal;
+        if (req.session.appliedCoupon) finalAmount -= req.session.appliedCoupon.discountAmount;
+
         const options = {
-            amount: Math.round(cartData.cartTotal * 100),
+            amount: Math.round(finalAmount * 100),
             currency: "INR",
             receipt: 'TEMP-' + Date.now()
         };
@@ -119,11 +126,15 @@ exports.verifyPayment = async (req, res) => {
         const generated_signature = hmac.digest('hex');
 
         if (generated_signature === razorpay_signature) {
-            const order = await checkoutService.placeOrder(userId, addressId, 'RAZORPAY');
+            const appliedCoupon = req.session.appliedCoupon || null;
+
+            const order = await checkoutService.placeOrder(userId, addressId, 'RAZORPAY', appliedCoupon);
 
             order.paymentStatus = 'Completed';
             order.orderStatus = 'Processing';
             await order.save();
+
+            req.session.appliedCoupon = null;
 
             return res.status(200).json({ success: true, orderId: order.orderId });
         } else {
@@ -143,3 +154,61 @@ exports.getOrderFailedPage = async (req, res) => {
     res.render('user/order-failed', { orderId: req.query.orderId });
 }
 
+exports.applyCoupon = async (req, res) => {
+    try {
+        const { code } = req.body;
+        const userId = req.session.user.id || req.session.user._id;
+
+        const coupon = await Coupon.findOne({ code: code.toUpperCase(), isActive: true });
+        if (!coupon) return res.status(400).json({ success: false, message: "Invalid or Inactive coupon code." });
+
+        if (new Date() > coupon.expiryDate) return res.status(400).json({ success: false, message: "This coupon has expired." });
+
+        const hasUsed = coupon.usedBy.some(id => id.toString() === userId.toString());
+        if (hasUsed) {
+            return res.status(400).json({ success: false, message: "You have already used this coupon." });
+        }
+
+        const cartData = await cartService.getCartData(userId);
+        const subtotal = cartData.cartTotal;
+
+        if (subtotal < coupon.minPurchaseAmount) return res.status(400).json({ success: false, message: `Minimum purchase of ${coupon.minPurchaseAmount} required.`});
+
+        let discountAmount = 0;
+        if (coupon.discountType === 'flat') {
+            discountAmount = coupon.discountValue;
+        } else if (coupon.discountType === 'percentage') {
+            discountAmount = (subtotal * coupon.discountValue) / 100;
+        }
+
+        if (discountAmount > subtotal) discountAmount = subtotal;
+
+        req.session.appliedCoupon = { code: coupon.code, discountAmount: discountAmount };
+        
+        res.status(200).json({ success: true, discountAmount, finalTotal: subtotal - discountAmount });
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Server error applying coupon." });
+    }
+};
+
+exports.removeCoupon = async (req, res) => {
+    req.session.appliedCoupon = null;
+    res.status(200).json({ success: true, message: "Coupon removed" });
+};
+
+exports.getAvailableCoupons = async (req, res) => {
+    try {
+        const userId = req.session.user.id || req.session.user._id;
+        const now = new Date();
+
+        const coupons = await Coupon.find({
+            isActive: true,
+            expiryDate: { $gt: now },
+            usedBy: { $ne: userId }
+        }).sort({ minPurchaseAmount: 1 });
+
+        res.status(200).json({ success: true, coupons });
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Error fetching coupons" });
+    }
+}

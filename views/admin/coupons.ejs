@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Coupon Management</title>
+    <link rel="stylesheet" href="/css/admin-products.css"> 
+    <link rel="stylesheet" href="/css/admin-orders.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+    <div class="admin-layout">
+        
+        <aside class="sidebar">
+            <div class="brand-logo">
+                <h1>DRESSROSA</h1>
+                <p>F A S H I O N</p>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="/admin/dashboard" class="nav-item"><i class="fas fa-th-large"></i> Dashboard</a>
+                <a href="/admin/users" class="nav-item"><i class="fas fa-users"></i> Users</a>
+                <a href="/admin/products" class="nav-item"><i class="fas fa-box"></i> Products</a>
+                <a href="/admin/categories" class="nav-item"><i class="fas fa-th-list"></i> Categories</a>
+                <a href="/admin/banners" class="nav-item"><i class="fas fa-plus-square"></i> Add Banners</a>
+                <a href="/admin/coupons" class="nav-item active"><i class="fas fa-ticket-alt"></i> Coupons</a>
+                <a href="/admin/orders" class="nav-item"><i class="fas fa-shopping-cart"></i> Orders</a>
+                <a href="/admin/report" class="nav-item"><i class="fas fa-chart-pie"></i> Report</a>
+            </nav>
+            <div class="sidebar-footer">
+                <a href="/admin/logout" class="nav-item logout-btn">Logout <i class="fas fa-sign-out-alt"></i></a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="page-header">
+                <h2>Coupon Management</h2>
+            </header>
+
+            <div class="admin-dashboard-container" style="padding: 0; background: transparent;">
+                
+                <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px; align-items: start;">
+                    
+                    <div class="filter-card" style="display: block; margin: 0;">
+                        <h3 style="margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; color: #111;">Create New Coupon</h3>
+                        
+                        <form id="createCouponForm">
+                            <div class="filter-group" style="width: 100%; margin-bottom: 15px;">
+                                <label style="display: block; margin-bottom: 5px;">Coupon Code</label>
+                                <input type="text" id="code" class="filter-input" style="width: 100%; text-transform: uppercase;" placeholder="e.g. FESTIVE50" required>
+                            </div>
+
+                            <div class="filter-group" style="width: 100%; margin-bottom: 15px;">
+                                <label style="display: block; margin-bottom: 5px;">Discount Type</label>
+                                <select id="discountType" class="filter-select" style="width: 100%;" required>
+                                    <option value="flat">Flat Amount (₹)</option>
+                                    <option value="percentage">Percentage (%)</option>
+                                </select>
+                            </div>
+
+                            <div class="filter-group" style="width: 100%; margin-bottom: 15px;">
+                                <label style="display: block; margin-bottom: 5px;">Discount Value</label>
+                                <input type="number" id="discountValue" class="filter-input" style="width: 100%;" required min="1">
+                            </div>
+
+                            <div class="filter-group" style="width: 100%; margin-bottom: 15px;">
+                                <label style="display: block; margin-bottom: 5px;">Min. Purchase Amount (₹)</label>
+                                <input type="number" id="minPurchaseAmount" class="filter-input" style="width: 100%;" required min="0">
+                            </div>
+
+                            <div class="filter-group" style="width: 100%; margin-bottom: 15px;">
+                                <label style="display: block; margin-bottom: 5px;">Expiry Date</label>
+                                <input type="date" id="expiryDate" class="filter-input" style="width: 100%;" required>
+                            </div>
+
+                            <button type="submit" class="filter-btn" style="width: 100%; margin-top: 10px; background: #00827f; color: white; border: none;">
+                                CREATE COUPON
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="table-container" style="margin: 0;">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Discount</th>
+                                    <th>Min. Purchase</th>
+                                    <th>Expiry Date</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% if (coupons.length > 0) { %>
+                                    <% coupons.forEach(coupon => { %>
+                                        <tr>
+                                            <td><strong style="color: #00827f;"><%= coupon.code %></strong></td>
+                                            <td>
+                                                <%= coupon.discountType === 'percentage' ? coupon.discountValue + '%' : '₹' + coupon.discountValue %>
+                                            </td>
+                                            <td>₹<%= coupon.minPurchaseAmount %></td>
+                                            <td>
+                                                <span style="font-size: 13px; color: #666;">
+                                                    <%= new Date(coupon.expiryDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) %>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <% if (new Date(coupon.expiryDate) < new Date()) { %>
+                                                    <span style="background: #ffebee; color: #d32f2f; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">Expired</span>
+                                                <% } else if (coupon.isActive) { %>
+                                                    <span style="background: #e8f5e9; color: #2e7d32; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">Active</span>
+                                                <% } else { %>
+                                                    <span style="background: #f5f5f5; color: #666; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">Disabled</span>
+                                                <% } %>
+                                            </td>
+                                            <td>
+                                                <div style="display: flex; gap: 8px;">
+                                                    <button onclick="openEditModal('<%= coupon._id %>', '<%= coupon.code %>', '<%= coupon.discountType %>', '<%= coupon.discountValue %>', '<%= coupon.minPurchaseAmount %>', '<%= coupon.expiryDate.toISOString().substring(0, 10) %>')" style="background: #f57c00; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                                                        Edit
+                                                    </button>
+                                                    
+                                                    <button onclick="toggleCoupon('<%= coupon._id %>')" style="background: <%= coupon.isActive ? '#d32f2f' : '#2e7d32' %>; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                                                        <%= coupon.isActive ? 'Disable' : 'Enable' %>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    <% }) %>
+                                <% } else { %>
+                                    <tr>
+                                        <td colspan="6" style="text-align: center; padding: 40px; color: #888;">No coupons created yet.</td>
+                                    </tr>
+                                <% } %>
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="editCouponModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+        <div style="background: #fff; padding: 25px; border-radius: 8px; width: 90%; max-width: 450px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px;">
+                <h3 style="margin: 0; color: #111;">Edit Coupon</h3>
+                <button type="button" onclick="closeEditModal()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #555;">&times;</button>
+            </div>
+            
+            <form id="editCouponForm">
+                <input type="hidden" id="editCouponId">
+                
+                <div class="filter-group" style="width: 100%; margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-size: 13px;">Coupon Code</label>
+                    <input type="text" id="editCode" class="filter-input" style="width: 100%; text-transform: uppercase;" required>
+                </div>
+
+                <div class="filter-group" style="width: 100%; margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-size: 13px;">Discount Type</label>
+                    <select id="editDiscountType" class="filter-select" style="width: 100%;" required>
+                        <option value="flat">Flat Amount (₹)</option>
+                        <option value="percentage">Percentage (%)</option>
+                    </select>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                    <div class="filter-group" style="width: 100%;">
+                        <label style="display: block; margin-bottom: 5px; font-size: 13px;">Discount Value</label>
+                        <input type="number" id="editDiscountValue" class="filter-input" style="width: 100%;" required min="1">
+                    </div>
+                    <div class="filter-group" style="width: 100%;">
+                        <label style="display: block; margin-bottom: 5px; font-size: 13px;">Min. Purchase</label>
+                        <input type="number" id="editMinPurchase" class="filter-input" style="width: 100%;" required min="0">
+                    </div>
+                </div>
+
+                <div class="filter-group" style="width: 100%; margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 5px; font-size: 13px;">Expiry Date</label>
+                    <input type="date" id="editExpiryDate" class="filter-input" style="width: 100%;" required>
+                </div>
+
+                <button type="submit" class="filter-btn" style="width: 100%; background: #f57c00; color: white; border: none; font-weight: bold;">
+                    SAVE CHANGES
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // 1. Create Coupon 
+        document.getElementById('createCouponForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const payload = {
+                code: document.getElementById('code').value,
+                discountType: document.getElementById('discountType').value,
+                discountValue: document.getElementById('discountValue').value,
+                minPurchaseAmount: document.getElementById('minPurchaseAmount').value,
+                expiryDate: document.getElementById('expiryDate').value
+            };
+
+            try {
+                const response = await fetch('/admin/coupons/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    Swal.fire({ icon: 'success', title: 'Success', text: data.message, timer: 1500, showConfirmButton: false })
+                    .then(() => window.location.reload());
+                } else {
+                    Swal.fire('Error', data.message, 'error');
+                }
+            } catch (error) {
+                Swal.fire('Error', 'Server error. Please try again.', 'error');
+            }
+        });
+
+        // 2. Toggle Status 
+        async function toggleCoupon(couponId) {
+            try {
+                const response = await fetch('/admin/coupons/toggle', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ couponId })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    Swal.fire('Error', data.message, 'error');
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        // --- EDIT MODAL ENGINE ---
+        function openEditModal(id, code, type, value, min, date) {
+            document.getElementById('editCouponId').value = id;
+            document.getElementById('editCode').value = code;
+            document.getElementById('editDiscountType').value = type;
+            document.getElementById('editDiscountValue').value = value;
+            document.getElementById('editMinPurchase').value = min;
+            document.getElementById('editExpiryDate').value = date;
+
+            document.getElementById('editCouponModal').style.display = 'flex';
+        }
+
+        function closeEditModal() {
+            document.getElementById('editCouponModal').style.display = 'none';
+        }
+
+        // --- SUBMIT EDIT ---
+        document.getElementById('editCouponForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const payload = {
+                couponId: document.getElementById('editCouponId').value,
+                code: document.getElementById('editCode').value,
+                discountType: document.getElementById('editDiscountType').value,
+                discountValue: document.getElementById('editDiscountValue').value,
+                minPurchaseAmount: document.getElementById('editMinPurchase').value,
+                expiryDate: document.getElementById('editExpiryDate').value
+            };
+
+            try {
+                const response = await fetch('/admin/coupons/edit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    Swal.fire({ icon: 'success', title: 'Updated!', text: data.message, timer: 1500, showConfirmButton: false })
+                    .then(() => window.location.reload());
+                } else {
+                    Swal.fire('Error', data.message, 'error');
+                }
+            } catch (error) {
+                Swal.fire('Error', 'Server error. Please try again.', 'error');
+            }
+        });
+    </script>
+</body>
+</html>

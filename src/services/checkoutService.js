@@ -3,7 +3,7 @@ const Cart = require('../models/cartModel');
 const Address = require('../models/addressModel');
 const Product = require('../models/productModel');
 
-exports.placeOrder = async (userId, addressId, paymentMethod) => {
+exports.placeOrder = async (userId, addressId, paymentMethod, appliedCoupon = null) => {
     try {
         const cartDoc = await Cart.findOne({ user: userId }).populate({
             path: 'items.product',
@@ -66,6 +66,27 @@ exports.placeOrder = async (userId, addressId, paymentMethod) => {
         });
 
         const finalTotal = subtotal;
+        let orderDiscount = 0;
+
+        if (appliedCoupon) {
+            const Coupon = require('../models/couponModel');
+            const couponDoc = await Coupon.findOne({ code: appliedCoupon.code, isActive: true });
+
+            const minPurchase = couponDoc.minPurchaseAmount || couponDoc.minPurchaseamount || 0;
+
+            let hasUsed = false;
+            if (couponDoc && couponDoc.usedBy) {
+                hasUsed = couponDoc.usedBy.some(id => id.toString() === userId.toString());
+            }
+
+            if (couponDoc && !hasUsed && finalTotal >= minPurchase) {
+                orderDiscount = appliedCoupon.discountAmount;
+                couponDoc.usedBy.push(userId);
+                await couponDoc.save();
+            }
+        }
+
+        const netTotal = finalTotal - orderDiscount;
 
         const orderId = 'ORD-' + Date.now() + Math.floor(Math.random() * 1000);
         const newOrder = new Order({
@@ -81,7 +102,7 @@ exports.placeOrder = async (userId, addressId, paymentMethod) => {
                 pincode: addressDoc.pincode,
                 phone: addressDoc.mobile
             },
-            pricing: { subtotal, shipping: 0, total: finalTotal },
+            pricing: { subtotal: finalTotal, shipping: 0, discount: orderDiscount, total: netTotal },
             paymentMethod: paymentMethod,
             paymentStatus: 'Pending'
         });
@@ -89,14 +110,14 @@ exports.placeOrder = async (userId, addressId, paymentMethod) => {
         await newOrder.save();
 
         for (let item of validItems) {
-            const Product = require('../models/productModel'); // Ensure imported
+            const Product = require('../models/productModel'); 
             await Product.updateOne(
                 { _id: item.product._id, "variants.size": item.size },
                 { $inc: { "variants.$.stock": -item.quantity } }
             );
         }
 
-            cartDoc.items = [];
+        cartDoc.items = [];
         await cartDoc.save();
 
         return newOrder;
