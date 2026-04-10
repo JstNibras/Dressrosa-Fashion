@@ -1,0 +1,26 @@
+<%- include('../layout/header') %>
+
+<div style="min-height: 80vh; display: flex; align-items: center; justify-content: center; background-color: #f4f5f9; padding: 20px;">
+    <div style="background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); text-align: center; max-width: 500px; width: 100%;">
+        
+        <div style="width: 80px; height: 80px; background: #ffebee; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+            <i class="fas fa-times" style="font-size: 40px; color: #d32f2f;"></i>
+        </div>
+
+        <h2 style="color: #282c3f; margin-bottom: 10px;">Payment Failed</h2>
+        <p style="color: #686b78; line-height: 1.6; margin-bottom: 25px;">
+            We could not process your payment. Your order has not been placed and your cart is safe. If money was deducted, it will be refunded automatically.
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 15px;">
+            <a href="/checkout" style="display: block; width: 100%; padding: 14px; background: #d32f2f; color: white; text-decoration: none; border-radius: 6px; font-weight: 600;">
+                Retry Payment
+            </a>
+            <a href="/cart" style="display: block; width: 100%; padding: 14px; background: #fff; color: #282c3f; border: 1px solid #eaeaec; text-decoration: none; border-radius: 6px; font-weight: 600;">
+                Back to Cart
+            </a>
+        </div>
+    </div>
+</div>
+
+<%- include('../layout/footer') %>

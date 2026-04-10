@@ -16,16 +16,33 @@ exports.getCartPage = async (req, res) => {
             return res.redirect('/login'); 
         }
 
+        const Cart = require('../models/cartModel');
+        const cartDoc = await Cart.findOne(({ user: userId })).populate({
+            path: 'items.product',
+            populate: { path: 'category' }
+        });
+
+        let hasInvalidItems = false;
+        if (cartDoc) {
+            cartDoc.items.forEach(item => {
+                if (!item.product || 
+                    item.product.isActive === false || 
+                    !item.product.category ||
+                    item.product.category.isActive === false ) {
+                        hasInvalidItems = true;
+                    }
+            });
+        }
+
         const cartData = await cartService.getCartData(userId);
-
         const addresses = await Address.find({ user: userId });
-
         const defaultAddress = addresses.find(a => a.isDefault) || addresses[0] || null;
 
         res.render('user/cart', {
             cartItems: cartData.items,
             cartTotal: cartData.cartTotal,
-            isCheckoutValid: cartData.isCheckoutValid,
+            isCheckoutValid: cartData.isCheckoutValid && !hasInvalidItems,
+            hasInvalidItems: hasInvalidItems,
             addresses: addresses,
             defaultAddress: defaultAddress
         });

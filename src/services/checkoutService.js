@@ -5,7 +5,10 @@ const Product = require('../models/productModel');
 
 exports.placeOrder = async (userId, addressId, paymentMethod) => {
     try {
-        const cartDoc = await Cart.findOne({ user: userId }).populate('items.product');
+        const cartDoc = await Cart.findOne({ user: userId }).populate({
+            path: 'items.product',
+            populate: { path: 'category' }
+        });
         const addressDoc = await Address.findById(addressId);
 
         if (!cartDoc || cartDoc.items.length === 0) throw new Error("Cart is empty");
@@ -14,7 +17,20 @@ exports.placeOrder = async (userId, addressId, paymentMethod) => {
         const pureCart = JSON.parse(JSON.stringify(cartDoc));
 
         let subtotal = 0;
-        const validItems = pureCart.items.filter(item => item.product != null);
+        const validItems = pureCart.items.filter(item => {
+            const p = item.product;
+            if (!p) return false;
+            
+            const productActive = p.isActive !== false && p.isListed !== false;
+            const categoryActive = p.category && p.category.isActive !== false && p.category.isListed !== false;
+            
+            return productActive && categoryActive;
+        });
+
+        if (validItems.length !== pureCart.items.length) {
+            throw new Error("Transaction Failed: One or more items belong to a suspended category.");
+        }
+
         if (validItems.length === 0) throw new Error("No valid items found in cart during checkout.");
 
         const orderItems = validItems.map(item => {
@@ -67,20 +83,20 @@ exports.placeOrder = async (userId, addressId, paymentMethod) => {
             },
             pricing: { subtotal, shipping: 0, total: finalTotal },
             paymentMethod: paymentMethod,
-            paymentStatus: paymentMethod === 'COD' ? 'Pending' : 'Completed'
+            paymentStatus: 'Pending'
         });
 
         await newOrder.save();
 
         for (let item of validItems) {
+            const Product = require('../models/productModel'); // Ensure imported
             await Product.updateOne(
                 { _id: item.product._id, "variants.size": item.size },
                 { $inc: { "variants.$.stock": -item.quantity } }
             );
         }
 
-        // 5. Empty the Cart (Using the original Mongoose Document)
-        cartDoc.items = [];
+            cartDoc.items = [];
         await cartDoc.save();
 
         return newOrder;

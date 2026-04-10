@@ -144,7 +144,7 @@
                 <span id="summary-final-total">₹<%= finalAmount.toFixed(2) %></span>
             </div>
 
-            <button class="btn-place-order" onclick="initiateCheckout()">CONFIRM ORDER</button>
+            <button class="btn-place-order" onclick="processCheckout()">CONFIRM ORDER</button>
         </div>
     </div>
 
@@ -188,6 +188,7 @@
     </div>
 </div>
 
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script>
     // --- ADDRESS MODAL ENGINE ---
     function openAddressModal() {
@@ -219,39 +220,107 @@
         });
     }
     
-async function initiateCheckout() {
-    // 1. Grab selected address ID
-    const addressEl = document.getElementById('checkout-address-name');
-    if (!addressEl) return Swal.fire('Wait', 'Please select a delivery address', 'warning');
-    const addressId = addressEl.getAttribute('data-address-id');
+    async function processCheckout() {
+        const addressEl = document.getElementById('checkout-address-name');
+        if (!addressEl) return Swal.fire('Wait', 'Please select a delivery address', 'warning');
+        const addressId = addressEl.getAttribute('data-address-id');
 
-    // 2. Grab selected payment method
-    const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
+        const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
+        const btn = document.querySelector('.btn-place-order');
+        btn.innerText = 'PROCESSING...';
+        btn.disabled = true;
 
-    const btn = document.querySelector('.btn-place-order');
-    btn.innerText = 'PROCESSING...';
-    btn.disabled = true;
+        try {
+            // ==========================================
+            // 1. COD FLOW
+            // ==========================================
+            if (paymentMethod === 'COD') {
+                const response = await fetch('/checkout/place-order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ addressId, paymentMethod })
+                });
+                const data = await response.json();
 
-    try {
-        const response = await fetch('/checkout/place-order', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ addressId, paymentMethod })
-        });
-        const data = await response.json();
+                if (data.success) {
+                    window.location.href = `/order-success?orderId=${data.orderId}`;
+                } else {
+                    Swal.fire('Error', data.message, 'error');
+                    btn.innerText = 'CONFIRM ORDER';
+                    btn.disabled = false;
+                }
+                return;
+            }
 
-        if (data.success) {
-            // Redirect to Requirement IV (Success Page)
-            window.location.href = `/order-success?orderId=${data.orderId}`;
-        } else {
-            Swal.fire('Error', data.message, 'error');
+            // ==========================================
+            // 2. RAZORPAY FLOW
+            // ==========================================
+            if (paymentMethod === 'RAZORPAY') {
+                // Get the temporary Razorpay Order (Cart is NOT emptied yet)
+                const response = await fetch('/checkout/create-razorpay-order', { method: 'POST' });
+                const data = await response.json();
+
+                if (!data.success) {
+                    Swal.fire('Error', data.message, 'error');
+                    btn.innerText = 'CONFIRM ORDER';
+                    btn.disabled = false;
+                    return;
+                }
+
+                const options = {
+                    "key": data.key,
+                    "amount": data.razorpayOrder.amount,
+                    "currency": "INR",
+                    "name": "Dressrosa Fashion",
+                    "description": "Order Payment",
+                    "image": "/images/logo.png", 
+                    "order_id": data.razorpayOrder.id,
+                    "handler": async function (response) {
+                        // Payment Successful! Send details + addressId to finally create the order
+                        const verifyRes = await fetch('/verify-payment', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                razorpay_payment_id: response.razorpay_payment_id,
+                                razorpay_order_id: response.razorpay_order_id,
+                                razorpay_signature: response.razorpay_signature,
+                                addressId: addressId // Passed so the backend can save the address
+                            })
+                        });
+                        const verifyData = await verifyRes.json();
+                        
+                        if (verifyData.success) {
+                            window.location.href = `/order-success?orderId=${verifyData.orderId}`;
+                        } else {
+                            // Failed verification
+                            window.location.href = `/order-failed`;
+                        }
+                    },
+                    "prefill": {
+                        "name": data.user ? (data.user.firstName + " " + data.user.lastName) : "",
+                        "email": data.user ? data.user.email : "",
+                        "contact": data.user ? data.user.mobile : ""
+                    },
+                    "theme": { "color": "#00827f" }
+                };
+
+                const rzp = new Razorpay(options);
+                
+                rzp.on('payment.failed', function (response){
+                    // Payment window closed or card declined. Just redirect.
+                    window.location.href = `/order-failed`;
+                });
+
+                rzp.open();
+                
+                btn.innerText = 'CONFIRM ORDER';
+                btn.disabled = false;
+            }
+
+        } catch (error) {
+            Swal.fire('Error', 'Server Error during checkout', 'error');
             btn.innerText = 'CONFIRM ORDER';
             btn.disabled = false;
         }
-    } catch (error) {
-        Swal.fire('Error', 'Something went wrong', 'error');
-        btn.innerText = 'CONFIRM ORDER';
-        btn.disabled = false;
     }
-}
 </script>
