@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const profileController = require('../controllers/profileController');
 const walletController = require('../controllers/walletController');
+const referralController = require('../controllers/referralController');
 const { noCache, isUser } = require('../middlewares/auth');
 
 // Profile 
@@ -22,5 +23,8 @@ router.post('/profile/address/default/:id', isUser, profileController.setDefault
 
 // Wallet
 router.get('/wallet', isUser, noCache, walletController.getWalletPage);
+
+// Referral
+router.get('/refer', isUser, referralController.getReferralPage);
 
 module.exports = router;

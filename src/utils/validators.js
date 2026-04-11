@@ -28,7 +28,8 @@ const signupSchema = z.object({
         .regex(/[0-9]/, "Password must contain at least one number")
         .regex(/[\W_]/, "Password must contain at least one special character"),
     
-    confirmPassword: z.string()
+    confirmPassword: z.string(),
+    referralCode: z.string().trim().optional()
 }).refine((data) => data.password === data.confirmPassword, {
     message: "Password don't match",
     path: ["confirmPassword"],

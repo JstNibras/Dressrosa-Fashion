@@ -4,6 +4,7 @@ const sendOtpEmail = require('../utils/sendOtp');
 const { signupSchema, loginSchema, forgotPasswordSchema, newPasswordSchema, otpSchema } = require('../utils/validators');
 const userModel = require('../models/userModel');
 const { cloudinary } = require('../config/cloudinary');
+const referralService = require('../services/referralService');
 
 exports.signup = async (req, res) => {
     try {
@@ -17,7 +18,7 @@ exports.signup = async (req, res) => {
             });
         }
 
-        const { firstName, lastName, email, password, phone } = validation.data;
+        const { firstName, lastName, email, password, phone, referralCode } = validation.data;
 
         const existingUser = await User.findOne({ email });
         if (existingUser) {
@@ -29,7 +30,7 @@ exports.signup = async (req, res) => {
 
         const otp = Math.floor(1000 + Math.random() * 9000).toString();
 
-        req.session.tempUser = { firstName, lastName, email, password, phone};
+        req.session.tempUser = { firstName, lastName, email, password, phone, referralCode};
         req.session.otp = otp;
         req.session.otpType = 'signup'
         req.session.otpExpiry = Date.now() + 2 * 60 * 1000
@@ -196,15 +197,22 @@ exports.verifyOtp = async (req, res) => {
 
         switch (otpType) {
             case 'signup':
-                const { firstName, lastName, email, password, phone } = req.session.tempUser;
+                const { firstName, lastName, email, password, phone, referralCode } = req.session.tempUser;
                 const salt = await bcrypt.genSalt(10);
                 const hashedPassword = await bcrypt.hash(password, salt);
+                const myReferralCode = await referralService.generateReferralCode(firstName);
                 const newUser = new User({
-                    firstName, lastName, email, password: hashedPassword, phone
+                    firstName, lastName, email, password: hashedPassword, phone, referralCode: myReferralCode
                 });
                 await newUser.save();
+
+                if (referralCode) {
+                    await referralService.processReferral(referralCode, newUser);
+                }
+
                 delete req.session.otp;
                 delete req.session.otpType;
+                delete req.session.tempUser;
                 return res.json({ success: true, redirectUrl: '/login' });
 
             case 'forgotPassword':

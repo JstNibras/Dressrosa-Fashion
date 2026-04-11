@@ -1,0 +1,143 @@
+<%- include('../layout/header') %>
+
+<style>
+    /* Borrowing your profile variables */
+    :root {
+        --primary-pink: #ff0055;
+        --soft-grey: #f8f9fa;
+        --border-color: #e0e0e0;
+    }
+
+    .profile-page-wrapper {
+        max-width: 1200px;
+        margin: 50px auto;
+        display: grid;
+        grid-template-columns: 300px 1fr;
+        gap: 30px;
+        padding: 0 20px;
+    }
+
+    .profile-sidebar {
+        background: white; border: 1px solid var(--border-color);
+        padding: 30px 0; border-radius: 8px; height: fit-content;
+    }
+
+    .profile-nav-item {
+        display: flex; align-items: center; padding: 15px 25px;
+        color: #444; text-decoration: none; transition: 0.2s;
+        border-left: 4px solid transparent; font-size: 14px; font-weight: 500;
+    }
+
+    .profile-nav-item i { margin-right: 15px; width: 20px; }
+    
+    .profile-nav-item:hover, .profile-nav-item.active {
+        background: var(--soft-grey); color: var(--primary-pink); border-left-color: var(--primary-pink);
+    }
+
+    .profile-main-content {
+        background: white; border: 1px solid var(--border-color);
+        border-radius: 8px; padding: 40px; text-align: center;
+    }
+
+    .referral-box {
+        background: #fff0f5;
+        border: 2px dashed var(--primary-pink);
+        padding: 30px;
+        border-radius: 12px;
+        margin: 30px auto;
+        max-width: 400px;
+    }
+
+    .ref-code {
+        font-size: 32px;
+        font-weight: 900;
+        color: var(--primary-pink);
+        letter-spacing: 2px;
+        margin: 15px 0;
+    }
+
+    .btn-copy {
+        background: var(--primary-pink);
+        color: white;
+        border: none;
+        padding: 10px 25px;
+        border-radius: 25px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+    .btn-copy:hover { background: #d40047; }
+</style>
+
+<div class="profile-page-wrapper">
+    
+    <aside class="profile-sidebar">
+        <div style="text-align: center; margin-bottom: 20px;">
+            <p style="font-weight: bold; font-size: 18px;">Hello, <%= user.firstName %>!</p>
+        </div>
+        <nav>
+            <a href="/profile" class="profile-nav-item"><i class="fas fa-user"></i> Personal Info</a>
+            <a href="/profile/orders" class="profile-nav-item"><i class="fas fa-shopping-bag"></i> My Orders</a>
+            <a href="/wishlist" class="profile-nav-item"><i class="fas fa-heart"></i> My Wishlist</a>
+            <a href="/profile/addresses" class="profile-nav-item"><i class="fas fa-map-marker-alt"></i> Addresses</a>
+            <a href="/wallet" class="profile-nav-item"><i class="fas fa-wallet"></i> Wallet</a>
+            <a href="/coupons" class="profile-nav-item"><i class="fas fa-tag"></i> Coupons</a>
+            <a href="/refer" class="profile-nav-item active"><i class="fas fa-gift"></i> Refer & Earn</a>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 10px 0;">
+            <a href="/logout" class="profile-nav-item" style="color: #ff4d4d;"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </nav>
+    </aside>
+
+    <main class="profile-main-content">
+        <h2 style="margin-top: 0;">Refer Friends. Earn Cash.</h2>
+        <p style="color: #666; font-size: 16px; margin-top: 10px;">
+            Give your friends <strong>₹50</strong> off their first order.<br>
+            You get <strong>₹100</strong> in your wallet when they sign up!
+        </p>
+
+        <div class="referral-box">
+            <p style="margin: 0; color: #555; font-size: 14px; font-weight: 600;">YOUR UNIQUE REFERRAL CODE</p>
+            <div class="ref-code" id="myReferralCode"><%= user.referralCode || 'GENERATING...' %></div>
+            <button class="btn-copy" onclick="copyCode()">
+                <i class="fas fa-copy"></i> COPY CODE
+            </button>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-top: 40px; text-align: center;">
+            <div>
+                <i class="fas fa-share-alt" style="font-size: 24px; color: var(--primary-pink); margin-bottom: 10px;"></i>
+                <h4 style="margin: 0;">1. Share</h4>
+                <p style="font-size: 12px; color: #888;">Send your code to friends.</p>
+            </div>
+            <div>
+                <i class="fas fa-user-plus" style="font-size: 24px; color: var(--primary-pink); margin-bottom: 10px;"></i>
+                <h4 style="margin: 0;">2. Sign Up</h4>
+                <p style="font-size: 12px; color: #888;">They use your code to register.</p>
+            </div>
+            <div>
+                <i class="fas fa-wallet" style="font-size: 24px; color: var(--primary-pink); margin-bottom: 10px;"></i>
+                <h4 style="margin: 0;">3. Earn</h4>
+                <p style="font-size: 12px; color: #888;">Wallet cash is added instantly!</p>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    function copyCode() {
+        const code = document.getElementById('myReferralCode').innerText;
+        navigator.clipboard.writeText(code).then(() => {
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: 'Code Copied to Clipboard!',
+                showConfirmButton: false,
+                timer: 2000
+            });
+        });
+    }
+</script>
+
+<%- include('../layout/footer') %>
