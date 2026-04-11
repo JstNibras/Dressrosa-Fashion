@@ -42,6 +42,12 @@
 </style>
 
 <div class="checkout-container">
+
+    <% 
+        const gstRate = 0.05; 
+        const gstAmount = cartTotal * gstRate;
+        const finalAmount = (cartTotal * 0.95) + gstAmount;
+    %>
     
     <div class="checkout-left">
         
@@ -97,6 +103,19 @@
                 </div>
                 <input type="radio" name="paymentMethod" value="COD">
             </label>
+
+            <% const isWalletSufficient = walletBalance >= finalAmount; %>
+            <label class="payment-option" style="<%= !isWalletSufficient ? 'opacity: 0.5; background: #f9f9f9;' : '' %>">
+                <div>
+                    <strong>Wallet (Balance: ₹<%= walletBalance.toFixed(2) %>)</strong>
+                    <% if (isWalletSufficient) { %>
+                        <p style="margin: 0; font-size: 12px; color: #2e7d32;">Pay instantly using your wallet balance</p>
+                    <% } else { %>
+                        <p style="margin: 0; font-size: 12px; color: #d32f2f;">Insufficient balance for this order</p>
+                    <% } %>
+                </div>
+                <input type="radio" name="paymentMethod" value="WALLET" <%= !isWalletSufficient ? 'disabled' : '' %>>
+            </label>
         </div>
     </div>
 
@@ -131,13 +150,6 @@
             </div>
         </div>
 
-        <div class="checkout-section" style="padding: 15px;">
-            <div style="display: flex; justify-content: space-between; cursor: pointer; font-weight: 600;">
-                <span><i class="fas fa-wallet"></i> Wallet Money</span>
-                <i class="fas fa-chevron-down"></i>
-            </div>
-        </div>
-
         <div class="summary-box">
             <h3 class="section-title" style="font-size: 14px; color: #888; border: none; margin-bottom: 10px;">BILLING DETAILS</h3>
             
@@ -151,11 +163,6 @@
                 <span style="color: #00827f; font-weight: 600;">Free</span>
             </div>
 
-            <% 
-                const gstRate = 0.05; 
-                const gstAmount = cartTotal * gstRate;
-                const finalAmount = (cartTotal * 0.95) + gstAmount;
-            %>
             <div class="summary-row">
                 <span>Estimated GST (5%)</span>
                 <span id="summary-gst">₹<%= gstAmount.toFixed(2) %></span>
@@ -399,6 +406,27 @@
                 btn.disabled = false;
             }
 
+            // ==========================================
+            // 3. WALLET FLOW
+            // ==========================================
+            if (paymentMethod === 'WALLET') {
+                const response = await fetch('/checkout/place-order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ addressId, paymentMethod })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    window.location.href = `/order-success?orderId=${data.orderId}`;
+                } else {
+                    Swal.fire('Error', data.message, 'error');
+                    btn.innerText = 'CONFIRM ORDER';
+                    btn.disabled = false;
+                }
+                return;
+            }
+
         } catch (error) {
             Swal.fire('Error', 'Server Error during checkout', 'error');
             btn.innerText = 'CONFIRM ORDER';
@@ -464,4 +492,6 @@
         closeCouponModal();
         applyCoupon(); // Existing function to trigger the backend calculation
     }
+
+
 </script>

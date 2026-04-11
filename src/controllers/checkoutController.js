@@ -44,11 +44,15 @@ exports.getCheckoutPage = async (req, res) => {
         const addresses = await Address.find({ user: userId });
         const defaultAddress = addresses.find(a => a.isDefault) || addresses[0] || null;
 
+        const walletService = require('../services/walletService');
+        const wallet = await walletService.getWallet(userId);
+
         res.render('user/checkout' , {
             cartItems: cartData.items,
             cartTotal: cartData.cartTotal,
             addresses: addresses,
             defaultAddress: defaultAddress,
+            walletBalance: wallet.balance
         });
 
     } catch (error) {
@@ -66,13 +70,20 @@ exports.placeOrder = async (req, res) => {
             return res.status(400).json({ success: false, message: "Missing address or payment method"});
         }
 
-        if (paymentMethod === 'COD') {
+        if (paymentMethod === 'COD' || paymentMethod === 'WALLET') {
             const appliedCoupon = req.session.appliedCoupon || null;
-
             const order = await checkoutService.placeOrder(userId, addressId, paymentMethod, appliedCoupon);
 
-            req.session.appliedCoupon = null;
+            if (paymentMethod === 'WALLET') {
+                const walletService = require('../services/walletService');
+                await walletService.debitWallet(userId, order.pricing.total, `Payment for Order #${order.orderId}`);
 
+                order.paymentStatus = 'Completed';
+                order.orderStatus = 'Processing';
+                await order.save();
+            }
+
+            req.session.appliedCoupon = null;
             return res.status(200).json({ success: true, orderId: order.orderId });
         }
 

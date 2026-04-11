@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const profileController = require('../controllers/profileController');
+const walletController = require('../controllers/walletController');
 const { noCache, isUser } = require('../middlewares/auth');
 
 // Profile 
@@ -19,5 +20,7 @@ router.post('/profile/address/edit/:id', isUser, noCache, profileController.post
 router.post('/profile/address/delete/:id', isUser, noCache, profileController.postDeleteAddress);
 router.post('/profile/address/default/:id', isUser, profileController.setDefaultAddress);
 
+// Wallet
+router.get('/wallet', isUser, noCache, walletController.getWalletPage);
 
 module.exports = router;

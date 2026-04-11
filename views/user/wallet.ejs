@@ -1,0 +1,45 @@
+<%- include('../layout/header') %>
+
+<div style="max-width: 900px; margin: 40px auto; padding: 20px; font-family: 'Poppins', sans-serif;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+        <h2>My Wallet</h2>
+        <button onclick="window.location.reload()" style="background: #eaeaec; color: #333; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: 600;">
+            <i class="fas fa-sync-alt"></i> Refresh
+        </button>
+    </div>
+
+    <div style="background: linear-gradient(135deg, #00827f, #004d4b); color: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 20px rgba(0,130,127,0.2); text-align: center; margin-bottom: 40px;">
+        <p style="margin: 0; font-size: 16px; opacity: 0.9;">Available Balance</p>
+        <h1 style="margin: 10px 0 0 0; font-size: 48px;">₹<%= wallet.balance.toFixed(2) %></h1>
+    </div>
+
+    <h3 style="margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px;">Transaction History</h3>
+    
+    <% if (wallet.transactions.length > 0) { %>
+        <div style="background: white; border-radius: 8px; border: 1px solid #eee; overflow: hidden;">
+            <% wallet.transactions.forEach(txn => { %>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #f4f5f9;">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div style="width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center; background: <%= txn.type === 'Credit' ? '#e8f5e9' : '#ffebee' %>; color: <%= txn.type === 'Credit' ? '#2e7d32' : '#d32f2f' %>;">
+                            <i class="fas <%= txn.type === 'Credit' ? 'fa-arrow-down' : 'fa-arrow-up' %>"></i>
+                        </div>
+                        <div>
+                            <strong style="display: block; color: #111; font-size: 14px;"><%= txn.description %></strong>
+                            <span style="font-size: 12px; color: #888;"><%= new Date(txn.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) %></span>
+                        </div>
+                    </div>
+                    <div style="font-weight: bold; font-size: 16px; color: <%= txn.type === 'Credit' ? '#2e7d32' : '#d32f2f' %>;">
+                        <%= txn.type === 'Credit' ? '+' : '-' %> ₹<%= txn.amount.toFixed(2) %>
+                    </div>
+                </div>
+            <% }) %>
+        </div>
+    <% } else { %>
+        <div style="text-align: center; padding: 40px; color: #888; background: #f9f9f9; border-radius: 8px;">
+            <i class="fas fa-receipt" style="font-size: 40px; margin-bottom: 15px; opacity: 0.5;"></i>
+            <p>No transactions found.</p>
+        </div>
+    <% } %>
+</div>
+
+<%- include('../layout/footer') %>
