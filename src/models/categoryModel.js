@@ -26,6 +26,12 @@ const categorySchema = new mongoose.Schema({
     isActive: {
         type: Boolean,
         default: true
+    },
+    offerPercentage: {
+        type: Number,
+        default: 0,
+        min: 0,
+        max: 100
     }
 }, { timestamps: true });
 

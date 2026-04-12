@@ -41,7 +41,8 @@
                 <span class="pdp-sale-price">₹<%= product.salePrice %></span>
                 <% if (product.salePrice < product.regularPrice) { %>
                     <span class="pdp-reg-price">₹<%= product.regularPrice %></span>
-                    <span class="pdp-discount">(<%= Math.round(((product.regularPrice - product.salePrice) / product.regularPrice) * 100) %>% OFF)</span>
+                    <% const activeOffer = Math.max(product.offerPercentage || 0, (product.category && product.category.offerPercentage) || 0); %>
+                    <% if (activeOffer > 0) { %><span class="pdp-discount">(<%= activeOffer %>% OFF)</span><% } %>
                 <% } %>
             </div>
             <p class="tax-inclusive">Inclusive of all taxes</p>
@@ -88,8 +89,8 @@
                         
                         <div class="product-image-container">
                             <% if (rel.salePrice < rel.regularPrice) { %>
-                                <% const discountPercent = Math.round(((rel.regularPrice - rel.salePrice) / rel.regularPrice) * 100); %>
-                                <div class="offer-badge"><%= discountPercent %>% OFF</div>
+                                <% const activeOffer = Math.max(rel.offerPercentage || 0, (product.category && product.category.offerPercentage) || 0); %>
+                                <% if (activeOffer > 0) { %><div class="offer-badge"><%= activeOffer %>% OFF</div><% } %>
                             <% } %>
 
                             <a href="/product/<%= rel._id %>">
