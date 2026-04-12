@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Dashboard</title>
     <link rel="stylesheet" href="/css/admin-products.css"> 
-    <link rel="stylesheet" href="/css/admin-orders.css">
     <link rel="stylesheet" href="/css/admin-dashboard.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -25,7 +24,7 @@
                 <a href="/admin/categories" class="nav-item"><i class="fas fa-th-list"></i> Categories</a>
                 <a href="/admin/coupons" class="nav-item"><i class="fas fa-ticket-alt"></i> Coupons</a>
                 <a href="/admin/orders" class="nav-item"><i class="fas fa-shopping-cart"></i> Orders</a>
-                <a href="/admin/report" class="nav-item"><i class="fas fa-chart-pie"></i> Report</a>
+                <a href="/admin/report" class="nav-item"><i class="fas fa-chart-pie"></i> Reports</a>
             </nav>
             <div class="sidebar-footer">
                 <a href="/admin/logout" class="nav-item logout-btn">Logout <i class="fas fa-sign-out-alt"></i></a>
@@ -37,197 +36,161 @@
                 <h2>Dashboard Overview</h2>
             </header>
 
-            <div class="admin-dashboard-container" style="padding: 0; background: transparent;">
-                
-                <div class="dashboard-controls" style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 20px;">
-                    <div class="filter-group" style="margin: 0; display: flex; align-items: center; gap: 10px;">
-                        <label style="margin: 0; font-weight: 600; font-size: 12px; color: var(--text-muted); text-transform: uppercase;">Time Period:</label>
-                        <select class="filter-select" onchange="window.location.href='?filter=' + this.value" style="margin: 0; width: 180px;">
-                            <option value="all_time" <%= currentFilter === 'all_time' ? 'selected' : '' %>>All Time</option>
-                            <option value="today" <%= currentFilter === 'today' ? 'selected' : '' %>>Today</option>
-                            <option value="this_week" <%= currentFilter === 'this_week' ? 'selected' : '' %>>This Week</option>
-                            <option value="this_month" <%= currentFilter === 'this_month' ? 'selected' : '' %>>This Month</option>
-                            <option value="this_year" <%= currentFilter === 'this_year' ? 'selected' : '' %>>This Year</option>
-                        </select>
-                    </div>
+            <div class="controls-bar" style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 30px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+                <div style="display: flex; gap: 15px; align-items: center;">
+                    <label style="font-weight: 600; color: #555; font-size: 13px; text-transform: uppercase;">Time Period:</label>
+                    <select class="form-input" onchange="window.location.href='?filter=' + this.value" style="width: 200px; margin: 0;">
+                        <option value="all_time" <%= currentFilter === 'all_time' ? 'selected' : '' %>>All Time</option>
+                        <option value="today" <%= currentFilter === 'today' ? 'selected' : '' %>>Today</option>
+                        <option value="this_week" <%= currentFilter === 'this_week' ? 'selected' : '' %>>This Week</option>
+                        <option value="this_month" <%= currentFilter === 'this_month' ? 'selected' : '' %>>This Month</option>
+                        <option value="this_year" <%= currentFilter === 'this_year' ? 'selected' : '' %>>This Year</option>
+                    </select>
                 </div>
-
-                <div class="dashboard-kpi-grid">
-                    <div class="kpi-card">
-                        <div class="kpi-header">
-                            <div class="kpi-icon icon-revenue"><i class="fas fa-rupee-sign"></i></div>
-                            <p class="kpi-title">Total Revenue</p>
-                        </div>
-                        <h3 class="kpi-value">₹<%= data.totalRevenue.toLocaleString('en-IN') %></h3>
-                    </div>
-
-                    <div class="kpi-card">
-                        <div class="kpi-header">
-                            <div class="kpi-icon icon-orders"><i class="fas fa-shopping-cart"></i></div>
-                            <p class="kpi-title">Total Orders</p>
-                        </div>
-                        <h3 class="kpi-value"><%= data.totalOrders %></h3>
-                    </div>
-
-                    <div class="kpi-card">
-                        <div class="kpi-header">
-                            <div class="kpi-icon icon-users"><i class="fas fa-users"></i></div>
-                            <p class="kpi-title">Total Customers</p>
-                        </div>
-                        <h3 class="kpi-value"><%= data.totalCustomers %></h3>
-                    </div>
-                </div>
-
-                <div class="dashboard-chart-grid">
-                    <div class="dashboard-card">
-                        <h3>Revenue Overview</h3>
-                        <div class="chart-container">
-                            <canvas id="revenueChart"></canvas>
-                        </div>
-                    </div>
-                    
-                    <div class="dashboard-card">
-                        <h3>Orders Summary</h3>
-                        <div class="chart-container">
-                            <canvas id="ordersChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="dashboard-chart-grid">
-                    <div class="dashboard-card">
-                        <h3>Top 3 Selling Products</h3>
-                        <div>
-                            <% if(data.topProducts.length > 0) { %>
-                                <% data.topProducts.forEach((prod, index) => { %>
-                                    <div class="top-product-item">
-                                        <div class="top-prod-rank">#<%= index + 1 %></div>
-                                        <img src="<%= prod.image || '/images/default-product.png' %>" class="top-prod-img">
-                                        <div class="top-prod-info">
-                                            <p class="top-prod-name"><%= prod.name %></p>
-                                        </div>
-                                        <div class="top-prod-sales">
-                                            <strong><%= prod.totalSold %></strong>
-                                            <span>Sales</span>
-                                        </div>
-                                    </div>
-                                <% }) %>
-                            <% } else { %>
-                                <p style="text-align: center; color: #888; padding: 20px;">No sales data available for this period.</p>
-                            <% } %>
-                        </div>
-                    </div>
-                    
-                    <div class="dashboard-card">
-                        <h3>Top Categories</h3>
-                        <div class="chart-container" style="display: flex; justify-content: center;">
-                            <canvas id="categoryChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-
             </div>
+
+            <div class="dashboard-kpi-grid">
+                <div class="kpi-card">
+                    <p class="kpi-title">Total Revenue</p>
+                    <p class="kpi-value">₹<%= data.totalRevenue.toLocaleString('en-IN') %></p>
+                </div>
+                <div class="kpi-card">
+                    <p class="kpi-title">Total Orders</p>
+                    <p class="kpi-value"><%= data.totalOrders %></p>
+                </div>
+                <div class="kpi-card">
+                    <p class="kpi-title">Total Customers</p>
+                    <p class="kpi-value"><%= data.totalCustomers %></p>
+                </div>
+            </div>
+
+            <div class="dashboard-chart-grid">
+                <div class="dashboard-card">
+                    <h3>Revenue Overview</h3>
+                    <div class="chart-container">
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="dashboard-card">
+                    <h3>Orders Summary</h3>
+                    <div class="chart-container">
+                        <canvas id="ordersChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-chart-grid">
+                <div class="dashboard-card">
+                    <h3>Top 3 Selling Products</h3>
+                    <div>
+                        <% if(data.topProducts.length > 0) { %>
+                            <% data.topProducts.forEach((prod, index) => { %>
+                                <div class="top-product-item">
+                                    <div class="top-prod-rank">#<%= index + 1 %></div>
+                                    <img src="<%= prod.image || '/images/default-product.png' %>" class="top-prod-img">
+                                    <div class="top-prod-info">
+                                        <p class="top-prod-name"><%= prod.name %></p>
+                                    </div>
+                                    <div class="top-prod-sales">
+                                        <strong><%= prod.totalSold %></strong>
+                                        <span>Sales</span>
+                                    </div>
+                                </div>
+                            <% }) %>
+                        <% } else { %>
+                            <p style="text-align: center; color: #888; padding: 20px;">No sales data available for this period.</p>
+                        <% } %>
+                    </div>
+                </div>
+                
+                <div class="dashboard-card">
+                    <h3>Top Categories</h3>
+                    <div class="chart-container" style="display: flex; justify-content: center;">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
         </main>
     </div>
 
     <script>
         const rawChartData = <%- JSON.stringify(data.chartData) %>;
 
-        const tooltipTheme = {
-            backgroundColor: 'rgba(43, 54, 116, 0.9)',
-            titleFont: { family: 'Outfit', size: 14, weight: 'bold' },
-            bodyFont: { family: 'Outfit', size: 13 },
-            padding: 12,
-            cornerRadius: 12,
-            displayColors: false,
-            boxShadow: '0 8px 32px rgba(31, 38, 135, 0.15)'
-        };
+        // Reset Chart.js defaults to standard sans-serif
+        Chart.defaults.font.family = "inherit";
+        Chart.defaults.color = '#555';
 
-        Chart.defaults.font.family = "'Outfit', sans-serif";
-        Chart.defaults.color = '#A3AED0';
-
-        // 1. Revenue Line Chart with Gradient
-        const revCtx = document.getElementById('revenueChart').getContext('2d');
-        let revGradient = revCtx.createLinearGradient(0, 0, 0, 400);
-        revGradient.addColorStop(0, 'rgba(67, 24, 255, 0.3)');
-        revGradient.addColorStop(1, 'rgba(67, 24, 255, 0.0)');
-
-        new Chart(revCtx, {
+        // 1. Revenue Line Chart (Teal Theme)
+        new Chart(document.getElementById('revenueChart').getContext('2d'), {
             type: 'line',
             data: {
                 labels: rawChartData.revenue.labels,
                 datasets: [{
                     label: 'Revenue (₹)',
                     data: rawChartData.revenue.data,
-                    borderColor: '#4318FF',
-                    backgroundColor: revGradient,
-                    borderWidth: 3,
+                    borderColor: '#00827f', // Dressrosa Teal
+                    backgroundColor: 'rgba(0, 130, 127, 0.1)',
+                    borderWidth: 2,
                     fill: true,
-                    tension: 0.4, // Smooth curve
-                    pointBackgroundColor: '#fff',
-                    pointBorderColor: '#4318FF',
-                    pointBorderWidth: 2,
-                    pointRadius: 4,
-                    pointHoverRadius: 6
+                    tension: 0.3,
+                    pointBackgroundColor: '#00827f',
+                    pointRadius: 3,
+                    pointHoverRadius: 5
                 }]
             },
             options: { 
                 responsive: true, maintainAspectRatio: false, 
-                plugins: { legend: { display: false }, tooltip: tooltipTheme },
+                plugins: { legend: { display: false } },
                 scales: { 
-                    y: { beginAtZero: true, grid: { color: 'rgba(163, 174, 208, 0.1)', borderDash: [5, 5] }, ticks: { padding: 10 } },
-                    x: { grid: { display: false }, ticks: { padding: 10 } }
+                    y: { beginAtZero: true, grid: { color: '#f0f0f0' } },
+                    x: { grid: { display: false } }
                 },
                 interaction: { intersect: false, mode: 'index' }
             }
         });
 
-        // 2. Orders Bar Chart
-        const ordCtx = document.getElementById('ordersChart').getContext('2d');
-        let ordGradient = ordCtx.createLinearGradient(0, 0, 0, 400);
-        ordGradient.addColorStop(0, '#05CD99');
-        ordGradient.addColorStop(1, 'rgba(5, 205, 153, 0.4)');
-
-        new Chart(ordCtx, {
+        // 2. Orders Bar Chart (Dark Theme)
+        new Chart(document.getElementById('ordersChart').getContext('2d'), {
             type: 'bar',
             data: {
                 labels: rawChartData.orders.labels,
                 datasets: [{
                     label: 'Orders',
                     data: rawChartData.orders.data,
-                    backgroundColor: ordGradient,
-                    borderRadius: 6,
+                    backgroundColor: '#333', // Dark Grey matching buttons
+                    borderRadius: 4,
                     barPercentage: 0.6
                 }]
             },
             options: { 
                 responsive: true, maintainAspectRatio: false, 
-                plugins: { legend: { display: false }, tooltip: tooltipTheme },
+                plugins: { legend: { display: false } },
                 scales: { 
-                    y: { beginAtZero: true, grid: { color: 'rgba(163, 174, 208, 0.1)', borderDash: [5, 5] }, ticks: { stepSize: 1, padding: 10 } },
-                    x: { grid: { display: false }, ticks: { padding: 10 } }
+                    y: { beginAtZero: true, grid: { color: '#f0f0f0' }, ticks: { stepSize: 1 } },
+                    x: { grid: { display: false } }
                 },
                 interaction: { intersect: false, mode: 'index' }
             }
         });
 
-        // 3. Top Categories Doughnut Chart
+        // 3. Top Categories Doughnut Chart (Brand Palette)
         new Chart(document.getElementById('categoryChart').getContext('2d'), {
             type: 'doughnut',
             data: {
                 labels: rawChartData.categories.labels,
                 datasets: [{
                     data: rawChartData.categories.data,
-                    backgroundColor: ['#4318FF', '#05CD99', '#FFCE20', '#EE5D50', '#8e44ad'],
+                    backgroundColor: ['#00827f', '#333', '#28a745', '#f57c00', '#dc3545'],
                     borderWidth: 0,
-                    hoverOffset: 8
+                    hoverOffset: 6
                 }]
             },
             options: { 
-                responsive: true, maintainAspectRatio: false, cutout: '75%', 
+                responsive: true, maintainAspectRatio: false, cutout: '70%', 
                 plugins: { 
-                    legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20, font: { weight: '600' } } },
-                    tooltip: tooltipTheme
+                    legend: { position: 'bottom', labels: { usePointStyle: true, padding: 15, font: { size: 12 } } }
                 } 
             }
         });

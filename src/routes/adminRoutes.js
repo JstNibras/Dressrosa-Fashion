@@ -4,6 +4,7 @@ const adminController = require('../controllers/adminController');
 const adminOrderController = require('../controllers/adminOrderController'); 
 const adminCouponController = require('../controllers/adminCouponController');
 const adminDashboardController = require('../controllers/adminDashboardController');
+const reportController = require('../controllers/reportController');
 const { isAdmin, noCache, adminLogout } = require('../middlewares/auth');
 
 router.get('/admin/login', noCache, (req, res) => {
@@ -30,5 +31,8 @@ router.post('/admin/coupons/toggle', isAdmin, adminCouponController.toggleCoupon
 router.post('/admin/coupons/edit', isAdmin, adminCouponController.editCoupon);
 
 router.get('/admin/dashboard', isAdmin, noCache, adminDashboardController.getDashboard);
+
+router.get('/admin/report', isAdmin, noCache, reportController.getReportPage);
+router.get('/admin/report/download/:format', isAdmin, noCache, reportController.downloadReport);
 
 module.exports = router;
