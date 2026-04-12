@@ -10,14 +10,14 @@
 
     <div style="background: linear-gradient(135deg, #00827f, #004d4b); color: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 20px rgba(0,130,127,0.2); text-align: center; margin-bottom: 40px;">
         <p style="margin: 0; font-size: 16px; opacity: 0.9;">Available Balance</p>
-        <h1 style="margin: 10px 0 0 0; font-size: 48px;">₹<%= wallet.balance.toFixed(2) %></h1>
+        <h1 style="margin: 10px 0 0 0; font-size: 48px;">₹<%= walletBalance.toFixed(2) %></h1>
     </div>
 
     <h3 style="margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px;">Transaction History</h3>
     
-    <% if (wallet.transactions.length > 0) { %>
+    <% if (transactions.length > 0) { %>
         <div style="background: white; border-radius: 8px; border: 1px solid #eee; overflow: hidden;">
-            <% wallet.transactions.forEach(txn => { %>
+            <% transactions.forEach(txn => { %>
                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #f4f5f9;">
                     <div style="display: flex; align-items: center; gap: 15px;">
                         <div style="width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center; background: <%= txn.type === 'Credit' ? '#e8f5e9' : '#ffebee' %>; color: <%= txn.type === 'Credit' ? '#2e7d32' : '#d32f2f' %>;">
@@ -40,6 +40,31 @@
             <p>No transactions found.</p>
         </div>
     <% } %>
+
+    <% if (totalPages > 1) { %>
+        <div style="display: flex; justify-content: center; margin-top: 30px; gap: 8px;">
+            
+            <% if (currentPage > 1) { %>
+                <a href="?page=<%= currentPage - 1 %>" style="padding: 8px 14px; border-radius: 6px; border: 1px solid #ddd; background: white; color: #333; text-decoration: none; font-weight: 500;">
+                    &laquo; Prev
+                </a>
+            <% } %>
+
+            <% for(let i = 1; i <= totalPages; i++) { %>
+                <a href="?page=<%= i %>" style="padding: 8px 14px; border-radius: 6px; text-decoration: none; font-weight: 500; transition: all 0.2s; <%= currentPage === i ? 'background-color: #333; color: white; border: 1px solid #333;' : 'background-color: white; color: #333; border: 1px solid #ddd;' %>">
+                    <%= i %>
+                </a>
+            <% } %>
+
+            <% if (currentPage < totalPages) { %>   
+                <a href="?page=<%= currentPage + 1 %>" style="padding: 8px 14px; border-radius: 6px; border: 1px solid #ddd; background: white; color: #333; text-decoration: none; font-weight: 500;">
+                    Next &raquo;
+                </a>
+            <% } %>
+            
+        </div>
+    <% } %>
 </div>
+
 
 <%- include('../layout/footer') %>
