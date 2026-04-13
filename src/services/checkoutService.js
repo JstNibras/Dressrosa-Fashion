@@ -3,39 +3,53 @@ const Cart = require('../models/cartModel');
 const Address = require('../models/addressModel');
 const Product = require('../models/productModel');
 
-exports.placeOrder = async (userId, addressId, paymentMethod, appliedCoupon = null) => {
+exports.placeOrder = async (userId, addressId, paymentMethod, appliedCoupon = null, buyNowItem = null) => {
     try {
-        const cartDoc = await Cart.findOne({ user: userId }).populate({
-            path: 'items.product',
-            populate: { path: 'category' }
-        });
         const addressDoc = await Address.findById(addressId);
-
-        if (!cartDoc || cartDoc.items.length === 0) throw new Error("Cart is empty");
         if (!addressDoc) throw new Error("Delivery address not found");
 
-        const pureCart = JSON.parse(JSON.stringify(cartDoc));
+        let validItems = [];
+        let cartDoc = null;
 
-        let subtotal = 0;
-        const validItems = pureCart.items.filter(item => {
-            const p = item.product;
-            if (!p) return false;
+        if (buyNowItem) {
+            const product = await Product.findById(buyNowItem.productId).populate('category');
             
-            const productActive = p.isActive !== false && p.isListed !== false;
-            const categoryActive = p.category && p.category.isActive !== false && p.category.isListed !== false;
-            
-            return productActive && categoryActive;
-        });
+            if (!product || product.isActive === false || product.isListed === false ||
+                !product.category || product.category.isActive === false || product.category.isListed === false) {
+                throw new Error("Transaction Failed: Product or category is unavailable.");
+            }
 
-        if (validItems.length !== pureCart.items.length) {
-            throw new Error("Transaction Failed: One or more items belong to a suspended category.");
+            validItems = [{
+                product: product, 
+                size: buyNowItem.size,
+                quantity: buyNowItem.quantity
+            }];
+        } else {
+            cartDoc = await Cart.findOne({ user: userId }).populate({
+                path: 'items.product',
+                populate: { path: 'category' }
+            });
+
+            if (!cartDoc || cartDoc.items.length === 0) throw new Error("Cart is empty");
+
+            const pureCart = JSON.parse(JSON.stringify(cartDoc));
+            validItems = pureCart.items.filter(item => {
+                const p = item.product;
+                if (!p) return false;
+                const productActive = p.isActive !== false && p.isListed !== false;
+                const categoryActive = p.category && p.category.isActive !== false && p.category.isListed !== false;
+                return productActive && categoryActive;
+            });
+
+            if (validItems.length !== pureCart.items.length) {
+                throw new Error("Transaction Failed: One or more items belong to a suspended category.");
+            }
+            if (validItems.length === 0) throw new Error("No valid items found in cart during checkout.");
         }
 
-        if (validItems.length === 0) throw new Error("No valid items found in cart during checkout.");
-
+        let subtotal = 0;
         const orderItems = validItems.map(item => {
             const product = item.product;
-
             const variant = product.variants.find(v => 
                 String(v.size).trim().toLowerCase() === String(item.size).trim().toLowerCase()
             );
@@ -71,8 +85,7 @@ exports.placeOrder = async (userId, addressId, paymentMethod, appliedCoupon = nu
         if (appliedCoupon) {
             const Coupon = require('../models/couponModel');
             const couponDoc = await Coupon.findOne({ code: appliedCoupon.code, isActive: true });
-
-            const minPurchase = couponDoc.minPurchaseAmount || couponDoc.minPurchaseamount || 0;
+            const minPurchase = couponDoc.minPurchaseAmount || 0;
 
             let hasUsed = false;
             if (couponDoc && couponDoc.usedBy) {
@@ -87,8 +100,8 @@ exports.placeOrder = async (userId, addressId, paymentMethod, appliedCoupon = nu
         }
 
         const netTotal = finalTotal - orderDiscount;
-
         const orderId = 'ORD-' + Date.now() + Math.floor(Math.random() * 1000);
+        
         const newOrder = new Order({
             user: userId,
             orderId: orderId,
@@ -110,15 +123,16 @@ exports.placeOrder = async (userId, addressId, paymentMethod, appliedCoupon = nu
         await newOrder.save();
 
         for (let item of validItems) {
-            const Product = require('../models/productModel'); 
             await Product.updateOne(
                 { _id: item.product._id, "variants.size": item.size },
                 { $inc: { "variants.$.stock": -item.quantity } }
             );
         }
 
-        cartDoc.items = [];
-        await cartDoc.save();
+        if (!buyNowItem && cartDoc) {
+            cartDoc.items = [];
+            await cartDoc.save();
+        }
 
         return newOrder;
 
