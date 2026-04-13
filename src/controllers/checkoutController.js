@@ -175,6 +175,10 @@ exports.createRazorpayOrder = async (req, res) => {
 
         if (req.session.appliedCoupon) finalAmount -= req.session.appliedCoupon.discountAmount;
 
+        if (finalAmount < 1) {
+            return res.status(400).json({ success: false, message: "Order amount must be at least ₹1 for Razorpay. Please use another payment method for free orders." });
+        }
+
         const options = {
             amount: Math.round(finalAmount * 100),
             currency: "INR",
@@ -260,6 +264,9 @@ exports.applyCoupon = async (req, res) => {
             discountAmount = coupon.discountValue;
         } else if (coupon.discountType === 'percentage') {
             discountAmount = (subtotal * coupon.discountValue) / 100;
+            if (coupon.maxDiscountAmount && coupon.maxDiscountAmount > 0 && discountAmount > coupon.maxDiscountAmount) {
+                discountAmount = coupon.maxDiscountAmount;
+            }
         }
 
         if (discountAmount > subtotal) discountAmount = subtotal;
