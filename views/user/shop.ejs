@@ -86,8 +86,8 @@
                         <div class="product-card">
                             <div class="product-image-container">
                                 <% if (product.salePrice < product.regularPrice) { %>
-                                    <% const discountPercent = Math.round(((product.regularPrice - product.salePrice) / product.regularPrice) * 100); %>
-                                    <div class="offer-badge"><%= discountPercent %>% OFF</div>
+                                    <% const activeOffer = Math.max(product.offerPercentage || 0, (product.category && product.category.offerPercentage) || 0); %>
+                                    <% if (activeOffer > 0) { %><div class="offer-badge"><%= activeOffer %>% OFF</div><% } %>
                                 <% } %>
                                 <a href="/product/<%= product._id %>">
                                     <img src="<%= product.images[0] %>" alt="<%= product.name %>" class="product-image">

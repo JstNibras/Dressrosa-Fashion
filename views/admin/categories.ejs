@@ -24,10 +24,9 @@
                 <a href="/admin/users" class="nav-item"><i class="fas fa-users"></i> Users</a>
                 <a href="/admin/products" class="nav-item"><i class="fas fa-box"></i> Products</a>
                 <a href="/admin/categories" class="nav-item active"><i class="fas fa-th-list"></i> Categories</a>
-                <a href="/admin/banners" class="nav-item"><i class="fas fa-plus-square"></i> Add Banners</a>
                 <a href="/admin/coupons" class="nav-item"><i class="fas fa-ticket-alt"></i> Coupons</a>
                 <a href="/admin/orders" class="nav-item"><i class="fas fa-shopping-cart"></i> Orders</a>
-                <a href="/admin/report" class="nav-item"><i class="fas fa-chart-pie"></i> Report</a>
+                <a href="/admin/report" class="nav-item"><i class="fas fa-chart-pie"></i> Reports</a>
             </nav>
 
             <div class="sidebar-footer">
@@ -96,7 +95,7 @@
                                     <td>
                                         <div style="display: flex; gap: 8px;">
                                             <button class="btn-action" style="background-color: #3085d6; color: white;" 
-                                                    onclick="openEditModal('<%= category._id %>', '<%= category.name %>', '<%= category.description || '' %>', '<%= category.image || '' %>')">
+                                                    onclick="openEditModal('<%= category._id %>', '<%= category.name %>', '<%= category.description || '' %>', '<%= category.image || '' %>', '<%= category.offerPercentage || 0 %>')">
                                                 EDIT
                                             </button>
                                             
@@ -155,6 +154,10 @@
                     <textarea id="catDesc" name="description" class="form-input" rows="3" placeholder="Optional description..."></textarea>
                 </div>
                 <div class="form-group">
+                    <label>Category Offer (%)</label>
+                    <input type="number" name="offerPercentage" id="addCatOffer" class="form-input" min="0" max="100" placeholder="e.g., 10">
+                </div>
+                <div class="form-group">
                     <label style="margin-bottom: 10px; display: block;">Category Image *</label>
                     <div class="image-upload-container">
                         <div class="image-upload-box" style="max-width: 200px;">
@@ -187,6 +190,10 @@
                 <div class="form-group">
                     <label>Description</label>
                     <textarea id="editCatDesc" name="description" class="form-input" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Category Offer (%)</label>
+                    <input type="number" name="offerPercentage" id="editCatOffer" class="form-input" min="0" max="100" placeholder="e.g., 10">
                 </div>
                 <div class="form-group">
                     <label style="margin-bottom: 10px; display: block;">Category Image</label>
@@ -320,7 +327,7 @@
             }
         }
 
-        function openEditModal(id, name, description, imageUrl) {
+        function openEditModal(id, name, description, imageUrl, offerPercentage) {
             const preview = document.getElementById('editPrevCat');
             const label = document.getElementById('editLabelCat');
             
@@ -337,6 +344,7 @@
             document.getElementById('editCatId').value = id;
             document.getElementById('editCatName').value = name;
             document.getElementById('editCatDesc').value = description;
+            document.getElementById('editCatOffer').value = offerPercentage;
             document.getElementById('editCategoryModal').style.display = 'flex';
         }
 

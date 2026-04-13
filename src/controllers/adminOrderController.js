@@ -44,7 +44,7 @@ exports.getAdminOrderDetails = async (req, res) => {
         const { orderId } = req.params;
         const Order = require('../models/orderModel');
 
-        const order = await Order.findOne({ orderId: orderId }).populate('user', 'email mobile');
+        const order = await Order.findOne({ orderId: orderId }).populate('user');
         if (!order) return res.redirect('/admin/orders?error=OrderNotFound');
 
         res.render('admin/order-details', { order });

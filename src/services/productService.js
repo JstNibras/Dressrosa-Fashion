@@ -37,7 +37,7 @@ exports.getAllProductsAdmin = async (queryData = {}) => {
     }
 
     let products = await Product.find(filter)
-        .populate('category', 'name isActive')
+        .populate('category', 'name isActive offerPercentage')
         .sort({ createdAt: -1 });
 
     if (stock) {
@@ -98,12 +98,23 @@ exports.createProduct = async (productData, files) => {
         }
     }
 
+    const Category = require('../models/categoryModel');
+    const categoryDoc = await Category.findById(productData.category);
+    const catOffer = categoryDoc ? (categoryDoc.offerPercentage || 0) : 0;
+    const prodOffer = Number(productData.offerPercentage) || 0;
+
+    const effectiveDiscount = Math.max(catOffer, prodOffer);
+
+    const regularPrice = Number(productData.regularPrice);
+    const salePrice = Math.round(regularPrice - (regularPrice * effectiveDiscount / 100));
+
     const newProduct = new Product({
         name: productData.name,
         description: productData.description,
         category: productData.category,
-        regularPrice: Number(productData.regularPrice),
-        salePrice: productData.salePrice ? Number(productData.salePrice) : Number(productData.regularPrice),
+        regularPrice: regularPrice,
+        offerPercentage: prodOffer,
+        salePrice: salePrice,
         variants: parsedVariants,
         images: imageUrls
     });
@@ -158,11 +169,21 @@ exports.updateProduct = async (productId, productData, files) => {
         return variantDoc;
     })
 
+    const Category = require('../models/categoryModel');
+    const categoryDoc = await Category.findById(productData.category);
+    const catOffer = categoryDoc ? (categoryDoc.offerPercentage || 0) : 0;
+    const prodOffer = Number(productData.offerPercentage) || 0;
+
+    const effectiveDiscount = Math.max(catOffer, prodOffer);
+    const regularPrice = Number(productData.regularPrice);
+    const salePrice = Math.round(regularPrice - (regularPrice * effectiveDiscount / 100));
+
     product.name = productData.name;
     product.description = productData.description;
     product.category = productData.category;
-    product.regularPrice = Number(productData.regularPrice);
-    product.salePrice = productData.salePrice ? Number(productData.salePrice) : Number(productData.regularPrice);
+    product.regularPrice = regularPrice;
+    product.offerPercentage = prodOffer;
+    product.salePrice = salePrice;
     product.variants = updatedVariants;
 
     return await product.save();
@@ -216,7 +237,7 @@ exports.getStorefrontProducts = async (queryData = {}) => {
     const skip = (Number(page) - 1) * Number(limit);
 
     const products = await Product.find(filter)
-        .populate('category', 'name')
+        .populate('category', 'name offerPercentage')
         .sort(sortOption)
         .skip(skip)
         .limit(limit);

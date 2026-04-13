@@ -54,5 +54,35 @@
             </div>
         <% }) %>
     <% } %>
+
+    <% if (totalPages > 1) { %>
+        <div style="display: flex; justify-content: center; margin-top: 30px; margin-bottom: 20px; gap: 8px;">
+            <% 
+                const buildUrl = (pageNum) => {
+                    let url = `?page=${pageNum}`;
+                    if (searchQuery) url += `&search=${searchQuery}`;
+                    return url;
+                }
+            %>
+
+            <% if (currentPage > 1) { %>
+                <a href="<%= buildUrl(currentPage - 1) %>" style="padding: 8px 14px; border-radius: 6px; border: 1px solid #ddd; background: white; color: #333; text-decoration: none; font-weight: 500;">
+                    &laquo; Prev
+                </a>
+            <% } %>
+
+            <% for(let i = 1; i <= totalPages; i++) { %>
+                <a href="<%= buildUrl(i) %>" style="padding: 8px 14px; border-radius: 6px; text-decoration: none; font-weight: 500; transition: all 0.2s; <%= currentPage === i ? 'background-color: #333; color: white; border: 1px solid #333;' : 'background-color: white; color: #333; border: 1px solid #ddd;' %>">
+                    <%= i %>
+                </a>
+            <% } %>
+
+            <% if (currentPage < totalPages) { %>   
+                <a href="<%= buildUrl(currentPage + 1) %>" style="padding: 8px 14px; border-radius: 6px; border: 1px solid #ddd; background: white; color: #333; text-decoration: none; font-weight: 500;">
+                    Next &raquo;
+                </a>
+            <% } %>
+        </div>
+    <% } %>
 </div>
 <%- include('../layout/footer') %>

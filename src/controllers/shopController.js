@@ -58,7 +58,7 @@ exports.getQuickViewProduct = async (req, res) => {
     try {
 
         const Product = require('../models/productModel');
-        const product = await Product.findById(req.params.id).select('name images salePrice regularPrice variants');
+        const product = await Product.findById(req.params.id).select('name images salePrice regularPrice variants offerPercentage').populate('category', 'offerPercentage');
 
         if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
 

@@ -103,10 +103,21 @@
                         <span>₹ <%= cartTotal.toFixed(2) %></span>
                     </div>
                 </div>
-
-                <button class="btn-checkout" onclick="window.location.href='/checkout'" style="width: 100%; padding: 15px; background: #00827f; color: white; border: none; font-weight: bold; cursor: pointer; border-radius: 4px;">
-                    PLACE ORDER
+                <br>
+                <% if (typeof hasInvalidItems !== 'undefined' && hasInvalidItems) { %>
+                <div style="background-color: #fce4e4; border: 1px solid #fccacb; color: #cc0033; padding: 12px; border-radius: 6px; margin-bottom: 15px; font-size: 13px;">
+                    <i class="fas fa-exclamation-triangle"></i> 
+                    <strong>Attention:</strong> One or more items in your cart are no longer available. Please remove them to proceed.
+                </div>
+                
+                <button type="button" style="width: 100%; padding: 12px; background: #cccccc; color: #666; border: none; border-radius: 6px; cursor: not-allowed; font-weight: bold;">
+                    Checkout Disabled
                 </button>
+            <% } else { %>
+                <a href="/checkout" style="display: block; width: 100%; text-align: center; padding: 12px; background: #00827f; color: white; text-decoration: none; border-radius: 6px; font-weight: bold;">
+                    Proceed to Checkout
+                </a>
+            <% } %>
             </div>
 
         <% } else { %>
@@ -253,6 +264,25 @@
                 title: 'Delivery address updated', showConfirmButton: false, timer: 1500
             });
         }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Read the URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const errorMsg = urlParams.get('error');
+
+            // If an error exists, show it, then clean the URL
+            if (errorMsg) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Checkout Blocked',
+                    text: errorMsg,
+                    confirmButtonColor: '#00827f'
+                }).then(() => {
+                    // This cleans the '?error=...' out of the URL bar so it doesn't pop up again on refresh
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                });
+            }
+        });
     </script>
 </body>
 </html>

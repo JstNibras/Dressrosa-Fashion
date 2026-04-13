@@ -23,10 +23,9 @@
                 <a href="/admin/users" class="nav-item"><i class="fas fa-users"></i> Users</a>
                 <a href="/admin/products" class="nav-item active"><i class="fas fa-box"></i> Products</a>
                 <a href="/admin/categories" class="nav-item"><i class="fas fa-th-list"></i> Categories</a>
-                <a href="/admin/banners" class="nav-item"><i class="fas fa-plus-square"></i> Add Banners</a>
                 <a href="/admin/coupons" class="nav-item"><i class="fas fa-ticket-alt"></i> Coupons</a>
                 <a href="/admin/orders" class="nav-item"><i class="fas fa-shopping-cart"></i> Orders</a>
-                <a href="/admin/report" class="nav-item"><i class="fas fa-chart-pie"></i> Report</a>
+                <a href="/admin/report" class="nav-item"><i class="fas fa-chart-pie"></i> Reports</a>
             </nav>
             <div class="sidebar-footer">
                 <a href="/admin/logout" class="nav-item logout-btn">Logout <i class="fas fa-sign-out-alt"></i></a>
@@ -112,8 +111,10 @@
                                     <td>
                                         <% if (product.salePrice < product.regularPrice) { %>
                                             <div style="font-weight: 500; color: #333;">₹<%= product.salePrice %> <span style="text-decoration: line-through; color: #999; font-weight: normal; font-size: 12px; margin-left: 5px;">₹<%= product.regularPrice %></span></div>
-                                            <% const discount = Math.round(((product.regularPrice - product.salePrice) / product.regularPrice) * 100); %>
-                                            <div style="color: #28a745; font-size: 12px; font-weight: 600; margin-top: 3px;"><%= discount %>% OFF</div>
+                                            <% const activeOffer = Math.max(product.offerPercentage || 0, (product.category && product.category.offerPercentage) || 0); %>
+                                            <% if (activeOffer > 0) { %>
+                                                <div style="color: #28a745; font-size: 12px; font-weight: 600; margin-top: 3px;"><%= activeOffer %>% OFF</div>
+                                            <% } %>
                                         <% } else { %>
                                             <div style="font-weight: 500; color: #333;">₹<%= product.regularPrice %></div>
                                         <% } %>
@@ -225,8 +226,8 @@
                         <input type="number" name="regularPrice" class="form-input" min="0" required>
                     </div>
                     <div class="form-group half-width">
-                        <label>Sale Price (₹)</label>
-                        <input type="number" name="salePrice" class="form-input" min="0" placeholder="Leave blank if no discount">
+                        <label>Product Offer (%)</label>
+                        <input type="number" name="offerPercentage" id="addOfferPercentage" class="form-input" min="0" max="100" placeholder="e.g., 15">
                     </div>
                 </div>
 
@@ -316,8 +317,8 @@
                         <input type="number" id="editRegularPrice" name="regularPrice" class="form-input" min="0" required>
                     </div>
                     <div class="form-group half-width">
-                        <label>Sale Price (₹)</label>
-                        <input type="number" id="editSalePrice" name="salePrice" class="form-input" min="0">
+                        <label>Product Offer (%)</label>
+                        <input type="number" name="offerPercentage" id="editOfferPercentage" class="form-input" min="0" max="100" placeholder="e.g., 15">
                     </div>
                 </div>
 
@@ -489,7 +490,7 @@
             document.getElementById('editCategory').value = product.category._id || product.category; // Handles populated or unpopulated
             document.getElementById('editDescription').value = product.description;
             document.getElementById('editRegularPrice').value = product.regularPrice;
-            document.getElementById('editSalePrice').value = product.salePrice;
+            document.getElementById('editOfferPercentage').value = product.offerPercentage;
 
             // Populate Variant Rows
             const container = document.getElementById('editVariantsContainer');
