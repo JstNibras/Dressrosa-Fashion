@@ -162,7 +162,7 @@ exports.generatePDF = async (reportData, res) => {
 
     doc.font('Helvetica').fontSize(9);
     reportData.forEach(item => {
-        if (currentY > 500) { // Page break
+        if (currentY > 500) { 
             doc.addPage({ layout: 'landscape' });
             currentY = 30;
         }

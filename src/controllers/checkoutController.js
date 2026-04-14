@@ -94,7 +94,7 @@ exports.getCheckoutPage = async (req, res) => {
             addresses: addresses,
             defaultAddress: defaultAddress,
             walletBalance: wallet.balance,
-            isBuyNow: !!req.session.buyNowItem // Flag to tell frontend we are in Buy Now mode
+            isBuyNow: !!req.session.buyNowItem 
         });
 
     } catch (error) {

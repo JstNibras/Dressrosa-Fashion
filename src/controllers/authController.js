@@ -107,7 +107,7 @@ exports.logout = (req, res, next) => {
                 console.log("Logout error:", err);
                 return res.redirect('/');
             }
-            res.clearCookie('connect.sid'); 
+            res.clearCookie('user.sid'); 
             res.redirect('/login');
         });
     })

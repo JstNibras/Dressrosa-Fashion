@@ -26,7 +26,7 @@ exports.getDashboardData = async (filter = 'all_time') => {
             const currentDayOrig = now.getDay();
             const diff = now.getDate() - currentDayOrig;
             startDate = new Date(now.getFullYear(), now.getMonth(), diff, 0, 0, 0, 0);
-            groupId = { $dayOfWeek: "$createdAt" }; // 1: Sun, 7: Sat
+            groupId = { $dayOfWeek: "$createdAt" };
             for(let i=1; i<=7; i++) expectedLabels.push(i);
             const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
             labelFormatter = (id) => days[(id - 1) % 7];

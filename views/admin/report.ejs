@@ -36,21 +36,6 @@
                 <h2>Sales Report</h2>
             </header>
 
-            <div class="report-kpi-container">
-                <div class="report-kpi-card">
-                    <p class="report-kpi-title">Total Sales</p>
-                    <p class="report-kpi-value">₹<%= kpi.totalSales.toLocaleString('en-IN') %></p>
-                </div>
-                <div class="report-kpi-card">
-                    <p class="report-kpi-title">Total Orders</p>
-                    <p class="report-kpi-value"><%= kpi.totalOrders %></p>
-                </div>
-                <div class="report-kpi-card">
-                    <p class="report-kpi-title">Total Discount</p>
-                    <p class="report-kpi-value">₹<%= kpi.totalDiscount.toLocaleString('en-IN') %></p>
-                </div>
-            </div>
-
             <form action="/admin/report" method="GET" class="controls-bar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; gap: 15px; flex-wrap: wrap; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
                 
                 <div style="display: flex; gap: 15px; align-items: center;">
