@@ -25,6 +25,7 @@ router.post('/cart/update-quantity', cartController.updateQuantity);
 router.post('/cart/update-size', cartController.updateSize);
 router.post('/cart/remove', cartController.removeFromCart);
 router.post('/cart/add', cartController.addToCart);
+router.post('/checkout/buy-now', isUser, noCache, checkoutController.buyNow);
 router.post('/checkout/place-order', isUser, noCache, checkoutController.placeOrder);
 router.post('/checkout/create-razorpay-order', isUser, noCache, checkoutController.createRazorpayOrder);
 router.post('/place-order', checkoutController.placeOrder);

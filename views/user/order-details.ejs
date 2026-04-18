@@ -66,7 +66,17 @@
             <div class="od-product-info">
                 <h3 class="od-product-title"><%= item.name %></h3>
                 <p class="od-product-meta">Size: <%= item.size %> &nbsp;|&nbsp; Qty: <%= item.quantity %></p>
-                <p class="od-product-price">₹<%= item.itemTotal %></p>
+                <% 
+                    const subtotal = order.pricing.subtotal || 1;
+                    const discount = order.pricing.discount || 0;
+                    const effectiveTotal = item.itemTotal - (item.itemTotal / subtotal * discount);
+                %>
+                <p class="od-product-price">
+                    <% if (discount > 0) { %>
+                        <span style="text-decoration: line-through; color: #888; font-weight: 400; font-size: 13px; margin-right: 8px;">₹<%= item.itemTotal %></span>
+                    <% } %>
+                    ₹<%= Math.round(effectiveTotal) %>
+                </p>
                 
                 <div style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
                     <% if (item.itemStatus === 'Delivered' || item.itemStatus === 'Returned') { %>
@@ -75,7 +85,7 @@
                         </a>
                     <% } %>
 
-                    <% if (item.itemStatus === 'Placed' || item.itemStatus === 'Shipped') { %>
+                    <% if (item.itemStatus === 'Placed') { %>
                         <button class="btn-action-small" style="color: #d32f2f; border-color: #d32f2f;" onclick="handleItemAction('<%= order.orderId %>', '<%= item._id %>', 'cancel')">Cancel Item</button>
                     <% } else if (item.itemStatus === 'Delivered') { %>
                         <button class="btn-action-small" style="color: #f57c00; border-color: #f57c00;" onclick="handleItemAction('<%= order.orderId %>', '<%= item._id %>', 'return')">Return Item</button>
@@ -182,18 +192,37 @@
             </div>
             
             <div class="od-info-block" style="border-left: 1px solid #eaeaec; padding-left: 20px;">
-                <h4>Payment Details</h4>
+                <h4>Order Summary</h4>
                 <p>Payment Method: <strong><%= order.paymentMethod %></strong></p>
-                <p>Overall Order Status: <strong><%= order.orderStatus %></strong></p>
+                <p>Order Status: <strong><%= order.orderStatus %></strong></p>
                 <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed #ccc;">
-                    <p style="display: flex; justify-content: space-between; font-size: 13px; color: #666;">
-                        <span>Item Price</span> <span>₹<%= item.price %></span>
-                    </p>
-                    <p style="display: flex; justify-content: space-between; font-size: 13px; color: #666;">
-                        <span>Quantity</span> <span>x <%= item.quantity %></span>
-                    </p>
-                    <p style="display: flex; justify-content: space-between; font-weight: 600; margin-top: 10px; color: #282c3f;">
-                        <span>Total Paid</span> <span>₹<%= item.itemTotal %></span>
+                    <% if (order.pricing && order.pricing.regularTotal > 0) { %>
+                        <p style="display: flex; justify-content: space-between; font-size: 13px; color: #666; margin-bottom: 8px;">
+                            <span>Cart Total (MRP)</span> <span>₹<%= order.pricing.regularTotal.toFixed(2) %></span>
+                        </p>
+                        <p style="display: flex; justify-content: space-between; font-size: 13px; color: #00827f; margin-bottom: 8px;">
+                            <span>Product Offer</span> <span>- ₹<%= order.pricing.productDiscount.toFixed(2) %></span>
+                        </p>
+                        <p style="display: flex; justify-content: space-between; font-size: 13px; color: #00827f; margin-bottom: 8px;">
+                            <span>Shipping Charges</span> <span>Free</span>
+                        </p>
+                        <% if (order.pricing.discount > 0) { %>
+                            <p style="display: flex; justify-content: space-between; font-size: 13px; color: #d32f2f; margin-bottom: 8px;">
+                                <span>Coupon Discount</span> <span>- ₹<%= order.pricing.discount.toFixed(2) %></span>
+                            </p>
+                        <% } %>
+                    <% } else { %>
+                        <p style="display: flex; justify-content: space-between; font-size: 13px; color: #666; margin-bottom: 8px;">
+                            <span>Subtotal</span> <span>₹<%= order.pricing.subtotal.toFixed(2) %></span>
+                        </p>
+                        <% if (order.pricing.discount > 0) { %>
+                            <p style="display: flex; justify-content: space-between; font-size: 13px; color: #d32f2f; margin-bottom: 8px;">
+                                <span>Discount</span> <span>- ₹<%= order.pricing.discount.toFixed(2) %></span>
+                            </p>
+                        <% } %>
+                    <% } %>
+                    <p style="display: flex; justify-content: space-between; font-weight: 700; margin-top: 12px; color: #111; font-size: 16px; border-top: 1px solid #eee; padding-top: 10px;">
+                        <span>Final Total</span> <span>₹<%= order.pricing.total.toFixed(2) %></span>
                     </p>
                 </div>
             </div>

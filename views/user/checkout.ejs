@@ -44,9 +44,7 @@
 <div class="checkout-container">
 
     <% 
-        const gstRate = 0.05; 
-        const gstAmount = cartTotal * gstRate;
-        const finalAmount = (cartTotal * 0.95) + gstAmount;
+        const finalAmount = cartTotal;
     %>
     
     <div class="checkout-left">
@@ -154,28 +152,28 @@
             <h3 class="section-title" style="font-size: 14px; color: #888; border: none; margin-bottom: 10px;">BILLING DETAILS</h3>
             
             <div class="summary-row">
-                <span>Cart Total (Excl. of all taxes)</span>
-                <span id="summary-subtotal">₹<%= (cartTotal * 0.95).toFixed(2) %></span>
+                <span>Cart Total</span>
+                <span id="summary-subtotal">₹<%= regularTotal.toFixed(2) %></span>
             </div>
-            
+
+            <div class="summary-row" style="color: #00827f; font-weight: 600;">
+                <span>Product Offer</span>
+                <span>- ₹<%= productDiscount.toFixed(2) %></span>
+            </div>
+
             <div class="summary-row">
                 <span>Shipping Charges</span>
                 <span style="color: #00827f; font-weight: 600;">Free</span>
             </div>
 
-            <div class="summary-row">
-                <span>Estimated GST (5%)</span>
-                <span id="summary-gst">₹<%= gstAmount.toFixed(2) %></span>
-            </div>
-
             <div class="summary-row" id="discount-row" style="display: none; color: #d32f2f; font-weight: 600;">
-                <span>Discount Applied</span>
+                <span>Coupon Discount</span>
                 <span id="summary-discount">- ₹0.00</span>
             </div>
 
             <div class="summary-total">
                 <span>Total Amount</span>
-                <span id="summary-final-total" data-original-total="<%= finalAmount %>">₹<%= finalAmount.toFixed(2) %></span>
+                <span id="summary-final-total" data-original-total="<%= cartTotal %>">₹<%= cartTotal.toFixed(2) %></span>
             </div>
 
             <button class="btn-place-order" onclick="processCheckout()">CONFIRM ORDER</button>
@@ -225,6 +223,28 @@
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script>
     // --- ADDRESS MODAL ENGINE ---
+    window.addEventListener('DOMContentLoaded', () => {
+        // Initialize coupon state if it exists (for non-Buy Now or persistent session)
+        <% if (appliedCoupon) { %>
+            const initialCode = '<%= appliedCoupon.code %>';
+            const initialDiscount = <%= appliedCoupon.discountAmount %>;
+            
+            // Update UI State
+            document.getElementById('coupon-input-group').style.display = 'none';
+            document.getElementById('coupon-success-group').style.display = 'flex';
+            document.getElementById('active-coupon-code').innerText = initialCode;
+            
+            // Update Math
+            document.getElementById('discount-row').style.display = 'flex';
+            document.getElementById('summary-discount').innerText = `- ₹${initialDiscount.toFixed(2)}`;
+            
+            // Adjust final total text
+            const finalTotalEl = document.getElementById('summary-final-total');
+            const originalTotal = parseFloat(finalTotalEl.getAttribute('data-original-total'));
+            finalTotalEl.innerText = `₹${(originalTotal - initialDiscount).toFixed(2)}`;
+        <% } %>
+    });
+
     function openAddressModal() {
         document.getElementById('addressModal').style.display = 'flex';
     }
@@ -381,8 +401,14 @@
                         if (verifyData.success) {
                             window.location.href = `/order-success?orderId=${verifyData.orderId}`;
                         } else {
-                            // Failed verification
-                            window.location.href = `/order-failed`;
+                            // SHOW SPECIFIC ERROR MESSAGE
+                            await Swal.fire({
+                                icon: 'error',
+                                title: 'Order Creation Failed',
+                                text: verifyData.message || 'Something went wrong while finalizing your order.',
+                                confirmButtonText: 'Go to Cart'
+                            });
+                            window.location.href = '/cart';
                         }
                     },
                     "prefill": {

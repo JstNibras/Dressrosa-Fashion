@@ -21,6 +21,10 @@ const couponSchema = new mongoose.Schema({
         type: Number, 
         required: true
     },
+    maxDiscountAmount: {
+        type: Number,
+        default: 0
+    },
     expiryDate: {
         type: Date,
         required: true
@@ -32,7 +36,15 @@ const couponSchema = new mongoose.Schema({
     usedBy: [{ 
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
-    }]
+    }],
+    totalUsageLimit: {
+        type: Number,
+        default: 0
+    },
+    usedCount: {
+        type: Number,
+        default: 0
+    }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Coupon', couponSchema);

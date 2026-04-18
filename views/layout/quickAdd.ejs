@@ -35,6 +35,10 @@
             if (!data.success) return alert("Failed to load product details.");
 
             const product = data.product;
+            if (!product.isActive || (product.category && !product.category.isActive)) {
+                return Swal.fire({ icon: 'error', title: 'Unavailable', text: 'This product is currently unavailable.' });
+            }
+
             qaVariants = product.variants.filter(v => v.isActive !== false);
             qaSelectedColor = null; qaSelectedSize = null; qaVariantId = null;
 

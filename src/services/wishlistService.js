@@ -6,16 +6,14 @@ exports.getUserWishlist = async (userId) => {
         const Wishlist = require('../models/wishlistModel');
         const wishlist = await Wishlist.findOne({ user: userId }).populate({
             path: 'products',
-            match: { isActive: { $ne: false } },
             populate: {
                 path: 'category',
-                match: { isActive: { $ne: false } },
-                select: 'name'
+                select: 'name isActive'
             }
         });
 
         if (wishlist && wishlist.products) {
-            return wishlist.products.filter(product => product && product.category);
+            return wishlist.products.filter(product => product != null);
         }
         return [];
     } catch (error) {

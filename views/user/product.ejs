@@ -4,7 +4,13 @@
     <meta charset="UTF-8">
     <title><%= product.name %> - Dressrosa</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="/css/product.css"> </head>
+    <link rel="stylesheet" href="/css/product.css"> 
+    <style>
+        .unavailable-status { color: #e74c3c; font-weight: bold; margin: 10px 0; padding: 10px; background: #fdeaea; border-radius: 4px; display: inline-block; width: 100%; text-align: center; }
+        .pdp-details.unavailable * { pointer-events: none; opacity: 0.6; }
+        .pdp-details.unavailable .unavailable-status { pointer-events: auto; opacity: 1; }
+    </style>
+</head>
 <body>
     <%- include('../layout/header') %>
 
@@ -28,7 +34,12 @@
             </div>
         </div>
 
-        <div class="pdp-details">
+        <div class="pdp-details <%= isUnavailable ? 'unavailable' : '' %>">
+            <% if (isUnavailable) { %>
+                <div class="unavailable-status">
+                    <i class="fas fa-exclamation-triangle"></i> This product is currently unavailable and cannot be purchased.
+                </div>
+            <% } %>
             <div class="pdp-brand"><%= product.category.name %></div>
             <h1 class="pdp-title"><%= product.name %></h1>
             
@@ -70,7 +81,7 @@
                 <button class="btn-wishlist-inline" onclick="toggleWishlist('<%= product._id %>', this)" title="Add to Wishlist"><i class="far fa-heart"></i></button>
             </div>
 
-            <button id="buyNowBtn" class="btn-buy-now" disabled>BUY IT NOW</button>
+            <button id="buyNowBtn" class="btn-buy-now" onclick="buyNow('<%= product._id %>')" disabled>BUY IT NOW</button>
 
             <div class="pdp-description">
                 <h3>Product Details</h3>
@@ -242,8 +253,10 @@
         }
 
         function updateCartButton(stock) {
+            if (<%= isUnavailable %>) return; // Prevent enabling buttons if product is blocked
+
             currentMaxStock = stock;
-            currentQuantity = 1; // Reset to 1 whenever they click a new size
+            currentQuantity = 1; 
             
             const cartBtn = document.getElementById('addToCartBtn');
             const buyBtn = document.getElementById('buyNowBtn');
@@ -308,6 +321,50 @@
                     Swal.fire({
                         icon: 'success', title: 'Added to Cart!', showConfirmButton: false, timer: 1500
                     });
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Oops...', text: data.message });
+                }
+            } catch (error) {
+                console.error(error);
+                Swal.fire({ icon: 'error', title: 'Error', text: 'Something went wrong.' });
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        // Handle Buy It Now from PDP
+        async function buyNow(productId) {
+            if (!selectedSize) {
+                Swal.fire({ icon: 'warning', title: 'Wait!', text: 'Please select a size first.' });
+                return;
+            }
+
+            const btn = document.getElementById('buyNowBtn');
+            const originalText = btn.innerText;
+            btn.innerText = 'PROCESSING...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('/checkout/buy-now', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        productId: productId, 
+                        size: selectedSize, 
+                        quantity: currentQuantity 
+                    })
+                });
+                
+                const data = await response.json();
+
+                if (response.status === 401) {
+                    Swal.fire({
+                        icon: 'info', title: 'Login Required', text: data.message || 'Please log in to continue.',
+                        confirmButtonText: 'Log In', confirmButtonColor: '#111'
+                    }).then((res) => { if (res.isConfirmed) window.location.href = '/login'; });
+                } else if (data.success) {
+                    window.location.href = data.redirectUrl || '/checkout';
                 } else {
                     Swal.fire({ icon: 'error', title: 'Oops...', text: data.message });
                 }

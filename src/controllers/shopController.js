@@ -28,10 +28,12 @@ exports.getProductDetails = async (req, res) => {
 
         const Product = require('../models/productModel');
         const product = await Product.findById(productId).populate('category');
-
-        if (!product || !product.isActive || !product.category || !product.category.isActive) {
+        
+        if (!product) {
             return res.redirect('/shop');
         }
+
+        const isUnavailable = !product.isActive || !product.category || !product.category.isActive;
 
         const relatedProducts = await Product.find({
             category: product.category._id,
@@ -46,7 +48,8 @@ exports.getProductDetails = async (req, res) => {
         res.render('user/product', {
             product,
             relatedProducts,
-            totalStock
+            totalStock,
+            isUnavailable
         });
     } catch (error) {
         console.error("Product Details Error:", error);
@@ -58,7 +61,9 @@ exports.getQuickViewProduct = async (req, res) => {
     try {
 
         const Product = require('../models/productModel');
-        const product = await Product.findById(req.params.id).select('name images salePrice regularPrice variants offerPercentage').populate('category', 'offerPercentage');
+        const product = await Product.findById(req.params.id)
+            .select('name images salePrice regularPrice variants offerPercentage isActive')
+            .populate('category', 'offerPercentage isActive');
 
         if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
 

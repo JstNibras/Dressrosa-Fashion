@@ -139,28 +139,65 @@ exports.downloadInvoice = async (req, res) => {
         doc.moveTo(50, currentY).lineTo(doc.page.width - 50, currentY).strokeColor('#eeeeee').stroke();
         currentY += 20;
 
-        doc.rect(380, currentY, 180, isReturned ? 70 : 50).fill('#f9f9f9');
+        const regPrice = item.regularPrice || item.price;
+        const mrpTotal = regPrice * item.quantity;
+        const productOffer = mrpTotal - item.itemTotal;
         
+        let couponDiscount = 0;
+        if (order.pricing && order.pricing.discount > 0) {
+            const itemProportion = item.itemTotal / order.pricing.subtotal;
+            couponDiscount = Math.round((order.pricing.discount * itemProportion) * 100) / 100;
+        }
+        
+        const finalItemPaid = Math.round((item.itemTotal - (isReturned ? 0 : couponDiscount)) * 100) / 100;
+
+        // Increase box height to fit more rows
+        const boxHeight = isReturned ? 70 : 100;
+        doc.rect(350, currentY, 210, boxHeight).fill('#f9f9f9');
+        
+        doc.fillColor('#555555').font('Roboto').fontSize(9);
+        let rowY = currentY + 15;
+
         if (isReturned) {
-            doc.fillColor('#555555').font('Roboto').fontSize(10)
-               .text('Original Amount:', 380, currentY + 15, { width: 90, align: 'right' });
-            doc.text(`₹${item.itemTotal}`, 480, currentY + 15, { width: 70, align: 'right' });
+            doc.text('Original Paid:', 350, rowY, { width: 110, align: 'right' });
+            doc.text(`₹${item.itemTotal - couponDiscount}`, 470, rowY, { width: 80, align: 'right' });
             
-            doc.fillColor('#d32f2f').font('Roboto')
-               .text('Refunded:', 380, currentY + 35, { width: 90, align: 'right' });
-            doc.text(`- ₹${item.itemTotal}`, 480, currentY + 35, { width: 70, align: 'right' });
+            rowY += 20;
+            doc.fillColor('#d32f2f').text('Refunded:', 350, rowY, { width: 110, align: 'right' });
+            doc.text(`- ₹${item.itemTotal - couponDiscount}`, 470, rowY, { width: 80, align: 'right' });
 
-            doc.fillColor('#00827f').font('Roboto-Bold').fontSize(12)
-               .text('Net Paid:', 380, currentY + 55, { width: 90, align: 'right' });
-            doc.text(`₹0`, 480, currentY + 55, { width: 70, align: 'right' });
+            rowY += 20;
+            doc.fillColor('#00827f').font('Roboto-Bold').fontSize(11)
+               .text('Net Paid:', 350, rowY, { width: 110, align: 'right' });
+            doc.text(`₹0`, 470, rowY, { width: 80, align: 'right' });
         } else {
-            doc.fillColor('#555555').font('Roboto').fontSize(10)
-               .text('Subtotal:', 380, currentY + 15, { width: 90, align: 'right' });
-            doc.text(`₹${item.itemTotal}`, 480, currentY + 15, { width: 70, align: 'right' });
+            // MRP Row
+            doc.text('Cart Total (MRP):', 350, rowY, { width: 110, align: 'right' });
+            doc.text(`₹${mrpTotal.toFixed(2)}`, 470, rowY, { width: 80, align: 'right' });
+            
+            // Product Offer Row
+            rowY += 15;
+            doc.fillColor('#00827f').text('Product Offer:', 350, rowY, { width: 110, align: 'right' });
+            doc.text(`- ₹${productOffer.toFixed(2)}`, 470, rowY, { width: 80, align: 'right' });
 
-            doc.fillColor('#00827f').font('Roboto-Bold').fontSize(12)
-               .text('Total Paid:', 380, currentY + 35, { width: 90, align: 'right' });
-            doc.text(`₹${item.itemTotal}`, 480, currentY + 35, { width: 70, align: 'right' });
+            // Shipping
+            rowY += 15;
+            doc.fillColor('#00827f').text('Shipping:', 350, rowY, { width: 110, align: 'right' });
+            doc.text(`Free`, 470, rowY, { width: 80, align: 'right' });
+
+            // Coupon Row (if any)
+            if (couponDiscount > 0) {
+                rowY += 15;
+                doc.fillColor('#d32f2f').text('Coupon Discount:', 350, rowY, { width: 110, align: 'right' });
+                doc.text(`- ₹${couponDiscount.toFixed(2)}`, 470, rowY, { width: 80, align: 'right' });
+            }
+
+            // Total Row
+            rowY += 15;
+            doc.fillColor('#111111').font('Roboto-Bold').fontSize(11);
+            doc.moveTo(360, rowY - 2).lineTo(550, rowY - 2).strokeColor('#dddddd').stroke();
+            doc.text('Net Total Paid:', 350, rowY + 5, { width: 110, align: 'right' });
+            doc.text(`₹${finalItemPaid.toFixed(2)}`, 470, rowY + 5, { width: 80, align: 'right' });
         }
 
         doc.fontSize(10).fillColor('#888888').font('Roboto')

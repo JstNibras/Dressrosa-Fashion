@@ -2,6 +2,7 @@ const Address = require('../models/addressModel');
 const cartService = require('../services/cartService');
 const checkoutService = require('../services/checkoutService');
 const Coupon = require('../models/couponModel');
+const couponService = require('../services/couponService');
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
 
@@ -14,31 +15,97 @@ exports.getCheckoutPage = async (req, res) => {
     try {
         const userId = req.session.user.id || req.session.user._id;
 
-        const Cart = require('../models/cartModel'); // Adjust path if necessary
-        const cartDoc = await Cart.findOne({ user: userId }).populate({
-            path: 'items.product',
-            populate: { path: 'category' }
-        });
+        let cartItems = [];
+        let cartTotal = 0;
 
-        if (cartDoc) {
-            const hasGhostItems = cartDoc.items.some(item => 
-                !item.product || 
-                item.product.isActive === false || item.product.isListed === false ||
-                !item.product.category || 
-                item.product.category.isActive === false || item.product.category.isListed === false
-            );
+        let regularTotal = 0;
+        let productDiscount = 0;
 
-            if (hasGhostItems) {
-                console.log("Checkout blocked: Ghost items (deleted category) found in cart.");
-                return res.redirect('/cart?error=Some items in your cart belong to an unavailable category.');
+        if (req.session.buyNowItem) {
+            const Product = require('../models/productModel');
+            const { productId, size, quantity } = req.session.buyNowItem;
+            
+            const product = await Product.findById(productId).populate('category');
+            
+            if (!product || product.isActive === false || product.isListed === false || 
+                !product.category || product.category.isActive === false || product.category.isListed === false) {
+                delete req.session.buyNowItem;
+                return res.redirect('/shop?error=This product is no longer available');
             }
+
+            const variant = product.variants.find(v => String(v.size).trim() === String(size).trim() && v.isActive !== false);
+            
+            if (!variant || variant.stock < quantity) {
+                delete req.session.buyNowItem;
+                return res.redirect(`/product/${productId}?error=Requested stock unavailable`);
+            }
+
+            const itemTotal = quantity * product.salePrice;
+            cartTotal = itemTotal;
+            regularTotal = quantity * (product.regularPrice || product.salePrice);
+            productDiscount = regularTotal - itemTotal;
+
+            cartItems = [{
+                _id: 'BUY_NOW_TEMP_ID',
+                productId: product._id,
+                name: product.name,
+                categoryName: product.category.name,
+                image: product.images[0] || '/images/default-product.png',
+                size: size,
+                price: product.salePrice,
+                regularPrice: product.regularPrice,
+                quantity: quantity,
+                itemTotal: itemTotal
+            }];
+
+        } else {
+            const Cart = require('../models/cartModel');
+            const cartDoc = await Cart.findOne({ user: userId }).populate({
+                path: 'items.product',
+                populate: { path: 'category' }
+            });
+
+            if (cartDoc) {
+                const invalidItem = cartDoc.items.find(item => 
+                    !item.product || 
+                    item.product.isActive === false || item.product.isListed === false ||
+                    !item.product.category || 
+                    item.product.category.isActive === false || item.product.category.isListed === false
+                );
+
+                if (invalidItem) {
+                    return res.redirect('/cart?error=Some items in your cart are no longer available. Please review.');
+                }
+
+                // Stock validation
+                const cartDataForStock = await cartService.getCartData(userId);
+                const outOfStockItem = cartDataForStock.items.find(item => item.hasStockIssue || item.isOutOfStock);
+                if (outOfStockItem) {
+                    return res.redirect(`/cart?error=Insufficient stock for ${outOfStockItem.name}.`);
+                }
+            }
+
+            const cartData = await cartService.getCartData(userId);
+
+            if (!cartData || cartData.items.length === 0 || !cartData.isCheckoutValid) {
+                return res.redirect('/cart');
+            }
+
+            cartItems = cartData.items;
+            cartTotal = cartData.cartTotal;
+            regularTotal = cartData.regularTotal;
+            productDiscount = cartData.productDiscount;
         }
 
-        const cartData = await cartService.getCartData(userId);
-
-        if (!cartData || cartData.items.length === 0 || !cartData.isCheckoutValid) {
-            console.log("Checkout blocked : Invalid cart or stock issues. ");
-            return res.redirect('/cart');
+        // --- COUPON RE-VALIDATION ---
+        if (req.session.appliedCoupon) {
+            const result = await couponService.validateCoupon(req.session.appliedCoupon.code, userId, cartTotal);
+            if (!result.success) {
+                req.session.appliedCoupon = null;
+            } else {
+                const discount = couponService.calculateDiscount(result.coupon, cartTotal);
+                req.session.appliedCoupon.discountAmount = discount;
+            }
         }
 
         const addresses = await Address.find({ user: userId });
@@ -48,18 +115,39 @@ exports.getCheckoutPage = async (req, res) => {
         const wallet = await walletService.getWallet(userId);
 
         res.render('user/checkout' , {
-            cartItems: cartData.items,
-            cartTotal: cartData.cartTotal,
+            cartItems: cartItems,
+            cartTotal: cartTotal,
+            regularTotal: regularTotal,
+            productDiscount: productDiscount,
             addresses: addresses,
             defaultAddress: defaultAddress,
-            walletBalance: wallet.balance
+            walletBalance: wallet.balance,
+            isBuyNow: !!req.session.buyNowItem,
+            appliedCoupon: req.session.appliedCoupon || null
         });
 
     } catch (error) {
-        console.error("Checkout Page Error :", error);
-        res.redirect('/cart?error=ServerError')
+        console.error("Checkout Page Error:", error);
+        res.redirect('/cart?error=ServerError');
     }
 };
+
+exports.buyNow = async (req, res) => {
+    try {
+        const { productId, size, quantity } = req.body;
+
+        if (!productId || !size || !quantity) {
+            return res.status(400).json({ success: false, message: "Missingproduct details"});
+        }
+
+        req.session.buyNowItem = { productId, size, quantity: parseInt(quantity) };
+
+        res.status(200).json({ success: true, redirectUrl: '/checkout' });
+    } catch (error) {
+        console.error("Buy Now Error:", error);
+        res.status(500).json({ success: false, message: "Server error processing Buy Now" });
+    }
+}
 
 exports.placeOrder = async (req, res) => {
     try {
@@ -72,7 +160,9 @@ exports.placeOrder = async (req, res) => {
 
         if (paymentMethod === 'COD' || paymentMethod === 'WALLET') {
             const appliedCoupon = req.session.appliedCoupon || null;
-            const order = await checkoutService.placeOrder(userId, addressId, paymentMethod, appliedCoupon);
+            const buyNowItem = req.session.buyNowItem || null; 
+
+            const order = await checkoutService.placeOrder(userId, addressId, paymentMethod, appliedCoupon, buyNowItem);
 
             if (paymentMethod === 'WALLET') {
                 const walletService = require('../services/walletService');
@@ -84,6 +174,7 @@ exports.placeOrder = async (req, res) => {
             }
 
             req.session.appliedCoupon = null;
+            req.session.buyNowItem = null; 
             return res.status(200).json({ success: true, orderId: order.orderId });
         }
 
@@ -97,14 +188,27 @@ exports.placeOrder = async (req, res) => {
 exports.createRazorpayOrder = async (req, res) => {
     try {
         const userId = req.session.user.id || req.session.user._id;
+        let finalAmount = 0;
 
-        const cartData = await cartService.getCartData(userId);
-        if (!cartData || !cartData.isCheckoutValid) {
-            return res.status(400).json({ success: false, message: "Invalid cart items" });
+        if (req.session.buyNowItem) {
+            const Product = require('../models/productModel');
+            const product = await Product.findById(req.session.buyNowItem.productId);
+            finalAmount = product.salePrice * req.session.buyNowItem.quantity;
+        } else {
+            const cartData = await cartService.getCartData(userId);
+            if (!cartData || !cartData.isCheckoutValid) {
+                const unavailableItem = cartData.items.find(item => item.isUnavailable || item.hasStockIssue);
+                const msg = unavailableItem ? `Item '${unavailableItem.name}' is unavailable or has insufficient stock.` : "Invalid cart items.";
+                return res.status(400).json({ success: false, message: msg });
+            }
+            finalAmount = cartData.cartTotal;
         }
 
-        let finalAmount = cartData.cartTotal;
         if (req.session.appliedCoupon) finalAmount -= req.session.appliedCoupon.discountAmount;
+
+        if (finalAmount < 1) {
+            return res.status(400).json({ success: false, message: "Order amount must be at least ₹1 for Razorpay. Please use another payment method for free orders." });
+        }
 
         const options = {
             amount: Math.round(finalAmount * 100),
@@ -129,7 +233,6 @@ exports.createRazorpayOrder = async (req, res) => {
 exports.verifyPayment = async (req, res) => {
     try {
         const userId = req.session.user.id || req.session.user._id;
-
         const { razorpay_order_id, razorpay_payment_id, razorpay_signature, addressId } = req.body;
 
         const hmac = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET);
@@ -138,14 +241,16 @@ exports.verifyPayment = async (req, res) => {
 
         if (generated_signature === razorpay_signature) {
             const appliedCoupon = req.session.appliedCoupon || null;
+            const buyNowItem = req.session.buyNowItem || null; 
 
-            const order = await checkoutService.placeOrder(userId, addressId, 'RAZORPAY', appliedCoupon);
+            const order = await checkoutService.placeOrder(userId, addressId, 'RAZORPAY', appliedCoupon, buyNowItem);
 
             order.paymentStatus = 'Completed';
             order.orderStatus = 'Processing';
             await order.save();
 
             req.session.appliedCoupon = null;
+            req.session.buyNowItem = null; 
 
             return res.status(200).json({ success: true, orderId: order.orderId });
         } else {
@@ -153,7 +258,7 @@ exports.verifyPayment = async (req, res) => {
         }
     } catch (error) {
         console.error("Verification Error:", error);
-        res.status(500).json({ success: false });
+        res.status(500).json({ success: false, message: error.message || "Order creation failed during payment verification." });
     }
 };
 
@@ -170,34 +275,32 @@ exports.applyCoupon = async (req, res) => {
         const { code } = req.body;
         const userId = req.session.user.id || req.session.user._id;
 
-        const coupon = await Coupon.findOne({ code: code.toUpperCase(), isActive: true });
-        if (!coupon) return res.status(400).json({ success: false, message: "Invalid or Inactive coupon code." });
-
-        if (new Date() > coupon.expiryDate) return res.status(400).json({ success: false, message: "This coupon has expired." });
-
-        const hasUsed = coupon.usedBy.some(id => id.toString() === userId.toString());
-        if (hasUsed) {
-            return res.status(400).json({ success: false, message: "You have already used this coupon." });
+        // Determine subtotal based on scenario (Buy Now vs Cart)
+        let subtotal = 0;
+        if (req.session.buyNowItem) {
+            const Product = require('../models/productModel');
+            const product = await Product.findById(req.session.buyNowItem.productId);
+            subtotal = product.salePrice * req.session.buyNowItem.quantity;
+        } else {
+            const cartData = await cartService.getCartData(userId);
+            subtotal = cartData.cartTotal;
         }
 
-        const cartData = await cartService.getCartData(userId);
-        const subtotal = cartData.cartTotal;
-
-        if (subtotal < coupon.minPurchaseAmount) return res.status(400).json({ success: false, message: `Minimum purchase of ${coupon.minPurchaseAmount} required.`});
-
-        let discountAmount = 0;
-        if (coupon.discountType === 'flat') {
-            discountAmount = coupon.discountValue;
-        } else if (coupon.discountType === 'percentage') {
-            discountAmount = (subtotal * coupon.discountValue) / 100;
+        const result = await couponService.validateCoupon(code, userId, subtotal);
+        if (!result.success) {
+            return res.status(400).json({ success: false, message: result.message });
         }
 
-        if (discountAmount > subtotal) discountAmount = subtotal;
-
-        req.session.appliedCoupon = { code: coupon.code, discountAmount: discountAmount };
+        const discountAmount = couponService.calculateDiscount(result.coupon, subtotal);
+        req.session.appliedCoupon = { 
+            code: result.coupon.code, 
+            discountAmount: discountAmount,
+            minPurchaseAmount: result.coupon.minPurchaseAmount
+        };
         
         res.status(200).json({ success: true, discountAmount, finalTotal: subtotal - discountAmount });
     } catch (error) {
+        console.error("Apply Coupon Error:", error);
         res.status(500).json({ success: false, message: "Server error applying coupon." });
     }
 };

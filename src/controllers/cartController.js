@@ -16,25 +16,8 @@ exports.getCartPage = async (req, res) => {
             return res.redirect('/login'); 
         }
 
-        const Cart = require('../models/cartModel');
-        const cartDoc = await Cart.findOne(({ user: userId })).populate({
-            path: 'items.product',
-            populate: { path: 'category' }
-        });
-
-        let hasInvalidItems = false;
-        if (cartDoc) {
-            cartDoc.items.forEach(item => {
-                if (!item.product || 
-                    item.product.isActive === false || 
-                    !item.product.category ||
-                    item.product.category.isActive === false ) {
-                        hasInvalidItems = true;
-                    }
-            });
-        }
-
         const cartData = await cartService.getCartData(userId);
+        const hasInvalidItems = cartData.items.some(item => item.isUnavailable || item.isDeleted);
         const addresses = await Address.find({ user: userId });
         const defaultAddress = addresses.find(a => a.isDefault) || addresses[0] || null;
 
@@ -87,6 +70,20 @@ exports.updateQuantity = async (req, res) => {
         item.quantity = requestedQty;
         await cart.save();
 
+        if (req.session.appliedCoupon) {
+            const cartData = await cartService.getCartData(userId);
+            if (cartData.cartTotal < req.session.appliedCoupon.minPurchaseAmount) {
+                req.session.appliedCoupon = null;
+            } else {
+                const Coupon = require('../models/couponModel');
+                const couponDoc = await Coupon.findOne({ code: req.session.appliedCoupon.code });
+                if (couponDoc) {
+                    const couponService = require('../services/couponService');
+                    req.session.appliedCoupon.discountAmount = couponService.calculateDiscount(couponDoc, cartData.cartTotal);
+                }
+            }
+        }
+
         res.status(200).json({ success: true, message: 'Quantity updated' });
     } catch (error) {
         console.error("Update Qty Error:", error);
@@ -110,6 +107,20 @@ exports.removeFromCart = async (req, res) => {
 
         cart.items.pull({ _id: itemId });
         await cart.save();
+
+        if (req.session.appliedCoupon) {
+            const cartData = await cartService.getCartData(userId);
+            if (cartData.cartTotal < req.session.appliedCoupon.minPurchaseAmount) {
+                req.session.appliedCoupon = null;
+            } else {
+                const Coupon = require('../models/couponModel');
+                const couponDoc = await Coupon.findOne({ code: req.session.appliedCoupon.code });
+                if (couponDoc) {
+                    const couponService = require('../services/couponService');
+                    req.session.appliedCoupon.discountAmount = couponService.calculateDiscount(couponDoc, cartData.cartTotal);
+                }
+            }
+        }
 
         res.status(200).json({ success: true, message: 'Item removed from cart' });
     } catch (error) {
@@ -135,9 +146,10 @@ exports.addToCart = async (req, res) => {
         const requestedQty = parseInt(quantity);
 
         const Product = require('../models/productModel');
-        const product = await Product.findById(productId);
-        if(!product || !product.isActive) {
-            return res.status(404).json({ success: false, message: 'Product is unavailable.' });
+        const product = await Product.findById(productId).populate('category');
+        
+        if(!product || !product.isActive || (product.category && !product.category.isActive)) {
+            return res.status(404).json({ success: false, message: 'This item is currently unavailable.' });
         }
 
         const variant = product.variants.find(v => v.size === size && v.isActive);

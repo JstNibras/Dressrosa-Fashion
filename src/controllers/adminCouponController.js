@@ -12,13 +12,17 @@ exports.getCouponPage = async (req, res) => {
 
 exports.createCoupon = async (req, res) => {
     try {
-        const { code, discountType, discountValue, minPurchaseAmount, expiryDate } = req.body;
+        const { code, discountType, discountValue, minPurchaseAmount, expiryDate, maxDiscountAmount, totalUsageLimit } = req.body;
 
         if (!code || !discountType || !discountValue || !minPurchaseAmount || !expiryDate) {
             return res.status(400).json({ success: false, message: "All fields are required." });
         }
 
         const upperCode = code.toUpperCase().trim();
+        const codeRegex = /^[A-Z0-9]{4,15}$/;
+        if (!codeRegex.test(upperCode)) {
+            return res.status(400).json({ success: false, message: "Coupon code must be 4-15 characters long and contain only letters and numbers." });
+        }
 
         const existingCoupon = await Coupon.findOne({ code: upperCode });
         if (existingCoupon) {
@@ -27,6 +31,18 @@ exports.createCoupon = async (req, res) => {
 
         if (discountType === 'percentage' && discountValue > 100) {
             return res.status(400).json({ success: false, message: "Percentage discount cannot exceed 100%." });
+        }
+
+        if (discountType === 'flat' && Number(discountValue) >= Number(minPurchaseAmount)) {
+            return res.status(400).json({ success: false, message: "Flat discount value cannot be greater than or equal to the minimum purchase amount." });
+        }
+
+        let maxLimit = 0;
+        if (discountType === 'percentage') {
+            maxLimit = Number(maxDiscountAmount) || 0;
+            if (maxLimit <= 0) {
+                return res.status(400).json({ success: false, message: "Max discount amount is required for percentage coupons." });
+            }
         }
 
         if (new Date(expiryDate) < new Date()) {
@@ -38,7 +54,9 @@ exports.createCoupon = async (req, res) => {
             discountType,
             discountValue: Number(discountValue),
             minPurchaseAmount: Number(minPurchaseAmount),
-            expiryDate: new Date(expiryDate)
+            maxDiscountAmount: maxLimit,
+            expiryDate: new Date(expiryDate),
+            totalUsageLimit: Number(totalUsageLimit) || 0
         });
 
         await newCoupon.save();
@@ -69,13 +87,17 @@ exports.toggleCouponStatus = async (req, res) => {
 
 exports.editCoupon = async (req, res) => {
     try {
-        const { couponId, code, discountType, discountValue, minPurchaseAmount, expiryDate } = req.body;
+        const { couponId, code, discountType, discountValue, minPurchaseAmount, expiryDate, maxDiscountAmount, totalUsageLimit } = req.body;
 
         if (!code || !discountType || !discountValue || !minPurchaseAmount || !expiryDate) {
             return res.status(400).json({ success: false, message: "all fields are required. "})
         }
 
         const upperCode = code.toUpperCase().trim();
+        const codeRegex = /^[A-Z0-9]{4,15}$/;
+        if (!codeRegex.test(upperCode)) {
+            return res.status(400).json({ success: false, message: "Coupon code must be 4-15 characters long and contain only letters and numbers." });
+        }
 
         const existingCoupon = await Coupon.findOne({ code: upperCode, _id: { $ne: couponId } });
         if (existingCoupon) {
@@ -86,6 +108,18 @@ exports.editCoupon = async (req, res) => {
             return res.status(400).json({ success: false, message: "Percentage discount cannot exceed 100%." });
         }
 
+        if (discountType === 'flat' && Number(discountValue) >= Number(minPurchaseAmount)) {
+            return res.status(400).json({ success: false, message: "Flat discount value cannot be greater than or equal to the minimum purchase amount." });
+        }
+
+        let maxLimit = 0;
+        if (discountType === 'percentage') {
+            maxLimit = Number(maxDiscountAmount) || 0;
+            if (maxLimit <= 0) {
+                return res.status(400).json({ success: false, message: "Max discount amount is required for percentage coupons." });
+            }
+        }
+
         const coupon = await Coupon.findById(couponId);
         if (!coupon) return res.status(404).json({ success: false, message: "Coupon not found." });
 
@@ -93,7 +127,9 @@ exports.editCoupon = async (req, res) => {
         coupon.discountType = discountType;
         coupon.discountValue = Number(discountValue);
         coupon.minPurchaseAmount = Number(minPurchaseAmount);
+        coupon.maxDiscountAmount = maxLimit;
         coupon.expiryDate = new Date(expiryDate);
+        coupon.totalUsageLimit = Number(totalUsageLimit) || 0;
 
         await coupon.save();
 

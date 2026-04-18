@@ -57,7 +57,7 @@ exports.cancelOrderItem = async (orderId, itemId, userId, reason) => {
         const item = order.items.id(itemId);
         if (!item) throw new Error("Item not found in order");
         
-        if (['Delivered', 'Cancelled', 'Returned'].includes(item.itemStatus)) {
+        if (['Shipped', 'Delivered', 'Cancelled', 'Returned'].includes(item.itemStatus)) {
             throw new Error(`Item cannot be cancelled because it is currently ${item.itemStatus}`);
         }
 

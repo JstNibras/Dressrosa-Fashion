@@ -30,6 +30,33 @@
             color: white;
             transform: scale(1.1);
         }
+        .unavailable-badge {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(231, 76, 60, 0.9);
+            color: white;
+            padding: 8px 15px;
+            font-weight: bold;
+            font-size: 12px;
+            border-radius: 4px;
+            z-index: 5;
+            white-space: nowrap;
+        }
+        .product-card.unavailable {
+            opacity: 0.7;
+        }
+        .product-card.unavailable .product-image {
+            filter: grayscale(80%);
+        }
+        .product-card.unavailable .btn-add-cart {
+            background: #ccc !important;
+            color: #fff !important;
+            border-color: #ccc !important;
+            cursor: not-allowed !important;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
@@ -41,9 +68,13 @@
         <% if (products.length > 0) { %>
             <div class="wishlist-grid">
                 <% products.forEach(product => { %>
-                    <div class="product-card" id="wishlist-card-<%= product._id %>">
+                    <% const isUnavailable = !product.isActive || (product.category && !product.category.isActive); %>
+                    <div class="product-card <%= isUnavailable ? 'unavailable' : '' %>" id="wishlist-card-<%= product._id %>">
                         
                         <div class="product-image-container">
+                            <% if (isUnavailable) { %>
+                                <div class="unavailable-badge">UNAVAILABLE</div>
+                            <% } %>
                             <button class="btn-remove-wishlist" onclick="toggleWishlist('<%= product._id %>', this)" title="Remove from Wishlist">
                                 <i class="fas fa-times"></i>
                             </button>
@@ -65,7 +96,9 @@
                                     <span class="price-sale">₹<%= product.regularPrice %></span>
                                 <% } %>
                             </div>
-                            <button class="btn-add-cart" onclick="openQuickAdd('<%= product._id %>')">MOVE TO CART</button>
+                            <button class="btn-add-cart" onclick="<%= isUnavailable ? '' : 'openQuickAdd(\'' + product._id + '\')' %>" <%= isUnavailable ? 'disabled' : '' %>>
+                                <%= isUnavailable ? 'UNAVAILABLE' : 'MOVE TO CART' %>
+                            </button>
                         </div>
                     </div>
                 <% }) %>
