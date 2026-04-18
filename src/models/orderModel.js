@@ -9,6 +9,7 @@ const orderSchema = new mongoose.Schema({
         name: String,
         image: String,
         price: Number,
+        regularPrice: Number,
         size: String,
         quantity: Number,
         itemTotal: Number,
@@ -33,9 +34,11 @@ const orderSchema = new mongoose.Schema({
     },
 
     pricing: {
+        regularTotal: { type: Number, default: 0 },
+        productDiscount: { type: Number, default: 0 },
         subtotal: Number,
-        shipping: Number,
-        discount: { type: Number, default: 0},
+        shipping: { type: Number, default: 0 },
+        discount: { type: Number, default: 0 },
         total: Number
     },
 

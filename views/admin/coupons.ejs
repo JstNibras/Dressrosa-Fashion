@@ -77,6 +77,11 @@
                                 <input type="date" id="expiryDate" class="filter-input" style="width: 100%;" required>
                             </div>
 
+                            <div class="filter-group" style="width: 100%; margin-bottom: 15px;">
+                                <label style="display: block; margin-bottom: 5px;">Total Usage Limit (0 = Unlimited)</label>
+                                <input type="number" id="totalUsageLimit" class="filter-input" style="width: 100%;" value="0" min="0">
+                            </div>
+
                             <button type="submit" class="filter-btn" style="width: 100%; margin-top: 10px; background: #00827f; color: white; border: none;">
                                 CREATE COUPON
                             </button>
@@ -90,6 +95,8 @@
                                     <th>Code</th>
                                     <th>Discount</th>
                                     <th>Min. Purchase</th>
+                                    <th>Usage</th>
+                                    <th>Max Limit</th>
                                     <th>Expiry Date</th>
                                     <th>Status</th>
                                     <th>Action</th>
@@ -104,6 +111,12 @@
                                                 <%= coupon.discountType === 'percentage' ? coupon.discountValue + '%' : '₹' + coupon.discountValue %>
                                             </td>
                                             <td>₹<%= coupon.minPurchaseAmount %></td>
+                                            <td>
+                                                <span style="font-size: 13px; font-weight: 600; color: #111;"><%= coupon.usedCount || 0 %></span>
+                                            </td>
+                                            <td>
+                                                <span style="font-size: 13px; color: #666;"><%= coupon.totalUsageLimit > 0 ? coupon.totalUsageLimit : '∞' %></span>
+                                            </td>
                                             <td>
                                                 <span style="font-size: 13px; color: #666;">
                                                     <%= new Date(coupon.expiryDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) %>
@@ -120,7 +133,7 @@
                                             </td>
                                             <td>
                                                 <div style="display: flex; gap: 8px;">
-                                                    <button onclick="openEditModal('<%= coupon._id %>', '<%= coupon.code %>', '<%= coupon.discountType %>', '<%= coupon.discountValue %>', '<%= coupon.minPurchaseAmount %>', '<%= coupon.maxDiscountAmount || 0 %>', '<%= coupon.expiryDate.toISOString().substring(0, 10) %>')" style="background: #f57c00; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                                                    <button onclick="openEditModal('<%= coupon._id %>', '<%= coupon.code %>', '<%= coupon.discountType %>', '<%= coupon.discountValue %>', '<%= coupon.minPurchaseAmount %>', '<%= coupon.maxDiscountAmount || 0 %>', '<%= coupon.expiryDate.toISOString().substring(0, 10) %>', '<%= coupon.totalUsageLimit || 0 %>')" style="background: #f57c00; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
                                                         Edit
                                                     </button>
                                                     
@@ -185,9 +198,15 @@
                     <input type="number" id="editMaxDiscount" class="filter-input" style="width: 100%;" min="1">
                 </div>
 
-                <div class="filter-group" style="width: 100%; margin-bottom: 20px;">
-                    <label style="display: block; margin-bottom: 5px; font-size: 13px;">Expiry Date</label>
-                    <input type="date" id="editExpiryDate" class="filter-input" style="width: 100%;" required>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                    <div class="filter-group" style="width: 100%;">
+                        <label style="display: block; margin-bottom: 5px; font-size: 13px;">Expiry Date</label>
+                        <input type="date" id="editExpiryDate" class="filter-input" style="width: 100%;" required>
+                    </div>
+                    <div class="filter-group" style="width: 100%;">
+                        <label style="display: block; margin-bottom: 5px; font-size: 13px;">Usage Limit (0=∞)</label>
+                        <input type="number" id="editTotalUsageLimit" class="filter-input" style="width: 100%;" min="0">
+                    </div>
                 </div>
 
                 <button type="submit" class="filter-btn" style="width: 100%; background: #f57c00; color: white; border: none; font-weight: bold;">
@@ -208,7 +227,8 @@
                 discountValue: document.getElementById('discountValue').value,
                 minPurchaseAmount: document.getElementById('minPurchaseAmount').value,
                 maxDiscountAmount: document.getElementById('maxDiscountAmount').value,
-                expiryDate: document.getElementById('expiryDate').value
+                expiryDate: document.getElementById('expiryDate').value,
+                totalUsageLimit: document.getElementById('totalUsageLimit').value
             };
 
             try {
@@ -271,7 +291,7 @@
         });
 
         // --- EDIT MODAL ENGINE ---
-        function openEditModal(id, code, type, value, min, max, date) {
+        function openEditModal(id, code, type, value, min, max, date, limit) {
             document.getElementById('editCouponId').value = id;
             document.getElementById('editCode').value = code;
             document.getElementById('editDiscountType').value = type;
@@ -279,6 +299,7 @@
             document.getElementById('editMinPurchase').value = min;
             document.getElementById('editMaxDiscount').value = max;
             document.getElementById('editExpiryDate').value = date;
+            document.getElementById('editTotalUsageLimit').value = limit || 0;
 
             document.getElementById('editDiscountType').dispatchEvent(new Event('change'));
             document.getElementById('editCouponModal').style.display = 'flex';
@@ -299,7 +320,8 @@
                 discountValue: document.getElementById('editDiscountValue').value,
                 minPurchaseAmount: document.getElementById('editMinPurchase').value,
                 maxDiscountAmount: document.getElementById('editMaxDiscount').value,
-                expiryDate: document.getElementById('editExpiryDate').value
+                expiryDate: document.getElementById('editExpiryDate').value,
+                totalUsageLimit: document.getElementById('editTotalUsageLimit').value
             };
 
             try {

@@ -102,7 +102,7 @@
                                         <%= row.productName %>
                                     </td>
                                     <td style="color: #555;"><%= row.quantity %></td>
-                                    <td style="font-weight: 600; color: #333;">₹<%= row.total %></td>
+                                    <td style="font-weight: 600; color: #333;">₹<%= (row.total || 0).toFixed(2) %></td>
                                     <td style="color: #555; font-size: 12px; font-weight: 600;"><%= row.paymentMethod %></td>
                                     <td>
                                         <% const statusColor = row.status === 'Returned' || row.status === 'Cancelled' ? '#dc3545' : '#28a745'; %>

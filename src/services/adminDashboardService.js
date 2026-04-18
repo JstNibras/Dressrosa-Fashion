@@ -60,8 +60,13 @@ exports.getDashboardData = async (filter = 'all_time') => {
             { $match: validOrderMatch },
             { $group: {
                 _id: null,
-                totalRevenue: { $sum: "$pricing.total"},
+                totalRevenue: { $sum: "$pricing.total" },
                 totalOrders: { $sum: 1 }
+            }},
+            { $project: {
+                _id: 0,
+                totalRevenue: { $round: ["$totalRevenue", 2] },
+                totalOrders: 1
             }}
         ]);
 
@@ -107,6 +112,9 @@ exports.getDashboardData = async (filter = 'all_time') => {
                 _id: groupId,
                 revenue: { $sum: "$pricing.total" },
                 orders: { $sum: 1 }
+            }},
+            { $addFields: {
+                revenue: { $round: ["$revenue", 2] }
             }},
             { $sort: { _id: 1 } }
         ]);

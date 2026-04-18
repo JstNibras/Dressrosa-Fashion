@@ -2,6 +2,7 @@ const Address = require('../models/addressModel');
 const cartService = require('../services/cartService');
 const checkoutService = require('../services/checkoutService');
 const Coupon = require('../models/couponModel');
+const couponService = require('../services/couponService');
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
 
@@ -16,6 +17,9 @@ exports.getCheckoutPage = async (req, res) => {
 
         let cartItems = [];
         let cartTotal = 0;
+
+        let regularTotal = 0;
+        let productDiscount = 0;
 
         if (req.session.buyNowItem) {
             const Product = require('../models/productModel');
@@ -38,6 +42,8 @@ exports.getCheckoutPage = async (req, res) => {
 
             const itemTotal = quantity * product.salePrice;
             cartTotal = itemTotal;
+            regularTotal = quantity * (product.regularPrice || product.salePrice);
+            productDiscount = regularTotal - itemTotal;
 
             cartItems = [{
                 _id: 'BUY_NOW_TEMP_ID',
@@ -60,15 +66,22 @@ exports.getCheckoutPage = async (req, res) => {
             });
 
             if (cartDoc) {
-                const hasGhostItems = cartDoc.items.some(item => 
+                const invalidItem = cartDoc.items.find(item => 
                     !item.product || 
                     item.product.isActive === false || item.product.isListed === false ||
                     !item.product.category || 
                     item.product.category.isActive === false || item.product.category.isListed === false
                 );
 
-                if (hasGhostItems) {
-                    return res.redirect('/cart?error=Some items in your cart belong to an unavailable category.');
+                if (invalidItem) {
+                    return res.redirect('/cart?error=Some items in your cart are no longer available. Please review.');
+                }
+
+                // Stock validation
+                const cartDataForStock = await cartService.getCartData(userId);
+                const outOfStockItem = cartDataForStock.items.find(item => item.hasStockIssue || item.isOutOfStock);
+                if (outOfStockItem) {
+                    return res.redirect(`/cart?error=Insufficient stock for ${outOfStockItem.name}.`);
                 }
             }
 
@@ -80,6 +93,19 @@ exports.getCheckoutPage = async (req, res) => {
 
             cartItems = cartData.items;
             cartTotal = cartData.cartTotal;
+            regularTotal = cartData.regularTotal;
+            productDiscount = cartData.productDiscount;
+        }
+
+        // --- COUPON RE-VALIDATION ---
+        if (req.session.appliedCoupon) {
+            const result = await couponService.validateCoupon(req.session.appliedCoupon.code, userId, cartTotal);
+            if (!result.success) {
+                req.session.appliedCoupon = null;
+            } else {
+                const discount = couponService.calculateDiscount(result.coupon, cartTotal);
+                req.session.appliedCoupon.discountAmount = discount;
+            }
         }
 
         const addresses = await Address.find({ user: userId });
@@ -91,10 +117,13 @@ exports.getCheckoutPage = async (req, res) => {
         res.render('user/checkout' , {
             cartItems: cartItems,
             cartTotal: cartTotal,
+            regularTotal: regularTotal,
+            productDiscount: productDiscount,
             addresses: addresses,
             defaultAddress: defaultAddress,
             walletBalance: wallet.balance,
-            isBuyNow: !!req.session.buyNowItem 
+            isBuyNow: !!req.session.buyNowItem,
+            appliedCoupon: req.session.appliedCoupon || null
         });
 
     } catch (error) {
@@ -168,7 +197,9 @@ exports.createRazorpayOrder = async (req, res) => {
         } else {
             const cartData = await cartService.getCartData(userId);
             if (!cartData || !cartData.isCheckoutValid) {
-                return res.status(400).json({ success: false, message: "Invalid cart items" });
+                const unavailableItem = cartData.items.find(item => item.isUnavailable || item.hasStockIssue);
+                const msg = unavailableItem ? `Item '${unavailableItem.name}' is unavailable or has insufficient stock.` : "Invalid cart items.";
+                return res.status(400).json({ success: false, message: msg });
             }
             finalAmount = cartData.cartTotal;
         }
@@ -227,7 +258,7 @@ exports.verifyPayment = async (req, res) => {
         }
     } catch (error) {
         console.error("Verification Error:", error);
-        res.status(500).json({ success: false });
+        res.status(500).json({ success: false, message: error.message || "Order creation failed during payment verification." });
     }
 };
 
@@ -244,37 +275,32 @@ exports.applyCoupon = async (req, res) => {
         const { code } = req.body;
         const userId = req.session.user.id || req.session.user._id;
 
-        const coupon = await Coupon.findOne({ code: code.toUpperCase(), isActive: true });
-        if (!coupon) return res.status(400).json({ success: false, message: "Invalid or Inactive coupon code." });
-
-        if (new Date() > coupon.expiryDate) return res.status(400).json({ success: false, message: "This coupon has expired." });
-
-        const hasUsed = coupon.usedBy.some(id => id.toString() === userId.toString());
-        if (hasUsed) {
-            return res.status(400).json({ success: false, message: "You have already used this coupon." });
+        // Determine subtotal based on scenario (Buy Now vs Cart)
+        let subtotal = 0;
+        if (req.session.buyNowItem) {
+            const Product = require('../models/productModel');
+            const product = await Product.findById(req.session.buyNowItem.productId);
+            subtotal = product.salePrice * req.session.buyNowItem.quantity;
+        } else {
+            const cartData = await cartService.getCartData(userId);
+            subtotal = cartData.cartTotal;
         }
 
-        const cartData = await cartService.getCartData(userId);
-        const subtotal = cartData.cartTotal;
-
-        if (subtotal < coupon.minPurchaseAmount) return res.status(400).json({ success: false, message: `Minimum purchase of ${coupon.minPurchaseAmount} required.`});
-
-        let discountAmount = 0;
-        if (coupon.discountType === 'flat') {
-            discountAmount = coupon.discountValue;
-        } else if (coupon.discountType === 'percentage') {
-            discountAmount = (subtotal * coupon.discountValue) / 100;
-            if (coupon.maxDiscountAmount && coupon.maxDiscountAmount > 0 && discountAmount > coupon.maxDiscountAmount) {
-                discountAmount = coupon.maxDiscountAmount;
-            }
+        const result = await couponService.validateCoupon(code, userId, subtotal);
+        if (!result.success) {
+            return res.status(400).json({ success: false, message: result.message });
         }
 
-        if (discountAmount > subtotal) discountAmount = subtotal;
-
-        req.session.appliedCoupon = { code: coupon.code, discountAmount: discountAmount };
+        const discountAmount = couponService.calculateDiscount(result.coupon, subtotal);
+        req.session.appliedCoupon = { 
+            code: result.coupon.code, 
+            discountAmount: discountAmount,
+            minPurchaseAmount: result.coupon.minPurchaseAmount
+        };
         
         res.status(200).json({ success: true, discountAmount, finalTotal: subtotal - discountAmount });
     } catch (error) {
+        console.error("Apply Coupon Error:", error);
         res.status(500).json({ success: false, message: "Server error applying coupon." });
     }
 };

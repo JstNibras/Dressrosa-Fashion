@@ -4,7 +4,13 @@
     <meta charset="UTF-8">
     <title><%= product.name %> - Dressrosa</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="/css/product.css"> </head>
+    <link rel="stylesheet" href="/css/product.css"> 
+    <style>
+        .unavailable-status { color: #e74c3c; font-weight: bold; margin: 10px 0; padding: 10px; background: #fdeaea; border-radius: 4px; display: inline-block; width: 100%; text-align: center; }
+        .pdp-details.unavailable * { pointer-events: none; opacity: 0.6; }
+        .pdp-details.unavailable .unavailable-status { pointer-events: auto; opacity: 1; }
+    </style>
+</head>
 <body>
     <%- include('../layout/header') %>
 
@@ -28,7 +34,12 @@
             </div>
         </div>
 
-        <div class="pdp-details">
+        <div class="pdp-details <%= isUnavailable ? 'unavailable' : '' %>">
+            <% if (isUnavailable) { %>
+                <div class="unavailable-status">
+                    <i class="fas fa-exclamation-triangle"></i> This product is currently unavailable and cannot be purchased.
+                </div>
+            <% } %>
             <div class="pdp-brand"><%= product.category.name %></div>
             <h1 class="pdp-title"><%= product.name %></h1>
             
@@ -242,8 +253,10 @@
         }
 
         function updateCartButton(stock) {
+            if (<%= isUnavailable %>) return; // Prevent enabling buttons if product is blocked
+
             currentMaxStock = stock;
-            currentQuantity = 1; // Reset to 1 whenever they click a new size
+            currentQuantity = 1; 
             
             const cartBtn = document.getElementById('addToCartBtn');
             const buyBtn = document.getElementById('buyNowBtn');

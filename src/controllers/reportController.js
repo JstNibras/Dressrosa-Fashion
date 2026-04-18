@@ -34,9 +34,9 @@ exports.downloadReport = async (req, res) => {
         const data = await reportService.getReportData(filter, startDate, endDate, null);
 
         if (format === 'excel') {
-            await reportService.generateExcel(data.reportData, res);
+            await reportService.generateExcel(data.reportData, data.kpi, res);
         } else if (format === 'pdf') {
-            await reportService.generatePDF(data.reportData, res);
+            await reportService.generatePDF(data.reportData, data.kpi, res);
         } else {
             res.status(400).send("Invalid format request");
         }

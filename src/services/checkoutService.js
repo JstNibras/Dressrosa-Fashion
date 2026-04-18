@@ -14,9 +14,11 @@ exports.placeOrder = async (userId, addressId, paymentMethod, appliedCoupon = nu
         if (buyNowItem) {
             const product = await Product.findById(buyNowItem.productId).populate('category');
             
-            if (!product || product.isActive === false || product.isListed === false ||
-                !product.category || product.category.isActive === false || product.category.isListed === false) {
-                throw new Error("Transaction Failed: Product or category is unavailable.");
+            if (!product || product.isActive === false || product.isListed === false) {
+                throw new Error("Transaction Failed: This product is no longer available.");
+            }
+            if (!product.category || product.category.isActive === false || product.category.isListed === false) {
+                throw new Error("Transaction Failed: The category for this product is currently unavailable.");
             }
 
             validItems = [{
@@ -42,7 +44,7 @@ exports.placeOrder = async (userId, addressId, paymentMethod, appliedCoupon = nu
             });
 
             if (validItems.length !== pureCart.items.length) {
-                throw new Error("Transaction Failed: One or more items belong to a suspended category.");
+                throw new Error("Transaction Failed: Some items in your cart are no longer available (Blocked or Inactive). Please review your cart.");
             }
             if (validItems.length === 0) throw new Error("No valid items found in cart during checkout.");
         }
@@ -83,19 +85,16 @@ exports.placeOrder = async (userId, addressId, paymentMethod, appliedCoupon = nu
         let orderDiscount = 0;
 
         if (appliedCoupon) {
-            const Coupon = require('../models/couponModel');
-            const couponDoc = await Coupon.findOne({ code: appliedCoupon.code, isActive: true });
-            const minPurchase = couponDoc.minPurchaseAmount || 0;
-
-            let hasUsed = false;
-            if (couponDoc && couponDoc.usedBy) {
-                hasUsed = couponDoc.usedBy.some(id => id.toString() === userId.toString());
-            }
-
-            if (couponDoc && !hasUsed && finalTotal >= minPurchase) {
-                orderDiscount = appliedCoupon.discountAmount;
-                couponDoc.usedBy.push(userId);
-                await couponDoc.save();
+            const couponService = require('./couponService');
+            const result = await couponService.validateCoupon(appliedCoupon.code, userId, finalTotal);
+            
+            if (result.success) {
+                const discount = couponService.calculateDiscount(result.coupon, finalTotal);
+                orderDiscount = discount;
+                
+                result.coupon.usedBy.push(userId);
+                result.coupon.usedCount += 1; 
+                await result.coupon.save();
             }
         }
 

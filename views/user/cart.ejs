@@ -5,16 +5,26 @@
     <title>Shopping Cart - Dressrosa</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/css/cart.css">
+    <style>
+        .cart-item-card.unavailable { opacity: 0.6; border: 1px dashed #e74c3c; background: #fffcfc; }
+        .cart-item-card.unavailable .select-box select { pointer-events: none; background: #eee; }
+        .item-status-msg { font-size: 12px; font-weight: 600; margin-top: 8px; }
+        .text-error { color: #e74c3c; }
+    </style>
 </head>
 <body>
     <%- include('../layout/header') %>
+
+    <div style="max-width: 1200px; margin: 30px auto 0; padding: 0 20px;">
+        <h2 style="font-size: 26px; font-weight: 700; color: #111; margin: 0;">Shopping Cart</h2>
+    </div>
 
     <div class="cart-wrapper">
         <% if (cartItems.length > 0) { %>
             <div class="cart-left">
                     
                 <% cartItems.forEach(item => { %>
-                    <div class="cart-item-card <%= item.isOutOfStock ? 'oos-dim' : '' %>">
+                    <div class="cart-item-card <%= item.isUnavailable ? 'unavailable' : '' %> <%= item.isOutOfStock ? 'oos-dim' : '' %>">
                         <div class="cart-item-main">
                             <div class="cart-item-img">
                                 <a href="/product/<%= item.productId %>">
@@ -25,28 +35,40 @@
                             <div class="cart-item-info">
                                 <div class="info-top">
                                     <h3 class="item-title"><%= item.name %></h3>
-                                    <div class="item-price-col">
+                                    <span class="item-total-price">₹ <%= item.price %></span>
+                                </div>
+                                
+                                <div class="item-price-col">
+                                    <% if (item.regularPrice > item.price) { %>
                                         <span class="sale-price">₹ <%= item.price %></span>
-                                        <span class="mrp-text">MRP incl. of all taxes</span>
-                                    </div>
+                                        <span class="regular-price">₹ <%= item.regularPrice %></span>
+                                        <span class="offer-text"><%= Math.round(((item.regularPrice - item.price) / item.regularPrice) * 100) %>% OFF</span>
+                                    <% } else { %>
+                                        <span class="sale-price">₹ <%= item.price %></span>
+                                    <% } %>
+                                    <span class="mrp-text">MRP</span>
                                 </div>
                                 <p class="item-category"><%= item.categoryName %></p>
                                 
                                 <div class="item-selectors">
                                     <div class="select-box">
                                         <label>Size:</label>
-                                        <select class="size-select" onchange="updateCartSize('<%= item._id %>', this.value)">
-                                            <% item.availableSizes.forEach(v => { %>
-                                                <option value="<%= v.size %>" <%= item.size === v.size ? 'selected' : '' %> <%= v.stock === 0 ? 'disabled' : '' %>>
-                                                    <%= v.size %> <%= v.stock === 0 ? '(OOS)' : '' %>
-                                                </option>
-                                            <% }) %>
+                                        <select class="size-select" onchange="updateCartSize('<%= item._id %>', this.value)" <%= item.isUnavailable ? 'disabled' : '' %>>
+                                            <% if (item.availableSizes) { %>
+                                                <% item.availableSizes.forEach(v => { %>
+                                                    <option value="<%= v.size %>" <%= item.size === v.size ? 'selected' : '' %> <%= v.stock === 0 ? 'disabled' : '' %>>
+                                                        <%= v.size %> <%= v.stock === 0 ? '(OOS)' : '' %>
+                                                    </option>
+                                                <% }) %>
+                                            <% } else { %>
+                                                <option selected disabled>N/A</option>
+                                            <% } %>
                                         </select>
                                     </div>
                                     <div class="select-box">
                                         <label>Qty:</label>
-                                        <select class="qty-select" onchange="updateCartQty('<%= item._id %>', this.value)" <%= item.isOutOfStock ? 'disabled' : '' %>>
-                                            <% const maxQty = Math.min(5, item.liveStock > 0 ? item.liveStock : 5); %>
+                                        <select class="qty-select" onchange="updateCartQty('<%= item._id %>', this.value)" <%= (item.isOutOfStock || item.isUnavailable) ? 'disabled' : '' %>>
+                                            <% const maxQty = Math.min(5, item.liveStock > 0 ? item.liveStock : 1); %>
                                             <% for(let i=1; i<=maxQty; i++) { %>
                                                 <option value="<%= i %>" <%= item.quantity === i ? 'selected' : '' %>><%= i %></option>
                                             <% } %>
@@ -54,10 +76,14 @@
                                     </div>
                                 </div>
 
-                                <% if (item.isOutOfStock) { %>
-                                    <p class="error-text"><i class="fas fa-exclamation-circle"></i> Out of Stock</p>
+                                <% if (item.isBlocked) { %>
+                                    <p class="item-status-msg text-error"><i class="fas fa-ban"></i> This product is currently unavailable.</p>
+                                <% } else if (item.isDeleted) { %>
+                                    <p class="item-status-msg text-error"><i class="fas fa-trash-alt"></i> This product has been removed.</p>
+                                <% } else if (item.isOutOfStock) { %>
+                                    <p class="item-status-msg text-error"><i class="fas fa-exclamation-circle"></i> Out of Stock</p>
                                 <% } else if (item.hasStockIssue) { %>
-                                    <p class="error-text"><i class="fas fa-exclamation-circle"></i> Only <%= item.liveStock %> left in stock!</p>
+                                    <p class="item-status-msg text-error"><i class="fas fa-exclamation-circle"></i> Only <%= item.liveStock %> left in stock!</p>
                                 <% } %>
                             </div>
                         </div>
@@ -86,12 +112,12 @@
                 <div class="billing-card">
                     <h4>BILLING DETAILS</h4>
                     <div class="billing-row">
-                        <span>Cart Total <small>(Excl. of all taxes)</small></span>
-                        <span>₹ <%= (cartTotal * 0.95).toFixed(2) %></span> <!-- Example 5% GST reverse calc -->
+                        <span>Cart Total</span>
+                        <span>₹ <%= regularTotal.toFixed(2) %></span>
                     </div>
                     <div class="billing-row">
-                        <span>GST</span>
-                        <span>₹ <%= (cartTotal * 0.05).toFixed(2) %></span>
+                        <span>Discount</span>
+                        <span class="text-teal">- ₹ <%= productDiscount.toFixed(2) %></span>
                     </div>
                     <div class="billing-row">
                         <span>Shipping Charges</span>
