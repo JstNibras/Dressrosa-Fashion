@@ -128,14 +128,11 @@ exports.generateExcel = async (reportData, summaryData, res) => {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Sales Report');
 
-    // Summary Section
     worksheet.addRow(['SALES SUMMARY']).font = { bold: true, size: 14 };
     worksheet.addRow(['Total Orders', summaryData.totalOrders]);
     worksheet.addRow(['Total Revenue', summaryData.totalSales]);
     worksheet.addRow(['Total Discount', summaryData.totalDiscount]);
-    worksheet.addRow([]); // Gap
-
-    // Define table columns starting from row 6
+    worksheet.addRow([]); 
     worksheet.getRow(6).values = ['Order ID', 'Date', 'Customer', 'Email', 'Product', 'Qty', 'Price', 'Total', 'Payment', 'Status'];
     worksheet.columns = [
         { key: 'orderId', width: 20 },
@@ -176,12 +173,10 @@ exports.generatePDF = async (reportData, summaryData, res) => {
     res.setHeader('Content-Disposition', 'attachment; filename=Dressrosa_Sales_Report.pdf');
     doc.pipe(res);
 
-    // Header
     doc.fontSize(22).fillColor('#00827f').text('DRESSROSA FASHION', { align: 'center' });
     doc.fontSize(14).fillColor('#333').text('Sales Report', { align: 'center' });
     doc.moveDown(1);
 
-    // Summary Box
     const summaryY = doc.y;
     doc.rect(30, summaryY, 250, 70).fillAndStroke('#f9f9f9', '#00827f');
     doc.fillColor('#00827f').fontSize(12).font('Helvetica-Bold').text('Overall Summary', 40, summaryY + 10);

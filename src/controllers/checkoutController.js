@@ -15,6 +15,11 @@ exports.getCheckoutPage = async (req, res) => {
     try {
         const userId = req.session.user.id || req.session.user._id;
 
+        if (req.query.from === 'cart') {
+            delete req.session.buyNowItem;
+            delete req.session.appliedCoupon;
+        }
+
         let cartItems = [];
         let cartTotal = 0;
 
@@ -77,7 +82,6 @@ exports.getCheckoutPage = async (req, res) => {
                     return res.redirect('/cart?error=Some items in your cart are no longer available. Please review.');
                 }
 
-                // Stock validation
                 const cartDataForStock = await cartService.getCartData(userId);
                 const outOfStockItem = cartDataForStock.items.find(item => item.hasStockIssue || item.isOutOfStock);
                 if (outOfStockItem) {
@@ -97,7 +101,6 @@ exports.getCheckoutPage = async (req, res) => {
             productDiscount = cartData.productDiscount;
         }
 
-        // --- COUPON RE-VALIDATION ---
         if (req.session.appliedCoupon) {
             const result = await couponService.validateCoupon(req.session.appliedCoupon.code, userId, cartTotal);
             if (!result.success) {
@@ -275,7 +278,6 @@ exports.applyCoupon = async (req, res) => {
         const { code } = req.body;
         const userId = req.session.user.id || req.session.user._id;
 
-        // Determine subtotal based on scenario (Buy Now vs Cart)
         let subtotal = 0;
         if (req.session.buyNowItem) {
             const Product = require('../models/productModel');
