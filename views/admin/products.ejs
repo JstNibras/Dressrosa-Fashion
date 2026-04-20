@@ -203,6 +203,7 @@
                     <div class="form-group half-width">
                         <label>Product Name *</label>
                         <input type="text" name="name" class="form-input" required>
+                        <span class="error-message" id="add-error-name"></span>
                     </div>
                     <div class="form-group half-width">
                         <label>Category *</label>
@@ -212,22 +213,26 @@
                                 <option value="<%= cat._id %>"><%= cat.name %></option>
                             <% }) %>
                         </select>
+                        <span class="error-message" id="add-error-category"></span>
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label>Description *</label>
                     <textarea name="description" class="form-input" rows="3" required></textarea>
+                    <span class="error-message" id="add-error-description"></span>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group half-width">
                         <label>Regular Price (₹) *</label>
                         <input type="number" name="regularPrice" class="form-input" min="0" required>
+                        <span class="error-message" id="add-error-regularPrice"></span>
                     </div>
                     <div class="form-group half-width">
                         <label>Product Offer (%)</label>
                         <input type="number" name="offerPercentage" id="addOfferPercentage" class="form-input" min="0" max="100" placeholder="e.g., 15">
+                        <span class="error-message" id="add-error-offerPercentage"></span>
                     </div>
                 </div>
 
@@ -235,26 +240,31 @@
                     <label style="margin-bottom: 10px; display: block;">Product Images (Click to upload)</label>
                     <div class="image-upload-container">
                         <div class="image-upload-box">
-                            <input type="file" name="image1" class="upload-input" accept="image/*" onchange="previewImage(this, 'prev1', 'label1')">
+                            <input type="file" name="image1" class="upload-input" accept="image/*" onchange="previewImage(this, 'prev1', 'label1', 'remove1')">
                             <img id="prev1" class="upload-preview" src="">
                             <span id="label1" class="upload-label">Primary Photo</span>
+                            <button type="button" id="remove1" class="remove-image-btn" onclick="clearImage('image1', 'prev1', 'label1', 'remove1')"><i class="fas fa-times"></i></button>
                         </div>
                         <div class="image-upload-box">
-                            <input type="file" name="image2" class="upload-input" accept="image/*" onchange="previewImage(this, 'prev2', 'label2')">
+                            <input type="file" name="image2" class="upload-input" accept="image/*" onchange="previewImage(this, 'prev2', 'label2', 'remove2')">
                             <img id="prev2" class="upload-preview" src="">
                             <span id="label2" class="upload-label">Secondary Photo</span>
+                            <button type="button" id="remove2" class="remove-image-btn" onclick="clearImage('image2', 'prev2', 'label2', 'remove2')"><i class="fas fa-times"></i></button>
                         </div>
                         <div class="image-upload-box">
-                            <input type="file" name="image3" class="upload-input" accept="image/*" onchange="previewImage(this, 'prev3', 'label3')">
+                            <input type="file" name="image3" class="upload-input" accept="image/*" onchange="previewImage(this, 'prev3', 'label3', 'remove3')">
                             <img id="prev3" class="upload-preview" src="">
                             <span id="label3" class="upload-label">Other Photo</span>
+                            <button type="button" id="remove3" class="remove-image-btn" onclick="clearImage('image3', 'prev3', 'label3', 'remove3')"><i class="fas fa-times"></i></button>
                         </div>
                         <div class="image-upload-box">
-                            <input type="file" name="image4" class="upload-input" accept="image/*" onchange="previewImage(this, 'prev4', 'label4')">
+                            <input type="file" name="image4" class="upload-input" accept="image/*" onchange="previewImage(this, 'prev4', 'label4', 'remove4')">
                             <img id="prev4" class="upload-preview" src="">
                             <span id="label4" class="upload-label">Other Photo</span>
+                            <button type="button" id="remove4" class="remove-image-btn" onclick="clearImage('image4', 'prev4', 'label4', 'remove4')"><i class="fas fa-times"></i></button>
                         </div>
                     </div>
+                    <span class="error-message" id="add-error-images"></span>
                 </div>
 
                 <div class="variants-section">
@@ -270,6 +280,7 @@
                             <button type="button" class="btn-remove-var" onclick="this.parentElement.remove()"><i class="fas fa-trash"></i></button>
                         </div>
                     </div>
+                    <span class="error-message" id="add-error-variants"></span>
                     <small style="color: #888; font-size: 11px;">Leave Color blank for Oversized T-Shirts. Size can also be left blank if needed.</small>
                 </div>
 
@@ -294,6 +305,7 @@
                     <div class="form-group half-width">
                         <label>Product Name *</label>
                         <input type="text" id="editName" name="name" class="form-input" required>
+                        <span class="error-message" id="edit-error-name"></span>
                     </div>
                     <div class="form-group half-width">
                         <label>Category *</label>
@@ -303,22 +315,26 @@
                                 <option value="<%= cat._id %>"><%= cat.name %></option>
                             <% }) %>
                         </select>
+                        <span class="error-message" id="edit-error-category"></span>
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label>Description *</label>
                     <textarea id="editDescription" name="description" class="form-input" rows="3" required></textarea>
+                    <span class="error-message" id="edit-error-description"></span>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group half-width">
                         <label>Regular Price (₹) *</label>
                         <input type="number" id="editRegularPrice" name="regularPrice" class="form-input" min="0" required>
+                        <span class="error-message" id="edit-error-regularPrice"></span>
                     </div>
                     <div class="form-group half-width">
                         <label>Product Offer (%)</label>
                         <input type="number" name="offerPercentage" id="editOfferPercentage" class="form-input" min="0" max="100" placeholder="e.g., 15">
+                        <span class="error-message" id="edit-error-offerPercentage"></span>
                     </div>
                 </div>
 
@@ -326,26 +342,31 @@
                     <label style="margin-bottom: 10px; display: block;">Product Images (Click to upload)</label>
                     <div class="image-upload-container">
                         <div class="image-upload-box">
-                            <input type="file" name="image1" class="upload-input" accept="image/*" onchange="previewImage(this, 'editPrev1', 'editLabel1')">
+                            <input type="file" name="image1" class="upload-input" accept="image/*" onchange="previewImage(this, 'editPrev1', 'editLabel1', 'editRemove1')">
                             <img id="editPrev1" class="upload-preview" src="">
                             <span id="editLabel1" class="upload-label">Primary Photo</span>
+                            <button type="button" id="editRemove1" class="remove-image-btn" onclick="clearImage('image1', 'editPrev1', 'editLabel1', 'editRemove1')"><i class="fas fa-times"></i></button>
                         </div>
                         <div class="image-upload-box">
-                            <input type="file" name="image2" class="upload-input" accept="image/*" onchange="previewImage(this, 'editPrev2', 'editLabel2')">
+                            <input type="file" name="image2" class="upload-input" accept="image/*" onchange="previewImage(this, 'editPrev2', 'editLabel2', 'editRemove2')">
                             <img id="editPrev2" class="upload-preview" src="">
                             <span id="editLabel2" class="upload-label">Secondary Photo</span>
+                            <button type="button" id="editRemove2" class="remove-image-btn" onclick="clearImage('image2', 'editPrev2', 'editLabel2', 'editRemove2')"><i class="fas fa-times"></i></button>
                         </div>
                         <div class="image-upload-box">
-                            <input type="file" name="image3" class="upload-input" accept="image/*" onchange="previewImage(this, 'editPrev3', 'editLabel3')">
+                            <input type="file" name="image3" class="upload-input" accept="image/*" onchange="previewImage(this, 'editPrev3', 'editLabel3', 'editRemove3')">
                             <img id="editPrev3" class="upload-preview" src="">
                             <span id="editLabel3" class="upload-label">Third Photo</span>
+                            <button type="button" id="editRemove3" class="remove-image-btn" onclick="clearImage('image3', 'editPrev3', 'editLabel3', 'editRemove3')"><i class="fas fa-times"></i></button>
                         </div>
                         <div class="image-upload-box">
-                            <input type="file" name="image4" class="upload-input" accept="image/*" onchange="previewImage(this, 'editPrev4', 'editLabel4')">
+                            <input type="file" name="image4" class="upload-input" accept="image/*" onchange="previewImage(this, 'editPrev4', 'editLabel4', 'editRemove4')">
                             <img id="editPrev4" class="upload-preview" src="">
                             <span id="editLabel4" class="upload-label">Other Photo</span>
+                            <button type="button" id="editRemove4" class="remove-image-btn" onclick="clearImage('image4', 'editPrev4', 'editLabel4', 'editRemove4')"><i class="fas fa-times"></i></button>
                         </div>
                     </div>
+                    <span class="error-message" id="edit-error-images"></span>
                 </div>
 
                 <div class="variants-section">
@@ -355,6 +376,7 @@
                     </div>
                     <div id="editVariantsContainer">
                         </div>
+                    <span class="error-message" id="edit-error-variants"></span>
                 </div>
 
                 <div class="modal-actions">
@@ -388,6 +410,16 @@
         function closeModal() { 
             document.getElementById('productModal').style.display = 'none'; 
             document.getElementById('addProductForm').reset();
+            clearErrors('add');
+            // Reset image previews and buttons
+            for(let i=1; i<=4; i++) {
+                const prev = document.getElementById(`prev${i}`);
+                prev.src = '';
+                prev.removeAttribute('src');
+                prev.style.display = 'none';
+                document.getElementById(`label${i}`).style.display = 'block';
+                document.getElementById(`remove${i}`).style.display = 'none';
+            }
             // Reset variants to a single empty row
             document.getElementById('variantsContainer').innerHTML = `
                 <div class="variant-row">
@@ -413,24 +445,104 @@
             container.appendChild(row);
         }
 
-        // Handle Form Submission
-        document.getElementById('addProductForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
+        // --- VALIDATION ENGINE ---
+        function showError(id, message, prefix) {
+            const errorSpan = document.getElementById(`${prefix}-error-${id}`);
+            const input = document.querySelector(`#${prefix}ProductForm [name="${id}"]`);
+            if (errorSpan) errorSpan.innerText = message;
+            if (input) input.classList.add('is-invalid');
+        }
 
-            console.log("🚀 BUTTON CLICKED! Data gathering started...");
-            const form = document.getElementById('addProductForm');
+        function clearErrors(prefix) {
+            document.querySelectorAll(`#${prefix}ProductForm .error-message`).forEach(el => el.innerText = '');
+            document.querySelectorAll(`#${prefix}ProductForm .form-input`).forEach(el => el.classList.remove('is-invalid'));
+        }
 
-            // Manual Validation to prevent silent HTML5 block on hidden elements
+        function validateProductForm(prefix) {
+            clearErrors(prefix);
+            const form = document.getElementById(`${prefix}ProductForm`);
+            let isValid = true;
+
             const name = form.querySelector('[name="name"]').value.trim();
             const category = form.querySelector('[name="category"]').value;
             const description = form.querySelector('[name="description"]').value.trim();
             const regularPrice = form.querySelector('[name="regularPrice"]').value;
+            const offerPercentage = form.querySelector('[name="offerPercentage"]').value;
 
-            if (!name || !category || !description || !regularPrice) {
-                return Swal.fire({ icon: 'warning', title: 'Missing Fields', text: 'Please fill in all required fields (Name, Category, Description, Regular Price).' });
+            if (!name) { showError('name', 'Product name is required', prefix); isValid = false; }
+            else if (name.length < 3) { showError('name', 'Name must be at least 3 characters', prefix); isValid = false; }
+
+            if (!category) { showError('category', 'Please select a category', prefix); isValid = false; }
+
+            if (!description) { showError('description', 'Description is required', prefix); isValid = false; }
+            else if (description.length < 10) { showError('description', 'Description must be at least 10 characters', prefix); isValid = false; }
+
+            if (!regularPrice) { showError('regularPrice', 'Price is required', prefix); isValid = false; }
+            else if (Number(regularPrice) <= 0) { showError('regularPrice', 'Price must be a positive number', prefix); isValid = false; }
+
+            if (offerPercentage && (Number(offerPercentage) < 0 || Number(offerPercentage) > 100)) {
+                showError('offerPercentage', 'Offer must be between 0 and 100', prefix); isValid = false;
             }
+
+            // Image Validation (Exactly 4 required)
+            let imageCount = 0;
+            for (let i = 1; i <= 4; i++) {
+                const previewId = prefix === 'add' ? `prev${i}` : `editPrev${i}`;
+                const preview = document.getElementById(previewId);
+                // Reliable check: count only if the preview box is explicitly showing an image
+                if (preview && preview.style.display === 'block') {
+                    imageCount++;
+                }
+            }
+
+            if (imageCount < 4) {
+                const errorSpan = document.getElementById(`${prefix}-error-images`);
+                if (errorSpan) errorSpan.innerText = 'Exactly 4 images are required.';
+                isValid = false;
+            }
+
+            // Variant Validation
+            const variantRows = form.querySelectorAll(prefix === 'add' ? '.variant-row' : '.edit-variant-row');
+            let activeVariantsCount = 0;
+            variantRows.forEach(row => {
+                const activeInput = row.querySelector('.var-active');
+                if (!activeInput || activeInput.value === 'true') {
+                    const stock = row.querySelector('.var-stock').value;
+                    if (stock !== "") activeVariantsCount++;
+                }
+            });
+
+            if (activeVariantsCount === 0) {
+                const errorSpan = document.getElementById(`${prefix}-error-variants`);
+                if (errorSpan) errorSpan.innerText = 'At least one active variant with stock is required.';
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        function clearImage(inputName, previewId, labelId, removeId) {
+            const input = document.querySelector(`input[name="${inputName}"]`);
+            if (input) input.value = '';
             
-            // 1. Gather all variant rows
+            const preview = document.getElementById(previewId);
+            preview.src = '';
+            preview.removeAttribute('src'); // Explicitly remove to prevent resolved URL counting
+            preview.style.display = 'none';
+            
+            document.getElementById(labelId).style.display = 'block';
+            document.getElementById(removeId).style.display = 'none';
+        }
+
+        // Handle Form Submission
+        document.getElementById('addProductForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            if (!validateProductForm('add')) {
+                return;
+            }
+
+            const form = document.getElementById('addProductForm');
             const variantRows = form.querySelectorAll('.variant-row');
             const variantsArray = [];
             
@@ -438,16 +550,10 @@
                 const size = row.querySelector('.var-size').value.trim();
                 const color = row.querySelector('.var-color').value.trim();
                 const stock = row.querySelector('.var-stock').value;
-                
-                // Only push if stock is provided
                 if (stock !== "") {
                     variantsArray.push({ size, color, stock: Number(stock) });
                 }
             });
-
-            if (variantsArray.length === 0) {
-                return Swal.fire({ icon: 'error', title: 'Missing Variants', text: 'You must add at least one variant with stock.' });
-            }
 
             const formData = new FormData(form);
             formData.append('variants', JSON.stringify(variantsArray));
@@ -458,11 +564,10 @@
             if (form.querySelector('input[name="image3"]').files.length === 0) formData.delete('image3');
             if (form.querySelector('input[name="image4"]').files.length === 0) formData.delete('image4');
 
-
             try {
                 const response = await fetch('/admin/products/add', {
                     method: 'POST',
-                    body: formData // Auto-handles the multiple files + text + JSON string
+                    body: formData
                 });
 
                 const data = await response.json();
@@ -472,7 +577,11 @@
                     Swal.fire({ icon: 'success', title: 'Success', text: data.message, timer: 1500, showConfirmButton: false })
                     .then(() => location.reload()); 
                 } else {
-                    Swal.fire({ icon: 'error', title: 'Oops...', text: data.message });
+                    if (data.field) {
+                        showError(data.field, data.message, 'add');
+                    } else {
+                        Swal.fire({ icon: 'error', title: 'Oops...', text: data.message });
+                    }
                 }
             } catch (error) {
                 Swal.fire({ icon: 'error', title: 'Error', text: 'Server error occurred' });
@@ -510,16 +619,19 @@
             for (let i = 1; i <= 4; i++) {
                 const preview = document.getElementById(`editPrev${i}`);
                 const label = document.getElementById(`editLabel${i}`);
+                const removeBtn = document.getElementById(`editRemove${i}`);
                 
                 // If an image URL exists at this array index, show it
                 if (product.images && product.images[i-1]) {
                     preview.src = product.images[i-1];
                     preview.style.display = 'block';
                     label.style.display = 'none';
+                    removeBtn.style.display = 'flex';
                 } else {
                     preview.src = '';
                     preview.style.display = 'none';
                     label.style.display = 'block';
+                    removeBtn.style.display = 'none';
                 }
             }
         }
@@ -527,6 +639,20 @@
         function closeEditModal() {
             document.getElementById('editProductModal').style.display = 'none';
             document.getElementById('editProductForm').reset();
+            clearErrors('edit');
+            // Reset image previews and buttons
+            for(let i=1; i<=4; i++) {
+                const prev = document.getElementById(`editPrev${i}`);
+                if (prev) {
+                    prev.src = '';
+                    prev.removeAttribute('src');
+                    prev.style.display = 'none';
+                }
+                const label = document.getElementById(`editLabel${i}`);
+                if (label) label.style.display = 'block';
+                const removeBtn = document.getElementById(`editRemove${i}`);
+                if (removeBtn) removeBtn.style.display = 'none';
+            }
         }
 
         function addEditVariantRow(id = '', size = '', color = '', stock = '', isActive = true) {
@@ -577,18 +703,12 @@
         // --- Edit Form Submission ---
         document.getElementById('editProductForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const form = document.getElementById('editProductForm');
-            
-            // Manual Validation to prevent silent HTML5 block on hidden elements
-            const name = form.querySelector('[name="name"]').value.trim();
-            const category = form.querySelector('[name="category"]').value;
-            const description = form.querySelector('[name="description"]').value.trim();
-            const regularPrice = form.querySelector('[name="regularPrice"]').value;
 
-            if (!name || !category || !description || !regularPrice) {
-                return Swal.fire({ icon: 'warning', title: 'Missing Fields', text: 'Please fill in all required fields (Name, Category, Description, Regular Price).' });
+            if (!validateProductForm('edit')) {
+                return;
             }
 
+            const form = document.getElementById('editProductForm');
             const productId = document.getElementById('editProdId').value;
             
             // Gather variant rows
@@ -607,10 +727,6 @@
                 }
             });
 
-            if (variantsArray.length === 0) {
-                return Swal.fire({ icon: 'error', title: 'Missing Variants', text: 'You must add at least one variant with stock.' });
-            }
-
             const formData = new FormData(form);
             formData.append('variants', JSON.stringify(variantsArray));
 
@@ -619,7 +735,6 @@
             if (form.querySelector('input[name="image2"]').files.length === 0) formData.delete('image2');
             if (form.querySelector('input[name="image3"]').files.length === 0) formData.delete('image3');
             if (form.querySelector('input[name="image4"]').files.length === 0) formData.delete('image4');
-
 
             try {
                 const response = await fetch(`/admin/products/edit/${productId}`, {
@@ -634,7 +749,11 @@
                     Swal.fire({ icon: 'success', title: 'Updated!', text: data.message, timer: 1500, showConfirmButton: false })
                     .then(() => location.reload()); 
                 } else {
-                    Swal.fire({ icon: 'error', title: 'Oops...', text: data.message });
+                    if (data.field) {
+                        showError(data.field, data.message, 'edit');
+                    } else {
+                        Swal.fire({ icon: 'error', title: 'Oops...', text: data.message });
+                    }
                 }
             } catch (error) {
                 Swal.fire({ icon: 'error', title: 'Error', text: 'Server error occurred' });
@@ -675,11 +794,12 @@
         let currentLabelId;
 
         // 1. Intercept the file selection
-        function previewImage(input, previewId, labelId) {
+        function previewImage(input, previewId, labelId, removeId) {
             if (input.files && input.files[0]) {
                 currentInput = input;
                 currentPreviewId = previewId;
                 currentLabelId = labelId;
+                currentRemoveId = removeId;
 
                 const reader = new FileReader();
                 reader.onload = function(e) {
@@ -745,6 +865,10 @@
                 preview.src = URL.createObjectURL(blob);
                 preview.style.display = 'block';
                 label.style.display = 'none';
+                
+                if(currentRemoveId) {
+                    document.getElementById(currentRemoveId).style.display = 'flex';
+                }
 
                 closeCropModal(false);
             }, 'image/jpeg', 0.85); 

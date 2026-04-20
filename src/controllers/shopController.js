@@ -1,4 +1,35 @@
 const productService = require('../services/productService');
+const Product = require('../models/productModel');
+const Category = require('../models/categoryModel');
+const Wishlist = require('../models/wishlistModel');
+
+exports.getHomePage = async (req, res) => {
+    try {
+        const newArrivals = await Product.find({ isActive: true })
+            .sort({ createdAt: -1 })
+            .limit(3)
+            .populate('category');
+
+        const categories = await Category.find({ isActive: true });
+
+        let wishlist = [];
+        if (req.session.user) {
+            const userWishlist = await Wishlist.findOne({ user: req.session.user.id });
+            if (userWishlist) {
+                wishlist = userWishlist.products.map(id => id.toString());
+            }
+        }
+
+        res.render('user/home', {
+            newArrivals,
+            categories,
+            wishlist
+        });
+    } catch (error) {
+        console.error("Home Page Error:", error);
+        res.status(500).send("Internal Server Error");
+    }
+};
 
 exports.getShopPage = async (req, res) => {
     try {

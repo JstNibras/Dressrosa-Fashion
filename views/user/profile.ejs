@@ -1,186 +1,212 @@
 <%- include('../layout/header') %>
 
-<style>
-    :root {
-        --primary-pink: #ff0055;
-        --soft-grey: #f8f9fa;
-        --border-color: #e0e0e0;
-    }
+    <style>
+        :root {
+            --primary-pink: #ff0055;
+            --soft-grey: #f8f9fa;
+            --border-color: #e0e0e0;
+        }
 
-    .profile-page-wrapper {
-        max-width: 1200px;
-        margin: 50px auto;
-        display: grid;
-        grid-template-columns: 300px 1fr; /* Sidebar + Main Content */
-        gap: 30px;
-        padding: 0 20px;
-    }
+        .profile-page-wrapper {
+            max-width: 1200px;
+            margin: 50px auto;
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            /* Sidebar + Main Content */
+            gap: 30px;
+            padding: 0 20px;
+        }
 
-    /* Left Sidebar */
-    .profile-sidebar {
-        background: white;
-        border: 1px solid var(--border-color);
-        padding: 30px 0;
-        border-radius: 8px;
-        height: fit-content;
-    }
+        /* Left Sidebar */
+        .profile-sidebar {
+            background: white;
+            border: 1px solid var(--border-color);
+            padding: 30px 0;
+            border-radius: 8px;
+            height: fit-content;
+        }
 
-    .profile-nav-item {
-        display: flex;
-        align-items: center;
-        padding: 15px 25px;
-        color: #444;
-        text-decoration: none;
-        transition: 0.2s;
-        border-left: 4px solid transparent;
-        font-size: 14px;
-        font-weight: 500;
-    }
+        .profile-nav-item {
+            display: flex;
+            align-items: center;
+            padding: 15px 25px;
+            color: #444;
+            text-decoration: none;
+            transition: 0.2s;
+            border-left: 4px solid transparent;
+            font-size: 14px;
+            font-weight: 500;
+        }
 
-    .profile-nav-item i { margin-right: 15px; width: 20px; }
-    
-    .profile-nav-item:hover, .profile-nav-item.active {
-        background: var(--soft-grey);
-        color: var(--primary-pink);
-        border-left-color: var(--primary-pink);
-    }
+        .profile-nav-item i {
+            margin-right: 15px;
+            width: 20px;
+        }
 
-    /* Main Content Card */
-    .profile-main-content {
-        background: white;
-        border: 1px solid var(--border-color);
-        border-radius: 8px;
-        padding: 40px;
-    }
+        .profile-nav-item:hover,
+        .profile-nav-item.active {
+            background: var(--soft-grey);
+            color: var(--primary-pink);
+            border-left-color: var(--primary-pink);
+        }
 
-    /* Profile Pic Styles */
-    .pic-upload-wrapper {
-        position: relative;
-        width: 130px;
-        margin: 0 auto 30px;
-    }
+        /* Main Content Card */
+        .profile-main-content {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 40px;
+        }
 
-    .profile-avatar {
-        width: 130px;
-        height: 130px;
-        border-radius: 50%;
-        object-fit: cover;
-        border: 3px solid var(--primary-pink);
-    }
+        /* Profile Pic Styles */
+        .pic-upload-wrapper {
+            position: relative;
+            width: 130px;
+            margin: 0 auto 30px;
+        }
 
-    .upload-overlay {
-        position: absolute;
-        bottom: 5px;
-        right: 5px;
-        background: white;
-        width: 35px;
-        height: 35px;
-        border-radius: 50%;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        cursor: pointer;
-    }
+        .profile-avatar {
+            width: 130px;
+            height: 130px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid var(--primary-pink);
+        }
 
-    .hidden-file-input { display: none; }
+        .upload-overlay {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            background: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+        }
 
-    .info-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 30px;
-        border-top: 1px solid #eee;
-        padding-top: 30px;
-    }
+        .hidden-file-input {
+            display: none;
+        }
 
-    .info-group label {
-        display: block;
-        font-size: 12px;
-        color: #888;
-        text-transform: uppercase;
-        margin-bottom: 5px;
-    }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            border-top: 1px solid #eee;
+            padding-top: 30px;
+        }
 
-    .info-group p { font-size: 16px; font-weight: 500; color: #333; }
-</style>
+        .info-group label {
+            display: block;
+            font-size: 12px;
+            color: #888;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
 
-<div class="profile-page-wrapper">
-    
-    <aside class="profile-sidebar">
-        <div style="text-align: center; margin-bottom: 20px;">
-            <p style="font-weight: bold; font-size: 18px;">Hello, <%= user.firstName %>!</p>
-        </div>
-        <nav>
-            <a href="/profile" class="profile-nav-item active"><i class="fas fa-user"></i> Personal Info</a>
-            <a href="/profile/orders" class="profile-nav-item"><i class="fas fa-shopping-bag"></i> My Orders</a>
-            <a href="/wishlist" class="profile-nav-item"><i class="fas fa-heart"></i> My Wishlist</a>
-            <a href="/profile/addresses" class="profile-nav-item"><i class="fas fa-map-marker-alt"></i> Addresses</a>
-            <a href="/wallet" class="profile-nav-item"><i class="fas fa-wallet"></i> Wallet</a>
-            <a href="/coupons" class="profile-nav-item"><i class="fas fa-tag"></i> Coupons</a>
-            <a href="/refer" class="profile-nav-item"><i class="fas fa-tag"></i> Refer & Earn</a>
-            <hr style="border: none; border-top: 1px solid #eee; margin: 10px 0;">
-            <a href="/logout" class="profile-nav-item" style="color: #ff4d4d;"><i class="fas fa-sign-out-alt"></i> Logout</a>
-        </nav>
-    </aside>
+        .info-group p {
+            font-size: 16px;
+            font-weight: 500;
+            color: #333;
+        }
+    </style>
 
-    <main class="profile-main-content">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-            <h2 style="margin-top: 0;">Account Overview</h2>
-            <a href="/profile/edit" style="color: var(--primary-pink); text-decoration: none; font-weight: 600;">Edit Profile</a>
-        </div>
+    <div class="profile-page-wrapper">
 
-        <div class="pic-upload-wrapper">
-            <img src="<%= user.profileImage || '/images/Default/images.jpg' %>" class="profile-avatar" alt="User">
-            <label for="profilePicInput" class="upload-overlay">
-                <i class="fas fa-camera" style="color: #666; font-size: 14px;"></i>
-            </label>
-            <% if (user.profileImage && !user.profileImage.includes('default-avatar')) { %>
-                <form action="/profile/remove-image" method="POST" style="position: absolute; top: 5px; left: 5px;">
-                    <button type="submit" style="background: white; border: none; border-radius: 50%; width: 30px; height: 30px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); cursor: pointer; color: #ff4d4d;">
-                        <i class="fas fa-trash-alt"></i>
-                    </button>
-                </form>
-            <% } %>
-            <form id="uploadForm" action="/profile/update-image" method="POST" enctype="multipart/form-data">
-                <input type="file" id="profilePicInput" name="profileImage" class="hidden-file-input" onchange="this.form.submit()">
-            </form>
-        </div>
-
-        <div class="info-grid">
-            <div class="info-group">
-                <label>First Name</label>
-                <p><%= user.firstName %></p>
+        <aside class="profile-sidebar">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <p style="font-weight: bold; font-size: 18px;">Hello, <%= user.firstName %>!</p>
             </div>
-            <div class="info-group">
-                <label>Last Name</label>
-                <p><%= user.lastName %></p>
+            <nav>
+                <a href="/profile" class="profile-nav-item active"><i class="fas fa-user"></i> Personal Info</a>
+                <a href="/profile/orders" class="profile-nav-item"><i class="fas fa-shopping-bag"></i> My Orders</a>
+                <a href="/wishlist" class="profile-nav-item"><i class="fas fa-heart"></i> My Wishlist</a>
+                <a href="/profile/addresses" class="profile-nav-item"><i class="fas fa-map-marker-alt"></i>
+                    Addresses</a>
+                <a href="/wallet" class="profile-nav-item"><i class="fas fa-wallet"></i> Wallet</a>
+                <a href="/refer" class="profile-nav-item"><i class="fas fa-tag"></i> Refer & Earn</a>
+                <hr style="border: none; border-top: 1px solid #eee; margin: 10px 0;">
+                <a href="/logout" class="profile-nav-item" style="color: #ff4d4d;"><i class="fas fa-sign-out-alt"></i>
+                    Logout</a>
+            </nav>
+        </aside>
+
+        <main class="profile-main-content">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <h2 style="margin-top: 0;">Account Overview</h2>
+                <a href="/profile/edit"
+                    style="color: var(--primary-pink); text-decoration: none; font-weight: 600;">Edit Profile</a>
             </div>
-            <div class="info-group">
-                <label>Email Address</label>
-                <p><%= user.email %></p>
-            </div>
-            <div class="info-group">
-                <label>Phone Number</label>
-                <p><%= user.phone || 'Not set' %></p>
-            </div>
-            <div class="info-group" style="grid-column: span 2;">
-                <label>Default Shipping Address</label>
-                <p>
-                    <% if (defaultAddress) { %>
-                        <%= defaultAddress.houseNo %>, <%= defaultAddress.city %>, <%= defaultAddress.state %> - <%= defaultAddress.pincode %>
-                    <% } else { %>
-                        No address found. <a href="/profile/addresses" style="color: blue;">Add one</a>
+
+            <div class="pic-upload-wrapper">
+                <img src="<%= user.profileImage || '/images/Default/images.jpg' %>" class="profile-avatar" alt="User">
+                <label for="profilePicInput" class="upload-overlay">
+                    <i class="fas fa-camera" style="color: #666; font-size: 14px;"></i>
+                </label>
+                <% if (user.profileImage && !user.profileImage.includes('default-avatar')) { %>
+                    <form action="/profile/remove-image" method="POST" style="position: absolute; top: 5px; left: 5px;">
+                        <button type="submit"
+                            style="background: white; border: none; border-radius: 50%; width: 30px; height: 30px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); cursor: pointer; color: #ff4d4d;">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </form>
                     <% } %>
-                </p>
+                        <form id="uploadForm" action="/profile/update-image" method="POST"
+                            enctype="multipart/form-data">
+                            <input type="file" id="profilePicInput" name="profileImage" class="hidden-file-input"
+                                onchange="this.form.submit()">
+                        </form>
             </div>
-        </div>
 
-        <div style="margin-top: 40px;">
-            <a href="/profile/change-password" class="btn-change-pw">
-                <i class="fas fa-shield-alt"></i> Change Password
-            </a>
-        </div>
-    </main>
-</div>
+            <div class="info-grid">
+                <div class="info-group">
+                    <label>First Name</label>
+                    <p>
+                        <%= user.firstName %>
+                    </p>
+                </div>
+                <div class="info-group">
+                    <label>Last Name</label>
+                    <p>
+                        <%= user.lastName %>
+                    </p>
+                </div>
+                <div class="info-group">
+                    <label>Email Address</label>
+                    <p>
+                        <%= user.email %>
+                    </p>
+                </div>
+                <div class="info-group">
+                    <label>Phone Number</label>
+                    <p>
+                        <%= user.phone || 'Not set' %>
+                    </p>
+                </div>
+                <div class="info-group" style="grid-column: span 2;">
+                    <label>Default Shipping Address</label>
+                    <p>
+                        <% if (defaultAddress) { %>
+                            <%= defaultAddress.houseNo %>, <%= defaultAddress.city %>, <%= defaultAddress.state %> - <%=
+                                            defaultAddress.pincode %>
+                                            <% } else { %>
+                                                No address found. <a href="/profile/addresses" style="color: blue;">Add
+                                                    one</a>
+                                                <% } %>
+                    </p>
+                </div>
+            </div>
 
-<%- include('../layout/footer') %>
+            <div style="margin-top: 40px;">
+                <a href="/profile/change-password" class="btn-change-pw">
+                    <i class="fas fa-shield-alt"></i> Change Password
+                </a>
+            </div>
+        </main>
+    </div>
+
+    <%- include('../layout/footer') %>
