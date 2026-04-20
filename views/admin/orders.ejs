@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Order Management</title>
+    <link rel="stylesheet" href="/css/admin-products.css"> 
+    <link rel="stylesheet" href="/css/admin-orders.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+    <div class="admin-layout">
+        
+        <aside class="sidebar">
+            <div class="brand-logo">
+                <h1>DRESSROSA</h1>
+                <p>F A S H I O N</p>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="/admin/dashboard" class="nav-item"><i class="fas fa-th-large"></i> Dashboard</a>
+                <a href="/admin/users" class="nav-item"><i class="fas fa-users"></i> Users</a>
+                <a href="/admin/products" class="nav-item"><i class="fas fa-box"></i> Products</a>
+                <a href="/admin/categories" class="nav-item"><i class="fas fa-th-list"></i> Categories</a>
+                <a href="/admin/banners" class="nav-item"><i class="fas fa-plus-square"></i> Add Banners</a>
+                <a href="/admin/coupons" class="nav-item"><i class="fas fa-ticket-alt"></i> Coupons</a>
+                <a href="/admin/orders" class="nav-item active"><i class="fas fa-shopping-cart"></i> Orders</a>
+                <a href="/admin/report" class="nav-item"><i class="fas fa-chart-pie"></i> Report</a>
+            </nav>
+            <div class="sidebar-footer">
+                <a href="/admin/logout" class="nav-item logout-btn">Logout <i class="fas fa-sign-out-alt"></i></a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="page-header">
+                <h2>Order Management</h2>
+            </header>
+
+            <div class="admin-dashboard-container" style="padding: 0; background: transparent;">
+                
+                <form action="/admin/orders" method="GET" class="filter-card">
+                    <div class="filter-group">
+                        <label>Search Orders</label>
+                        <input type="text" name="search" class="filter-input" placeholder="Order ID or Customer Name" value="<%= query.search || '' %>">
+                    </div>
+
+                    <div class="filter-group">
+                        <label>Status Filter</label>
+                        <select name="status" class="filter-select">
+                            <option value="all" <%= query.status === 'all' ? 'selected' : '' %>>All Statuses</option>
+                            <option value="Placed" <%= query.status === 'Placed' ? 'selected' : '' %>>Placed</option>
+                            <option value="Shipped" <%= query.status === 'Shipped' ? 'selected' : '' %>>Shipped</option>
+                            <option value="Delivered" <%= query.status === 'Delivered' ? 'selected' : '' %>>Delivered</option>
+                            <option value="Cancelled" <%= query.status === 'Cancelled' ? 'selected' : '' %>>Cancelled</option>
+                            <option value="Returned" <%= query.status === 'Returned' ? 'selected' : '' %>>Returned</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label>Sort By</label>
+                        <select name="sort" class="filter-select">
+                            <option value="date_desc" <%= query.sort === 'date_desc' ? 'selected' : '' %>>Date: Newest First</option>
+                            <option value="date_asc" <%= query.sort === 'date_asc' ? 'selected' : '' %>>Date: Oldest First</option>
+                            <option value="total_desc" <%= query.sort === 'total_desc' ? 'selected' : '' %>>Amount: High to Low</option>
+                            <option value="total_asc" <%= query.sort === 'total_asc' ? 'selected' : '' %>>Amount: Low to High</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="filter-btn">Apply Filters</button>
+                    <a href="/admin/orders" class="filter-btn" style="background: #eaeaec; color: #111; text-decoration: none; display: flex; align-items: center;">Clear</a>
+                    
+                    <!-- <a href="/admin/orders?status=Return+Requested" class="filter-btn" style="background: #f57c00; color: white; text-decoration: none; display: flex; align-items: center; margin-left: auto;">
+                        <i class="fas fa-bell"></i> &nbsp; View Pending Returns
+                    </a>
+                    <a href="/admin/orders" class="filter-btn" style="background: #eaeaec; color: #111; text-decoration: none; display: flex; align-items: center;">Clear</a> -->
+                </form>
+
+                <div class="table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Order ID & Date</th>
+                                <th>Customer</th>
+                                <th>Total Amount</th>
+                                <th>Payment</th>
+                                <th>Order Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (orders.length === 0) { %>
+                                <tr>
+                                    <td colspan="6" style="text-align: center; padding: 40px; color: #888;">No orders found matching your criteria.</td>
+                                </tr>
+                            <% } else { %>
+                                <% orders.forEach(order => { %>
+                                    <tr>
+                                        <td>
+                                            <strong style="color: #00827f;"><%= order.orderId %></strong><br>
+                                            <span style="font-size: 12px; color: #666;">
+                                                <%= new Date(order.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) %>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <% if (order.user) { %>
+                                                <strong><%= order.user.firstName %> <%= order.user.lastName %></strong><br>
+                                                <span style="font-size: 12px; color: #666;"><%= order.user.email %></span>
+                                            <% } else { %>
+                                                <span style="color: #d32f2f;">User Deleted</span>
+                                            <% } %>
+                                        </td>
+                                        <td><strong>₹<%= order.pricing.total %></strong></td>
+                                        <td>
+                                            <%= order.paymentMethod %><br>
+                                            <span style="font-size: 11px; font-weight: bold; color: <%= order.paymentStatus === 'Completed' ? '#2e7d32' : '#f57c00' %>;">
+                                                <%= order.paymentStatus %>
+                                            </span>
+                                        </td>
+                                        
+                                        <td>
+                                            <span class="status-select status-<%= order.orderStatus %>" style="display: inline-block; padding: 4px 10px; border-radius: 4px; pointer-events: none;">
+                                                <%= order.orderStatus %>
+                                            </span>
+                                        </td>
+                                        
+                                        <td>
+                                            <a href="/admin/orders/<%= order.orderId %>" class="btn-view">View Details</a>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+
+                <% if (totalPages > 1) { %>
+                    <div class="pagination-container">
+                        <% for(let i = 1; i <= totalPages; i++) { %>
+                            <a href="/admin/orders?page=<%= i %>&search=<%= query.search || '' %>&status=<%= query.status || '' %>&sort=<%= query.sort || '' %>" 
+                               class="page-link <%= currentPage === i ? 'active' : '' %>">
+                               <%= i %>
+                            </a>
+                        <% } %>
+                    </div>
+                <% } %>
+
+            </div>
+        </main>
+    </div>
+</body>
+</html>

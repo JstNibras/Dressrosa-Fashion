@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Order Details</title>
+    <link rel="stylesheet" href="/css/admin-products.css">
+    <link rel="stylesheet" href="/css/admin-orders.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="admin-layout">
+        
+        <aside class="sidebar">
+            <div class="brand-logo">
+                <h1>DRESSROSA</h1>
+                <p>F A S H I O N</p>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="/admin/dashboard" class="nav-item"><i class="fas fa-th-large"></i> Dashboard</a>
+                <a href="/admin/users" class="nav-item"><i class="fas fa-users"></i> Users</a>
+                <a href="/admin/products" class="nav-item"><i class="fas fa-box"></i> Products</a>
+                <a href="/admin/categories" class="nav-item"><i class="fas fa-th-list"></i> Categories</a>
+                <a href="/admin/banners" class="nav-item"><i class="fas fa-plus-square"></i> Add Banners</a>
+                <a href="/admin/coupons" class="nav-item"><i class="fas fa-ticket-alt"></i> Coupons</a>
+                <a href="/admin/orders" class="nav-item active"><i class="fas fa-shopping-cart"></i> Orders</a>
+                <a href="/admin/report" class="nav-item"><i class="fas fa-chart-pie"></i> Report</a>
+            </nav>
+            <div class="sidebar-footer">
+                <a href="/admin/logout" class="nav-item logout-btn">Logout <i class="fas fa-sign-out-alt"></i></a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="page-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <h2>Order Details: <%= order.orderId %></h2>
+                <a href="/admin/orders" class="btn-view" style="background: #555;"><i class="fas fa-arrow-left"></i> Back to Orders</a>
+            </header>
+
+            <div class="admin-dashboard-container" style="padding: 0; background: transparent;">
+                
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px;">
+                    
+                    <div class="filter-card" style="display: block; margin-bottom: 0;">
+                        <h3 style="margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 15px;">Purchased Items</h3>
+                        
+                        <table class="admin-table" style="margin-top: 15px;">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Price</th>
+                                    <th>Qty</th>
+                                    <th>Total</th>
+                                    <th>Item Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% order.items.forEach(item => { %>
+                                    <tr>
+                                        <td style="display: flex; gap: 10px; align-items: center; border-bottom: none;">
+                                            <img src="<%= item.image %>" style="width: 40px; height: 50px; object-fit: cover; border-radius: 4px;">
+                                            <div>
+                                                <strong><%= item.name %></strong><br>
+                                                <span style="font-size: 12px; color: #666;">Size: <%= item.size %></span>
+                                            </div>
+                                        </td>
+                                        <td>₹<%= item.price %></td>
+                                        <td><%= item.quantity %></td>
+                                        <td><strong>₹<%= item.itemTotal %></strong></td>
+                                        <td>
+                                            <% if (item.itemStatus === 'Placed') { %>
+                                                <button class="btn-action-small" style="background: #f57c00; color: white; border: none; padding: 6px 12px; cursor: pointer; border-radius: 4px;" onclick="changeItemStatus('<%= order.orderId %>', '<%= item._id %>', 'Shipped')">
+                                                    Mark as Shipped <i class="fas fa-truck" style="margin-left: 4px;"></i>
+                                                </button>
+                                            
+                                            <% } else if (item.itemStatus === 'Shipped') { %>
+                                                <button class="btn-action-small" style="background: #2e7d32; color: white; border: none; padding: 6px 12px; cursor: pointer; border-radius: 4px;" onclick="changeItemStatus('<%= order.orderId %>', '<%= item._id %>', 'Delivered')">
+                                                    Mark Delivered <i class="fas fa-check-circle" style="margin-left: 4px;"></i>
+                                                </button>
+                                            
+                                            <% } else if (item.itemStatus === 'Return Requested') { %>
+                                                <div style="background: #fff3e0; border: 1px solid #ffcc80; padding: 10px; border-radius: 6px; margin-top: 10px;">
+                                                    <p style="margin: 0 0 10px 0; font-size: 12px; color: #d84315;"><strong>User Reason:</strong> <%= item.returnReason %></p>
+                                                    <div style="display: flex; gap: 10px;">
+                                                        <button onclick="processReturn('<%= order.orderId %>', '<%= item._id %>', 'approve')" style="background: #28a745; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 11px;">Approve Return</button>
+                                                        <button onclick="processReturn('<%= order.orderId %>', '<%= item._id %>', 'reject')" style="background: #dc3545; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 11px;">Reject Return</button>
+                                                    </div>
+                                                </div>
+                                            
+                                            <% } else if (item.itemStatus === 'Cancelled') { %>
+                                                <div style="font-size: 11px; color: #d32f2f; margin-top: 4px;">Reason: <%= item.cancellationReason %></div>
+                                            <% } else if (item.itemStatus === 'Returned') { %>
+                                                <div style="font-size: 11px; color: #7b1fa2; margin-top: 4px;">User Reason: <%= item.returnReason %></div>
+                                                <div style="font-size: 11px; color: #28a745; margin-top: 2px;">Status: Approved & Refunded</div>
+                                            <% } else if (item.itemStatus === 'Return Rejected') { %>
+                                                <div style="font-size: 11px; color: #d32f2f; margin-top: 4px;">Rejected Reason: <%= item.adminRejectReason %></div>
+                                            <% } %>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 20px;">
+                        
+                        <div class="filter-card" style="display: block; margin-bottom: 0;">
+                            <h3 style="margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 10px;">Customer Info</h3>
+                            <% if (order.user) { %>
+                                <p style="margin: 10px 0 5px 0;"><strong>Name:</strong> <%= order.user.firstName %> <%= order.user.lastName %></p>
+                                <p style="margin: 5px 0;"><strong>Email:</strong> <%= order.user.email %></p>
+                                <p style="margin: 5px 0;"><strong>Phone:</strong> <%= order.user.mobile %></p>
+                            <% } else { %>
+                                <p style="color: #d32f2f;">User Account Deleted</p>
+                            <% } %>
+                        </div>
+
+                        <div class="filter-card" style="display: block; margin-bottom: 0;">
+                            <h3 style="margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 10px;">Shipping Address</h3>
+                            <p style="margin: 10px 0 5px 0;"><strong><%= order.shippingAddress.name %></strong></p>
+                            <p style="margin: 5px 0; font-size: 14px; color: #555;"><%= order.shippingAddress.street %>, <%= order.shippingAddress.city %>, <%= order.shippingAddress.district %></p>
+                            <p style="margin: 5px 0; font-size: 14px; color: #555;"><%= order.shippingAddress.state %> - <%= order.shippingAddress.pincode %></p>
+                            <p style="margin: 5px 0; font-size: 14px; color: #555;">Phone: <%= order.shippingAddress.phone %></p>
+                        </div>
+
+                        <div class="filter-card" style="display: block; margin-bottom: 0;">
+                            <h3 style="margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 10px;">Financial Summary</h3>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                <span style="color: #666;">Payment Method:</span>
+                                <strong><%= order.paymentMethod %></strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                <span style="color: #666;">Payment Status:</span>
+                                <strong style="color: <%= order.paymentStatus === 'Completed' ? '#2e7d32' : '#f57c00' %>;"><%= order.paymentStatus %></strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-top: 15px; padding-top: 15px; border-top: 2px dashed #eee;">
+                                <span style="font-size: 18px; font-weight: bold;">Grand Total:</span>
+                                <span style="font-size: 18px; font-weight: bold; color: #00827f;">₹<%= order.pricing.total %></span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        async function changeItemStatus(orderId, itemId, newStatus) {
+            const result = await Swal.fire({
+                title: 'Confirm Action',
+                text: `Are you sure you want to mark this item as ${newStatus}?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#00827f',
+                cancelButtonColor: '#d32f2f',
+                confirmButtonText: `Yes, mark ${newStatus}!`
+            });
+
+            if (result.isConfirmed) {
+                try {
+                    const response = await fetch(`/admin/orders/${orderId}/item/${itemId}/status`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ newStatus })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        await Swal.fire({ title: 'Updated!', text: data.message, icon: 'success', timer: 1500, showConfirmButton: false });
+                        // Reload the page so the next button appears and Master Status updates visually
+                        window.location.reload(); 
+                    } else {
+                        throw new Error(data.message);
+                    }
+                } catch (error) {
+                    Swal.fire('Error!', error.message || 'Failed to update status', 'error');
+                }
+            }
+        }
+
+        async function processReturn(orderId, itemId, action) {
+            let rejectReason = null;
+
+            if (action === 'reject') {
+                const { value: text } = await Swal.fire({
+                    title: 'Reject Return Request',
+                    input: 'textarea',
+                    inputLabel: 'Reason for rejection (Required)',
+                    inputPlaceholder: 'Type reason here...',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d32f2f',
+                    inputValidator: (value) => {
+                        if (!value) return 'You must provide a reason for rejecting the return!'
+                    }
+                });
+                if (text) rejectReason = text;
+                else return; // User cancelled prompt
+            } else {
+                const result = await Swal.fire({
+                    title: 'Approve Return?',
+                    text: 'This will update the status to Returned and restore inventory.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#28a745',
+                    confirmButtonText: 'Yes, Approve'
+                });
+                if (!result.isConfirmed) return;
+            }
+
+            try {
+                const response = await fetch(`/admin/orders/${orderId}/item/${itemId}/return`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action, rejectReason })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    await Swal.fire('Success', data.message, 'success');
+                    window.location.reload();
+                } else {
+                    Swal.fire('Error', data.message, 'error');
+                }
+            } catch (error) {
+                Swal.fire('Error', 'Server Error', 'error');
+            }
+        }
+    </script>  
+</body>
+</html>

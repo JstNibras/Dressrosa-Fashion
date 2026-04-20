@@ -1,0 +1,257 @@
+<%- include('../layout/header') %>
+
+<style>
+    /* Address Modal Styles */
+    .address-modal-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.5); display: flex; justify-content: center;
+        align-items: center; z-index: 1000;
+    }
+    .address-modal-content {
+        background: white; width: 90%; max-width: 500px; border-radius: 8px;
+        padding: 20px; max-height: 80vh; overflow-y: auto;
+    }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
+    .close-btn { background: none; border: none; font-size: 20px; cursor: pointer; color: #555; }
+    .address-card { border: 1px solid #ddd; border-radius: 6px; padding: 15px; margin-bottom: 15px; }
+    .address-card h4 { margin: 0 0 5px 0; display: flex; align-items: center; gap: 10px; }
+    .badge { background: #eee; font-size: 10px; padding: 2px 6px; border-radius: 4px; color: #555; }
+    .address-card p { margin: 2px 0; font-size: 13px; color: #666; }
+    .addr-actions { margin-top: 15px; text-align: right; }
+    .btn-primary-small { background: #00827f; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 12px; }
+    .btn-outline-block { width: 100%; padding: 12px; background: transparent; border: 1px dashed #00827f; color: #00827f; font-weight: 600; cursor: pointer; border-radius: 4px; }
+    /* Basic Layout for Checkout */
+    .checkout-container { max-width: 1200px; margin: 40px auto; padding: 0 20px; display: grid; grid-template-columns: 2fr 1fr; gap: 30px; font-family: 'Poppins', sans-serif; }
+    .checkout-section { background: #fff; border: 1px solid #eee; border-radius: 8px; padding: 25px; margin-bottom: 20px; }
+    .section-title { font-size: 18px; font-weight: 600; margin-bottom: 20px; color: #111; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+    
+    /* Address Box */
+    .address-box { border: 1px solid #00827f; border-radius: 6px; padding: 15px; position: relative; }
+    .btn-change { position: absolute; top: 15px; right: 15px; background: none; border: none; color: #00827f; font-weight: 600; cursor: pointer; }
+    
+    /* Payment Options */
+    .payment-option { display: flex; align-items: center; justify-content: space-between; padding: 15px; border: 1px solid #eee; margin-bottom: 10px; border-radius: 6px; cursor: pointer; }
+    .payment-option:hover { border-color: #00827f; }
+    
+    /* Right Column (Summary) */
+    .summary-box { background: #f9f9f9; padding: 20px; border-radius: 8px; border: 1px solid #eee; }
+    .summary-row { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 14px; color: #555; }
+    .summary-total { display: flex; justify-content: space-between; margin-top: 20px; padding-top: 20px; border-top: 1px dashed #ccc; font-size: 18px; font-weight: bold; color: #111; }
+    .btn-place-order { width: 100%; padding: 15px; background: #00827f; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 20px; }
+    .btn-place-order:hover { background: #006663; }
+</style>
+
+<div class="checkout-container">
+    
+    <div class="checkout-left">
+        
+        <div class="checkout-section">
+            <h3 class="section-title">Delivery Address</h3>
+            <div class="address-box">
+                <% if (defaultAddress) { %>
+                    <h4 id="checkout-address-name" data-address-id="<%= defaultAddress._id %>">
+                        Deliver To: <%= defaultAddress.firstName %> <%= defaultAddress.lastName %>, <%= defaultAddress.pincode %>
+                    </h4>
+                    <p id="checkout-address-full" style="color: #666; font-size: 14px; margin-top: 5px;">
+                        <%= defaultAddress.houseNo %>, <%= defaultAddress.city %>, <%= defaultAddress.district %>, <%= defaultAddress.state %>
+                    </p>
+                    <button class="btn-change" onclick="openAddressModal()">CHANGE</button>
+                <% } else { %>
+                    <p style="color: red;">No address selected. Please add an address to proceed.</p>
+                    <button class="btn-change" onclick="window.location.href='/profile/addresses'">ADD NEW</button>
+                <% } %>
+            </div>
+        </div>
+
+        <div class="checkout-section">
+            <h3 class="section-title" style="font-size: 14px; color: #888;">YOUR ORDER (<%= cartItems.length %> Items)</h3>
+            <div class="checkout-items-list" style="max-height: 300px; overflow-y: auto;">
+                <% cartItems.forEach(item => { %>
+                    <div style="display: flex; gap: 15px; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                        <img src="<%= item.image %>" alt="<%= item.name %>" style="width: 60px; height: 80px; object-fit: cover; border-radius: 4px;">
+                        <div style="flex-grow: 1;">
+                            <h4 style="margin: 0 0 5px 0; font-size: 14px;"><%= item.name %></h4>
+                            <p style="margin: 0; font-size: 12px; color: #666;">Size: <%= item.size %> | Qty: <%= item.quantity %></p>
+                            <p style="margin: 5px 0 0 0; font-weight: 600;">₹<%= item.price * item.quantity %></p>
+                        </div>
+                    </div>
+                <% }) %>
+            </div>
+        </div>
+
+        <div class="checkout-section">
+            <h3 class="section-title">Payment Options</h3>
+            
+            <label class="payment-option">
+                <div>
+                    <strong>RazorPay</strong>
+                    <p style="margin: 0; font-size: 12px; color: #666;">Pay via UPI, Cards, or Netbanking</p>
+                </div>
+                <input type="radio" name="paymentMethod" value="RAZORPAY" checked>
+            </label>
+
+            <label class="payment-option">
+                <div>
+                    <strong>Cash on Delivery (COD)</strong>
+                    <p style="margin: 0; font-size: 12px; color: #666;">Pay when your order arrives</p>
+                </div>
+                <input type="radio" name="paymentMethod" value="COD">
+            </label>
+        </div>
+    </div>
+
+    <div class="checkout-right">
+        
+        <div class="checkout-section" style="padding: 15px;">
+            <div style="display: flex; justify-content: space-between; cursor: pointer; font-weight: 600;">
+                <span><i class="fas fa-tag"></i> Apply Coupon</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+        </div>
+
+        <div class="checkout-section" style="padding: 15px;">
+            <div style="display: flex; justify-content: space-between; cursor: pointer; font-weight: 600;">
+                <span><i class="fas fa-wallet"></i> Wallet Money</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+        </div>
+
+        <div class="summary-box">
+            <h3 class="section-title" style="font-size: 14px; color: #888; border: none; margin-bottom: 10px;">BILLING DETAILS</h3>
+            
+            <div class="summary-row">
+                <span>Cart Total (Excl. of all taxes)</span>
+                <span id="summary-subtotal">₹<%= (cartTotal * 0.95).toFixed(2) %></span>
+            </div>
+            
+            <div class="summary-row">
+                <span>Shipping Charges</span>
+                <span style="color: #00827f; font-weight: 600;">Free</span>
+            </div>
+
+            <% 
+                const gstRate = 0.05; 
+                const gstAmount = cartTotal * gstRate;
+                const finalAmount = (cartTotal * 0.95) + gstAmount;
+            %>
+            <div class="summary-row">
+                <span>Estimated GST (5%)</span>
+                <span id="summary-gst">₹<%= gstAmount.toFixed(2) %></span>
+            </div>
+
+            <div class="summary-total">
+                <span>Total Amount</span>
+                <span id="summary-final-total">₹<%= finalAmount.toFixed(2) %></span>
+            </div>
+
+            <button class="btn-place-order" onclick="initiateCheckout()">CONFIRM ORDER</button>
+        </div>
+    </div>
+
+</div>
+
+<%- include('../layout/footer') %>
+
+<div id="addressModal" class="address-modal-overlay" style="display: none;">
+    <div class="address-modal-content">
+        <div class="modal-header">
+            <h3 style="margin: 0; font-size: 18px;">Select Delivery Address</h3>
+            <button class="close-btn" onclick="closeAddressModal()"><i class="fas fa-times"></i></button>
+        </div>
+        
+        <div class="modal-body">
+            <% if (addresses && addresses.length > 0) { %>
+                <% addresses.forEach(addr => { %>
+                    <div class="address-card" id="addr-card-<%= addr._id %>">
+                        <div class="addr-info">
+                            <h4><%= addr.firstName %> <%= addr.lastName %> <span class="badge"><%= addr.type %></span></h4>
+                            <p><%= addr.houseNo %></p>
+                            <p><%= addr.city %>, <%= addr.district %>, <%= addr.state %> - <%= addr.pincode %></p>
+                            <p>Phone: <%= addr.mobile %></p>
+                        </div>
+                        <div class="addr-actions">
+                            <button class="btn-primary-small" onclick="selectAddress(
+                                '<%= addr._id %>', 
+                                '<%= addr.firstName %> <%= addr.lastName %>', 
+                                '<%= addr.pincode %>', 
+                                '<%= addr.houseNo %>', 
+                                '<%= addr.city %>', 
+                                '<%= addr.district %>',
+                                '<%= addr.state %>'
+                            )">DELIVER HERE</button>
+                        </div>
+                    </div>
+                <% }) %>
+            <% } %>
+            <button class="btn-outline-block" style="margin-top: 15px;" onclick="window.location.href='/profile/addresses'">+ ADD NEW ADDRESS</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- ADDRESS MODAL ENGINE ---
+    function openAddressModal() {
+        document.getElementById('addressModal').style.display = 'flex';
+    }
+
+    function closeAddressModal() {
+        document.getElementById('addressModal').style.display = 'none';
+    }
+
+    function selectAddress(id, fullName, pincode, houseNo, city, district, state) {
+        // 1. Target the display elements in the left column
+        const namePinEl = document.getElementById('checkout-address-name');
+        const fullAddressEl = document.getElementById('checkout-address-full');
+        
+        // 2. Update the text visually
+        namePinEl.innerHTML = `Deliver To: ${fullName}, ${pincode}`;
+        fullAddressEl.innerHTML = `${houseNo}, ${city}, ${district}, ${state}`;
+        
+        // 3. CRITICAL: Update the hidden ID so initiateCheckout() sends the right one to MongoDB
+        namePinEl.setAttribute('data-address-id', id);
+        
+        // 4. Close the modal and notify the user
+        closeAddressModal();
+        
+        Swal.fire({
+            toast: true, position: 'top-end', icon: 'success',
+            title: 'Delivery address updated', showConfirmButton: false, timer: 1500
+        });
+    }
+    
+async function initiateCheckout() {
+    // 1. Grab selected address ID
+    const addressEl = document.getElementById('checkout-address-name');
+    if (!addressEl) return Swal.fire('Wait', 'Please select a delivery address', 'warning');
+    const addressId = addressEl.getAttribute('data-address-id');
+
+    // 2. Grab selected payment method
+    const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
+
+    const btn = document.querySelector('.btn-place-order');
+    btn.innerText = 'PROCESSING...';
+    btn.disabled = true;
+
+    try {
+        const response = await fetch('/checkout/place-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ addressId, paymentMethod })
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            // Redirect to Requirement IV (Success Page)
+            window.location.href = `/order-success?orderId=${data.orderId}`;
+        } else {
+            Swal.fire('Error', data.message, 'error');
+            btn.innerText = 'CONFIRM ORDER';
+            btn.disabled = false;
+        }
+    } catch (error) {
+        Swal.fire('Error', 'Something went wrong', 'error');
+        btn.innerText = 'CONFIRM ORDER';
+        btn.disabled = false;
+    }
+}
+</script>

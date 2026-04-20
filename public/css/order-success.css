@@ -1,0 +1,94 @@
+
+    .success-container {
+        max-width: 600px;
+        margin: 80px auto;
+        padding: 40px 20px;
+        text-align: center;
+        background: #fff;
+        border: 1px solid #eee;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        font-family: 'Poppins', sans-serif;
+    }
+    
+    .success-icon-wrapper {
+        width: 100px;
+        height: 100px;
+        background: #e8f5e9;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+    }
+    
+    .success-icon-wrapper i {
+        font-size: 50px;
+        color: #00827f;
+    }
+    
+    .success-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: #111;
+        margin-bottom: 10px;
+    }
+    
+    .success-message {
+        font-size: 16px;
+        color: #666;
+        margin-bottom: 30px;
+        line-height: 1.6;
+    }
+    
+    .order-id-box {
+        background: #f9f9f9;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 30px;
+        border: 1px dashed #ccc;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+    }
+    
+    .btn-primary-custom {
+        padding: 12px 25px;
+        background: #00827f;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+    
+    .btn-primary-custom:hover {
+        background: #006663;
+    }
+    
+    .btn-secondary-custom {
+        padding: 12px 25px;
+        background: white;
+        color: #00827f;
+        border: 1px solid #00827f;
+        border-radius: 6px;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+    
+    .btn-secondary-custom:hover {
+        background: #f0fdfc;
+    }
+
+    @media (max-width: 480px) {
+        .action-buttons {
+            flex-direction: column;
+        }
+    }

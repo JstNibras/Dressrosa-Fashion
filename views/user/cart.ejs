@@ -12,27 +12,7 @@
     <div class="cart-wrapper">
         <% if (cartItems.length > 0) { %>
             <div class="cart-left">
-                <div class="address-block">
-                    <% if (defaultAddress) { %>
-                        <div class="address-details" id="active-address-display">
-                            <h4 id="display-name-pin" data-address-id="<%= defaultAddress._id %>">
-                                Deliver To: <%= defaultAddress.firstName %> <%= defaultAddress.lastName %>, <%= defaultAddress.pincode %>
-                            </h4>
-                            <p id="display-full-address">
-                                <%= defaultAddress.houseNo %>, <%= defaultAddress.city %>, <%= defaultAddress.district %>, <%= defaultAddress.state %>
-                            </p>
-                        </div>
-                        <button class="btn-change-text" onclick="openAddressModal()">CHANGE</button>
-                    <% } else { %>
-                        <div class="address-details">
-                            <h4>No Address Found</h4>
-                            <p>Please add a delivery address to proceed.</p>
-                        </div>
-                        <button class="btn-change-text" onclick="window.location.href='/profile/addresses'">ADD NEW</button>
-                    <% } %>
-                </div>
-
-                
+                    
                 <% cartItems.forEach(item => { %>
                     <div class="cart-item-card <%= item.isOutOfStock ? 'oos-dim' : '' %>">
                         <div class="cart-item-main">
@@ -91,15 +71,16 @@
 
             <!-- RIGHT COLUMN: Billing -->
             <div class="cart-right">
-                <button class="btn-primary btn-block mb-15" <%= !isCheckoutValid ? 'disabled' : '' %>>PLACE ORDER</button>
-
-                <!-- Accordions -->
+                <!-- <button class="btn-checkout" onclick="window.location.href='/checkout'" style="width: 100%; padding: 15px; background: #00827f; color: white; border: none; font-weight: bold; cursor: pointer; border-radius: 4px;">
+                    PLACE ORDER
+                </button> -->
+                <!-- Accordions
                 <div class="accordion-box">
                     <div class="accordion-header"><i class="fas fa-tag"></i> Apply Coupon <i class="fas fa-chevron-down right-icon"></i></div>
                 </div>
                 <div class="accordion-box mb-15">
                     <div class="accordion-header"><i class="fas fa-wallet"></i> Wallet Money <i class="fas fa-chevron-down right-icon"></i></div>
-                </div>
+                </div> -->
 
                 <!-- Billing Summary -->
                 <div class="billing-card">
@@ -123,7 +104,9 @@
                     </div>
                 </div>
 
-                <button class="btn-primary btn-block mt-15" <%= !isCheckoutValid ? 'disabled' : '' %>>PLACE ORDER</button>
+                <button class="btn-checkout" onclick="window.location.href='/checkout'" style="width: 100%; padding: 15px; background: #00827f; color: white; border: none; font-weight: bold; cursor: pointer; border-radius: 4px;">
+                    PLACE ORDER
+                </button>
             </div>
 
         <% } else { %>
