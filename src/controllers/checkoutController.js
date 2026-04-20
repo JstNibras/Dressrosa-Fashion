@@ -140,7 +140,27 @@ exports.buyNow = async (req, res) => {
         const { productId, size, quantity } = req.body;
 
         if (!productId || !size || !quantity) {
-            return res.status(400).json({ success: false, message: "Missingproduct details"});
+            return res.status(400).json({ success: false, message: "Missing product details" });
+        }
+
+        const Product = require('../models/productModel');
+        const product = await Product.findById(productId).populate('category');
+
+        if (!product || product.isActive === false || product.isListed === false) {
+            return res.status(400).json({ success: false, message: "This product is no longer available." });
+        }
+
+        if (!product.category || product.category.isActive === false || product.category.isListed === false) {
+            return res.status(400).json({ success: false, message: "The category for this product is currently unavailable." });
+        }
+
+        const variant = product.variants.find(v => String(v.size).trim() === String(size).trim() && v.isActive !== false);
+        if (!variant) {
+            return res.status(400).json({ success: false, message: "Selected size is no longer available." });
+        }
+
+        if (variant.stock < parseInt(quantity)) {
+            return res.status(400).json({ success: false, message: "Requested quantity exceeds available stock." });
         }
 
         req.session.buyNowItem = { productId, size, quantity: parseInt(quantity) };
@@ -195,8 +215,22 @@ exports.createRazorpayOrder = async (req, res) => {
 
         if (req.session.buyNowItem) {
             const Product = require('../models/productModel');
-            const product = await Product.findById(req.session.buyNowItem.productId);
-            finalAmount = product.salePrice * req.session.buyNowItem.quantity;
+            const { productId, size, quantity } = req.session.buyNowItem;
+            const product = await Product.findById(productId).populate('category');
+
+            if (!product || product.isActive === false || product.isListed === false) {
+                return res.status(400).json({ success: false, message: "This product is no longer available." });
+            }
+            if (!product.category || product.category.isActive === false || product.category.isListed === false) {
+                return res.status(400).json({ success: false, message: "The product category is currently unavailable." });
+            }
+
+            const variant = product.variants.find(v => String(v.size).trim() === String(size).trim());
+            if (!variant || variant.stock < quantity) {
+                return res.status(400).json({ success: false, message: `Insufficient stock for ${product.name}.` });
+            }
+
+            finalAmount = product.salePrice * quantity;
         } else {
             const cartData = await cartService.getCartData(userId);
             if (!cartData || !cartData.isCheckoutValid) {
@@ -207,7 +241,15 @@ exports.createRazorpayOrder = async (req, res) => {
             finalAmount = cartData.cartTotal;
         }
 
-        if (req.session.appliedCoupon) finalAmount -= req.session.appliedCoupon.discountAmount;
+        if (req.session.appliedCoupon) {
+            const result = await couponService.validateCoupon(req.session.appliedCoupon.code, userId, finalAmount);
+            if (result.success) {
+                const discount = couponService.calculateDiscount(result.coupon, finalAmount);
+                finalAmount -= discount;
+            } else {
+                return res.status(400).json({ success: false, message: `Coupon Error: ${result.message}` });
+            }
+        }
 
         if (finalAmount < 1) {
             return res.status(400).json({ success: false, message: "Order amount must be at least ₹1 for Razorpay. Please use another payment method for free orders." });

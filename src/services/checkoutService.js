@@ -84,18 +84,18 @@ exports.placeOrder = async (userId, addressId, paymentMethod, appliedCoupon = nu
         const finalTotal = subtotal;
         let orderDiscount = 0;
 
+        let couponToUpdate = null;
         if (appliedCoupon) {
             const couponService = require('./couponService');
             const result = await couponService.validateCoupon(appliedCoupon.code, userId, finalTotal);
             
-            if (result.success) {
-                const discount = couponService.calculateDiscount(result.coupon, finalTotal);
-                orderDiscount = discount;
-                
-                result.coupon.usedBy.push(userId);
-                result.coupon.usedCount += 1; 
-                await result.coupon.save();
+            if (!result.success) {
+                throw new Error(`Coupon Validation Failed: ${result.message}`);
             }
+
+            const discount = couponService.calculateDiscount(result.coupon, finalTotal);
+            orderDiscount = discount;
+            couponToUpdate = result.coupon;
         }
 
         const netTotal = finalTotal - orderDiscount;
@@ -120,6 +120,12 @@ exports.placeOrder = async (userId, addressId, paymentMethod, appliedCoupon = nu
         });
 
         await newOrder.save();
+
+        if (couponToUpdate) {
+            couponToUpdate.usedBy.push(userId);
+            couponToUpdate.usedCount += 1;
+            await couponToUpdate.save();
+        }
 
         for (let item of validItems) {
             await Product.updateOne(
