@@ -151,7 +151,6 @@ exports.downloadInvoice = async (req, res) => {
         
         const finalItemPaid = Math.round((item.itemTotal - (isReturned ? 0 : couponDiscount)) * 100) / 100;
 
-        // Increase box height to fit more rows
         const boxHeight = isReturned ? 70 : 100;
         doc.rect(350, currentY, 210, boxHeight).fill('#f9f9f9');
         
@@ -171,28 +170,23 @@ exports.downloadInvoice = async (req, res) => {
                .text('Net Paid:', 350, rowY, { width: 110, align: 'right' });
             doc.text(`₹0`, 470, rowY, { width: 80, align: 'right' });
         } else {
-            // MRP Row
             doc.text('Cart Total (MRP):', 350, rowY, { width: 110, align: 'right' });
             doc.text(`₹${mrpTotal.toFixed(2)}`, 470, rowY, { width: 80, align: 'right' });
             
-            // Product Offer Row
             rowY += 15;
             doc.fillColor('#00827f').text('Product Offer:', 350, rowY, { width: 110, align: 'right' });
             doc.text(`- ₹${productOffer.toFixed(2)}`, 470, rowY, { width: 80, align: 'right' });
 
-            // Shipping
             rowY += 15;
             doc.fillColor('#00827f').text('Shipping:', 350, rowY, { width: 110, align: 'right' });
             doc.text(`Free`, 470, rowY, { width: 80, align: 'right' });
 
-            // Coupon Row (if any)
             if (couponDiscount > 0) {
                 rowY += 15;
                 doc.fillColor('#d32f2f').text('Coupon Discount:', 350, rowY, { width: 110, align: 'right' });
                 doc.text(`- ₹${couponDiscount.toFixed(2)}`, 470, rowY, { width: 80, align: 'right' });
             }
 
-            // Total Row
             rowY += 15;
             doc.fillColor('#111111').font('Roboto-Bold').fontSize(11);
             doc.moveTo(360, rowY - 2).lineTo(550, rowY - 2).strokeColor('#dddddd').stroke();

@@ -14,7 +14,6 @@ exports.getCartData = async (userId) => {
         const processedItems = cart.items.map(item => {
             const product = item.product;
 
-            // Handle deleted products
             if (!product) {
                 return {
                     _id: item._id,

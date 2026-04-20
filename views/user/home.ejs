@@ -1,5 +1,94 @@
 <%- include('../layout/header') %>
 
+<style>
+    /* Category Section Styles */
+    .category-section {
+        padding: 60px 0;
+        background: #fdfdfd;
+    }
+    .category-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 30px;
+        padding: 0 50px;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+    .category-card {
+        position: relative;
+        height: 350px;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+        transition: transform 0.4s ease, box-shadow 0.4s ease;
+        cursor: pointer;
+        text-decoration: none;
+    }
+    .category-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    }
+    .category-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.6s ease;
+    }
+    .category-card:hover .category-image {
+        transform: scale(1.1);
+    }
+    .category-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        padding: 40px 20px 20px;
+        background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+        color: white;
+        text-align: center;
+    }
+    .category-name {
+        font-size: 20px;
+        font-weight: 700;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        margin-bottom: 5px;
+    }
+    .category-explore {
+        font-size: 12px;
+        letter-spacing: 1px;
+        opacity: 0.8;
+    }
+
+    /* Product Card Highlights */
+    .product-card {
+        transition: all 0.3s ease;
+    }
+    .product-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+    .section-title {
+        font-size: 28px;
+        font-weight: 800;
+        text-align: center;
+        margin-bottom: 40px;
+        letter-spacing: 4px;
+        color: #1a1a1a;
+        position: relative;
+    }
+    .section-title::after {
+        content: '';
+        position: absolute;
+        bottom: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 60px;
+        height: 3px;
+        background: #000;
+    }
+</style>
+
     <section class="hero-banner"
         style="background: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('/images/hero-bg.jpg') no-repeat center center / cover;">
         <div class="hero-content">
@@ -9,145 +98,61 @@
         </div>
     </section>
 
-    <section class="new-arrivals">
+    <section class="new-arrivals" style="padding: 80px 0;">
         <h2 class="section-title">NEW ARRIVALS</h2>
 
-        <div class="product-grid">
-            <div class="product-card">
-                <div class="product-image-container">
-                    <img src="/images/Product 1.jpg" alt="Relaxed Fit Cargos" class="product-image">
-                    <div class="image-overlay">
-                        <i class="fas fa-plus circle-plus"></i>
+        <div class="product-grid" style="padding: 0 50px; max-width: 1400px; margin: 0 auto;">
+            <% newArrivals.forEach(product => { %>
+                <div class="product-card">
+                    <div class="product-image-container" onclick="window.location.href='/product/<%= product._id %>'" style="cursor: pointer;">
+                        <img src="<%= product.images[0] %>" alt="<%= product.name %>" class="product-image">
+                        <% if (product.offerPercentage > 0) { %>
+                            <div class="product-badge" style="position: absolute; top: 10px; left: 10px; background: #000; color: #fff; padding: 4px 10px; font-size: 10px; font-weight: bold; border-radius: 4px;">
+                                <%= product.offerPercentage %>% OFF
+                            </div>
+                        <% } %>
                     </div>
-                </div>
-                <div class="product-details">
-                    <div class="price-row">
-                        <div class="price-info">
-                            <span class="current-price">Rs.799.00</span>
-                            <span class="original-price">Rs.1,199.00</span>
-                            <span class="tax-info">inclusive of all taxes</span>
+                    <div class="product-details">
+                        <div class="price-row">
+                            <div class="price-info">
+                                <span class="current-price">Rs.<%= product.salePrice.toLocaleString() %></span>
+                                <% if (product.offerPercentage > 0) { %>
+                                    <span class="original-price">Rs.<%= product.regularPrice.toLocaleString() %></span>
+                                <% } %>
+                                <span class="tax-info">inclusive of all taxes</span>
+                            </div>
+                            <% const isInWishlist = wishlist && wishlist.includes(product._id.toString()); %>
+                            <i class="<%= isInWishlist ? 'fas' : 'far' %> fa-heart wishlist-icon" 
+                               style="<%= isInWishlist ? 'color: #e74c3c;' : '' %>"
+                               onclick="toggleWishlist('<%= product._id %>', this)"></i>
                         </div>
-                        <i class="far fa-heart wishlist-icon"></i>
-                    </div>
-                    <h3 class="product-title">Porsche 1985 Oversized T-shirt</h3>
-                    <div class="product-actions">
-                        <button class="btn-add-cart">ADD TO CART</button>
-                        <button class="btn-buy-now">BUY NOW</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="product-card">
-                <div class="product-image-container">
-                    <img src="/images/Product 2.jpg" alt="Beige Hoodie" class="product-image">
-                </div>
-                <div class="product-details">
-                    <div class="price-row">
-                        <div class="price-info">
-                            <span class="current-price">Rs.999.00</span>
-                            <span class="original-price">Rs.1,199.00</span>
-                            <span class="tax-info">inclusive of all taxes</span>
+                        <h3 class="product-title" onclick="window.location.href='/product/<%= product._id %>'" style="cursor: pointer;"><%= product.name %></h3>
+                        <div class="product-actions">
+                            <button class="btn-add-cart" onclick="openQuickAdd('<%= product._id %>')">ADD TO CART</button>
+                            <button class="btn-buy-now" onclick="window.location.href='/product/<%= product._id %>'">BUY NOW</button>
                         </div>
-                        <i class="far fa-heart wishlist-icon"></i>
-                    </div>
-                    <h3 class="product-title">Hogwarts Heritage Faded Oversized T-shirt </h3>
-                    <div class="product-actions">
-                        <button class="btn-add-cart">ADD TO CART</button>
-                        <button class="btn-buy-now">BUY NOW</button>
                     </div>
                 </div>
-            </div>
-
-            <div class="product-card">
-                <div class="product-image-container">
-                    <img src="/images/Product 3.jpg" alt="Denim Jacket" class="product-image">
-                </div>
-                <div class="product-details">
-                    <div class="price-row">
-                        <div class="price-info">
-                            <span class="current-price">Rs.799.00</span>
-                            <span class="original-price">Rs.999.00</span>
-                            <span class="tax-info">inclusive of all taxes</span>
-                        </div>
-                        <i class="far fa-heart wishlist-icon"></i>
-                    </div>
-                    <h3 class="product-title">Alligator Faded Effect Oversized T-shirt </h3>
-                    <div class="product-actions">
-                        <button class="btn-add-cart">ADD TO CART</button>
-                        <button class="btn-buy-now">BUY NOW</button>
-                    </div>
-                </div>
-            </div>
-
+            <% }) %>
         </div>
-        <br>
-        <div class="product-grid">
-            <div class="product-card">
-                <div class="product-image-container">
-                    <img src="/images/Product 4.jpg" alt="Relaxed Fit Cargos" class="product-image">
-                    <div class="image-overlay">
-                        <i class="fas fa-plus circle-plus"></i>
-                    </div>
-                </div>
-                <div class="product-details">
-                    <div class="price-row">
-                        <div class="price-info">
-                            <span class="current-price">Rs.1,999.00</span>
-                            <span class="original-price">Rs.2,299.00</span>
-                            <span class="tax-info">inclusive of all taxes</span>
-                        </div>
-                        <i class="far fa-heart wishlist-icon"></i>
-                    </div>
-                    <h3 class="product-title">Black Wash Workwear Cargo Jeans</h3>
-                    <div class="product-actions">
-                        <button class="btn-add-cart">ADD TO CART</button>
-                        <button class="btn-buy-now">BUY NOW</button>
-                    </div>
-                </div>
-            </div>
+        
+        <div style="text-align: center; margin-top: 50px;">
+            <a href="/shop" class="btn-shop-now" style="background: #000; color: #fff; padding: 12px 35px; text-decoration: none; font-size: 14px; font-weight: 600; border-radius: 30px; transition: 0.3s; display: inline-block;">VIEW ALL PRODUCTS</a>
+        </div>
+    </section>
 
-            <div class="product-card">
-                <div class="product-image-container">
-                    <img src="/images/Product 5.jpg" alt="Beige Hoodie" class="product-image">
-                </div>
-                <div class="product-details">
-                    <div class="price-row">
-                        <div class="price-info">
-                            <span class="current-price">Rs.1,599.00</span>
-                            <span class="original-price">Rs.1,999.00</span>
-                            <span class="tax-info">inclusive of all taxes</span>
-                        </div>
-                        <i class="far fa-heart wishlist-icon"></i>
+    <section class="category-section">
+        <h2 class="section-title">SHOP BY CATEGORY</h2>
+        <div class="category-grid">
+            <% categories.forEach(category => { %>
+                <a href="/shop?category=<%= category._id %>" class="category-card">
+                    <img src="<%= category.image %>" alt="<%= category.name %>" class="category-image">
+                    <div class="category-overlay">
+                        <h3 class="category-name"><%= category.name %></h3>
+                        <p class="category-explore">EXPLORE NOW</p>
                     </div>
-                    <h3 class="product-title">Ridge Line Black Straight Fit Jeans </h3>
-                    <div class="product-actions">
-                        <button class="btn-add-cart">ADD TO CART</button>
-                        <button class="btn-buy-now">BUY NOW</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="product-card">
-                <div class="product-image-container">
-                    <img src="/images/Product 6.jpg" alt="Denim Jacket" class="product-image">
-                </div>
-                <div class="product-details">
-                    <div class="price-row">
-                        <div class="price-info">
-                            <span class="current-price">Rs.1,499.00</span>
-                            <span class="original-price">Rs.1,799.00</span>
-                            <span class="tax-info">inclusive of all taxes</span>
-                        </div>
-                        <i class="far fa-heart wishlist-icon"></i>
-                    </div>
-                    <h3 class="product-title">Ash Cabana Full Sleeve Striped Shirt</h3>
-                    <div class="product-actions">
-                        <button class="btn-add-cart">ADD TO CART</button>
-                        <button class="btn-buy-now">BUY NOW</button>
-                    </div>
-                </div>
-            </div>
-
+                </a>
+            <% }) %>
         </div>
     </section>
 
@@ -182,4 +187,5 @@
         </div>
     </section>
 
+    <%- include('../layout/quickAdd') %>
     <%- include('../layout/footer') %>

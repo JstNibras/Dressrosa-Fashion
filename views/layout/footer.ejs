@@ -214,13 +214,16 @@
                     }
                 } else {
                     // 2. We are on Shop/Home -> Just toggle the Heart Icon Color
-                    const icon = buttonElement.querySelector('i');
+                    // If buttonElement is the <i> itself, use it. Otherwise find <i> inside.
+                    const icon = buttonElement.tagName === 'I' ? buttonElement : buttonElement.querySelector('i');
                     if (icon) {
                         if (data.isAdded) {
-                            icon.classList.replace('far', 'fas');
+                            icon.classList.remove('far');
+                            icon.classList.add('fas');
                             icon.style.color = '#e74c3c';
                         } else {
-                            icon.classList.replace('fas', 'far');
+                            icon.classList.remove('fas');
+                            icon.classList.add('far');
                             icon.style.color = 'inherit';
                         }
                     }

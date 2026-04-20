@@ -89,6 +89,10 @@ exports.createProduct = async (productData, files) => {
     }
     imageUrls = imageUrls.filter(url => url != null);
 
+    if (imageUrls.length < 4) {
+        throw new Error("Exactly 4 product images are required.");
+    }
+
     let parsedVariants = [];
     if (productData.variants) {
         try {
@@ -145,6 +149,10 @@ exports.updateProduct = async (productId, productData, files) => {
     }
 
     product.images = updatedImages.filter(url => url != null);
+
+    if (product.images.length < 4) {
+        throw new Error("Exactly 4 product images are required.");
+    }
 
     let parsedVariants = [];
     if (productData.variants) {

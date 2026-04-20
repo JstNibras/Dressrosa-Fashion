@@ -10,6 +10,19 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
+    <style>
+        .error-msg {
+            color: #d32f2f;
+            font-size: 11px;
+            margin-top: 4px;
+            display: block;
+            height: 14px;
+        }
+        .filter-input.invalid {
+            border-color: #d32f2f !important;
+        }
+    </style>
+
     <div class="admin-layout">
         
         <aside class="sidebar">
@@ -43,43 +56,50 @@
                     <div class="filter-card" style="display: block; margin: 0;">
                         <h3 style="margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; color: #111;">Create New Coupon</h3>
                         
-                        <form id="createCouponForm">
+                        <form id="createCouponForm" novalidate>
                             <div class="filter-group" style="width: 100%; margin-bottom: 15px;">
                                 <label style="display: block; margin-bottom: 5px;">Coupon Code</label>
-                                <input type="text" id="code" class="filter-input" style="width: 100%; text-transform: uppercase;" placeholder="e.g. FESTIVE50" required>
+                                <input type="text" id="code" name="code" class="filter-input" style="width: 100%; text-transform: uppercase;" placeholder="e.g. FESTIVE50">
+                                <small class="error-msg" id="error-code"></small>
                             </div>
 
                             <div class="filter-group" style="width: 100%; margin-bottom: 15px;">
                                 <label style="display: block; margin-bottom: 5px;">Discount Type</label>
-                                <select id="discountType" class="filter-select" style="width: 100%;" required>
+                                <select id="discountType" name="discountType" class="filter-select" style="width: 100%;">
                                     <option value="flat">Flat Amount (₹)</option>
                                     <option value="percentage">Percentage (%)</option>
                                 </select>
+                                <small class="error-msg" id="error-discountType"></small>
                             </div>
 
                             <div class="filter-group" style="width: 100%; margin-bottom: 15px;">
                                 <label style="display: block; margin-bottom: 5px;">Discount Value</label>
-                                <input type="number" id="discountValue" class="filter-input" style="width: 100%;" required min="1">
+                                <input type="number" id="discountValue" name="discountValue" class="filter-input" style="width: 100%;">
+                                <small class="error-msg" id="error-discountValue"></small>
                             </div>
 
                             <div class="filter-group" style="width: 100%; margin-bottom: 15px;">
                                 <label style="display: block; margin-bottom: 5px;">Min. Purchase Amount (₹)</label>
-                                <input type="number" id="minPurchaseAmount" class="filter-input" style="width: 100%;" required min="0">
+                                <input type="number" id="minPurchaseAmount" name="minPurchaseAmount" class="filter-input" style="width: 100%;">
+                                <small class="error-msg" id="error-minPurchaseAmount"></small>
                             </div>
 
                             <div class="filter-group" id="maxDiscountAmountGroup" style="width: 100%; margin-bottom: 15px; display: none;">
                                 <label style="display: block; margin-bottom: 5px;">Max Discount Amount (₹)</label>
-                                <input type="number" id="maxDiscountAmount" class="filter-input" style="width: 100%;" min="1">
+                                <input type="number" id="maxDiscountAmount" name="maxDiscountAmount" class="filter-input" style="width: 100%;">
+                                <small class="error-msg" id="error-maxDiscountAmount"></small>
                             </div>
 
                             <div class="filter-group" style="width: 100%; margin-bottom: 15px;">
                                 <label style="display: block; margin-bottom: 5px;">Expiry Date</label>
-                                <input type="date" id="expiryDate" class="filter-input" style="width: 100%;" required>
+                                <input type="date" id="expiryDate" name="expiryDate" class="filter-input" style="width: 100%;">
+                                <small class="error-msg" id="error-expiryDate"></small>
                             </div>
 
                             <div class="filter-group" style="width: 100%; margin-bottom: 15px;">
                                 <label style="display: block; margin-bottom: 5px;">Total Usage Limit (0 = Unlimited)</label>
-                                <input type="number" id="totalUsageLimit" class="filter-input" style="width: 100%;" value="0" min="0">
+                                <input type="number" id="totalUsageLimit" name="totalUsageLimit" class="filter-input" style="width: 100%;" value="0">
+                                <small class="error-msg" id="error-totalUsageLimit"></small>
                             </div>
 
                             <button type="submit" class="filter-btn" style="width: 100%; margin-top: 10px; background: #00827f; color: white; border: none;">
@@ -166,46 +186,53 @@
                 <button type="button" onclick="closeEditModal()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #555;">&times;</button>
             </div>
             
-            <form id="editCouponForm">
+            <form id="editCouponForm" novalidate>
                 <input type="hidden" id="editCouponId">
                 
                 <div class="filter-group" style="width: 100%; margin-bottom: 15px;">
                     <label style="display: block; margin-bottom: 5px; font-size: 13px;">Coupon Code</label>
-                    <input type="text" id="editCode" class="filter-input" style="width: 100%; text-transform: uppercase;" required>
+                    <input type="text" id="editCode" name="code" class="filter-input" style="width: 100%; text-transform: uppercase;">
+                    <small class="error-msg" id="error-edit-code"></small>
                 </div>
 
                 <div class="filter-group" style="width: 100%; margin-bottom: 15px;">
                     <label style="display: block; margin-bottom: 5px; font-size: 13px;">Discount Type</label>
-                    <select id="editDiscountType" class="filter-select" style="width: 100%;" required>
+                    <select id="editDiscountType" name="discountType" class="filter-select" style="width: 100%;">
                         <option value="flat">Flat Amount (₹)</option>
                         <option value="percentage">Percentage (%)</option>
                     </select>
+                    <small class="error-msg" id="error-edit-discountType"></small>
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
                     <div class="filter-group" style="width: 100%;">
                         <label style="display: block; margin-bottom: 5px; font-size: 13px;">Discount Value</label>
-                        <input type="number" id="editDiscountValue" class="filter-input" style="width: 100%;" required min="1">
+                        <input type="number" id="editDiscountValue" name="discountValue" class="filter-input" style="width: 100%;">
+                        <small class="error-msg" id="error-edit-discountValue"></small>
                     </div>
                     <div class="filter-group" style="width: 100%;">
                         <label style="display: block; margin-bottom: 5px; font-size: 13px;">Min. Purchase</label>
-                        <input type="number" id="editMinPurchase" class="filter-input" style="width: 100%;" required min="0">
+                        <input type="number" id="editMinPurchase" name="minPurchaseAmount" class="filter-input" style="width: 100%;">
+                        <small class="error-msg" id="error-edit-minPurchaseAmount"></small>
                     </div>
                 </div>
 
                 <div class="filter-group" id="editMaxDiscountGroup" style="width: 100%; margin-bottom: 15px; display: none;">
                     <label style="display: block; margin-bottom: 5px; font-size: 13px;">Max Discount Amount (₹)</label>
-                    <input type="number" id="editMaxDiscount" class="filter-input" style="width: 100%;" min="1">
+                    <input type="number" id="editMaxDiscount" name="maxDiscountAmount" class="filter-input" style="width: 100%;">
+                    <small class="error-msg" id="error-edit-maxDiscountAmount"></small>
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
                     <div class="filter-group" style="width: 100%;">
                         <label style="display: block; margin-bottom: 5px; font-size: 13px;">Expiry Date</label>
-                        <input type="date" id="editExpiryDate" class="filter-input" style="width: 100%;" required>
+                        <input type="date" id="editExpiryDate" name="expiryDate" class="filter-input" style="width: 100%;">
+                        <small class="error-msg" id="error-edit-expiryDate"></small>
                     </div>
                     <div class="filter-group" style="width: 100%;">
                         <label style="display: block; margin-bottom: 5px; font-size: 13px;">Usage Limit (0=∞)</label>
-                        <input type="number" id="editTotalUsageLimit" class="filter-input" style="width: 100%;" min="0">
+                        <input type="number" id="editTotalUsageLimit" name="totalUsageLimit" class="filter-input" style="width: 100%;">
+                        <small class="error-msg" id="error-edit-totalUsageLimit"></small>
                     </div>
                 </div>
 
@@ -217,9 +244,59 @@
     </div>
 
     <script>
+        // --- SET MIN DATE FOR CALENDAR ---
+        function setMinDate() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('expiryDate').setAttribute('min', today);
+            document.getElementById('editExpiryDate').setAttribute('min', today);
+        }
+        setMinDate();
+
+        // --- FIELD-WISE ERROR UTILITY ---
+        function clearErrors(formId) {
+            const form = document.getElementById(formId);
+            form.querySelectorAll('.error-msg').forEach(el => el.innerText = '');
+            form.querySelectorAll('.filter-input, .filter-select').forEach(el => el.classList.remove('invalid'));
+        }
+
+        function showFieldErrors(formId, errors, prefix = 'error-') {
+            clearErrors(formId);
+            for (const field in errors) {
+                const errorEl = document.getElementById(`${prefix}${field}`);
+                const inputEl = document.getElementById(formId === 'createCouponForm' ? field : `edit${field.charAt(0).toUpperCase() + field.slice(1)}`);
+                
+                if (errorEl) {
+                    errorEl.innerText = errors[field][0];
+                }
+                if (inputEl) {
+                    inputEl.classList.add('invalid');
+                }
+            }
+        }
+
+        // --- REAL-TIME VALIDATORS ---
+        function setupRealTimeValidation(formId, prefix = 'error-') {
+            const form = document.getElementById(formId);
+            const inputs = form.querySelectorAll('input, select');
+
+            inputs.forEach(input => {
+                input.addEventListener('input', () => {
+                    const errorEl = document.getElementById(`${prefix}${input.name}`);
+                    if (errorEl && errorEl.innerText) {
+                        errorEl.innerText = '';
+                        input.classList.remove('invalid');
+                    }
+                });
+            });
+        }
+
+        setupRealTimeValidation('createCouponForm', 'error-');
+        setupRealTimeValidation('editCouponForm', 'error-edit-');
+
         // 1. Create Coupon 
         document.getElementById('createCouponForm').addEventListener('submit', async function(e) {
             e.preventDefault();
+            clearErrors('createCouponForm');
             
             const payload = {
                 code: document.getElementById('code').value,
@@ -242,8 +319,10 @@
                 if (data.success) {
                     Swal.fire({ icon: 'success', title: 'Success', text: data.message, timer: 1500, showConfirmButton: false })
                     .then(() => window.location.reload());
+                } else if (data.errors) {
+                    showFieldErrors('createCouponForm', data.errors, 'error-');
                 } else {
-                    Swal.fire('Error', data.message, 'error');
+                    Swal.fire('Error', data.message || 'Something went wrong', 'error');
                 }
             } catch (error) {
                 Swal.fire('Error', 'Server error. Please try again.', 'error');
@@ -273,25 +352,22 @@
         document.getElementById('discountType').addEventListener('change', function() {
             if (this.value === 'percentage') {
                 document.getElementById('maxDiscountAmountGroup').style.display = 'block';
-                document.getElementById('maxDiscountAmount').required = true;
             } else {
                 document.getElementById('maxDiscountAmountGroup').style.display = 'none';
-                document.getElementById('maxDiscountAmount').required = false;
             }
         });
 
         document.getElementById('editDiscountType').addEventListener('change', function() {
             if (this.value === 'percentage') {
                 document.getElementById('editMaxDiscountGroup').style.display = 'block';
-                document.getElementById('editMaxDiscount').required = true;
             } else {
                 document.getElementById('editMaxDiscountGroup').style.display = 'none';
-                document.getElementById('editMaxDiscount').required = false;
             }
         });
 
         // --- EDIT MODAL ENGINE ---
         function openEditModal(id, code, type, value, min, max, date, limit) {
+            clearErrors('editCouponForm');
             document.getElementById('editCouponId').value = id;
             document.getElementById('editCode').value = code;
             document.getElementById('editDiscountType').value = type;
@@ -312,6 +388,7 @@
         // --- SUBMIT EDIT ---
         document.getElementById('editCouponForm').addEventListener('submit', async function(e) {
             e.preventDefault();
+            clearErrors('editCouponForm');
             
             const payload = {
                 couponId: document.getElementById('editCouponId').value,
@@ -335,8 +412,10 @@
                 if (data.success) {
                     Swal.fire({ icon: 'success', title: 'Updated!', text: data.message, timer: 1500, showConfirmButton: false })
                     .then(() => window.location.reload());
+                } else if (data.errors) {
+                    showFieldErrors('editCouponForm', data.errors, 'error-edit-');
                 } else {
-                    Swal.fire('Error', data.message, 'error');
+                    Swal.fire('Error', data.message || 'Something went wrong', 'error');
                 }
             } catch (error) {
                 Swal.fire('Error', 'Server error. Please try again.', 'error');

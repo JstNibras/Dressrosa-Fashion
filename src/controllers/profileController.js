@@ -4,6 +4,32 @@ const { profileSchema, addressSchema, changePasswordSchema } = require('../utils
 const bcrypt = require('bcrypt');
 const axios = require('axios');
 
+const verifyPincodeMatch = async (pincode, state, district) => {
+    try {
+        const pincodeRes = await axios.get(`https://api.postalpincode.in/pincode/${pincode}`);
+        const pinData = pincodeRes.data[0];
+
+        if (pinData.Status === "Success") {
+            const officialState = pinData.PostOffice[0].State;
+            const officialDistrict = pinData.PostOffice[0].District;
+
+            if (state.toLowerCase() !== officialState.toLowerCase() ||
+                district.toLowerCase() !== officialDistrict.toLowerCase()) {
+                return { 
+                    success: false, 
+                    message: `Pincode ${pincode} does not match ${district}, ${state}. Expected ${officialDistrict}, ${officialState}` 
+                };
+            }
+            return { success: true };
+        } else {
+            return { success: false, message: "Invalid Pincode provided" };
+        }
+    } catch (apiErr) {
+        console.error("Pincode API Error:", apiErr);
+        return { success: true }; 
+    }
+};
+
 const getProfile = async (req, res) => {
     try {
         const userId = req.session.user ? req.session.user.id : null;
@@ -122,10 +148,12 @@ const getAddresses = async (req, res) => {
 
 const getAddAddress = async (req, res) => {
      try {
+        const returnTo = req.query.returnTo || 'profile';
         res.render('user/add-address', { 
             user: req.session.user, 
             errors: {}, 
-            oldData: {} 
+            oldData: {},
+            returnTo
         });
     } catch (error) {
         res.status(500).send("Error loading page");
@@ -158,37 +186,21 @@ const postAddAddress = async (req, res) => {
             return res.render('user/add-address', {
                 user: req.session.user,
                 errors: errors,
-                oldData: req.body
+                oldData: req.body,
+                returnTo: req.body.returnTo
             });
         }
 
         const { pincode, state, district, city } = validation.data;
 
-        try {
-            const pincodeRes = await axios.get(`https://api.postalpincode.in/pincode/${pincode}`);
-            const pinData = pincodeRes.data[0];
-
-            if (pinData.Status === "Success") {
-                const officialState = pinData.PostOffice[0].State;
-                const officialDistrict = pinData.PostOffice[0].District;
-
-                if (state.toLowerCase() !== officialState.toLowerCase() ||
-                    district.toLocaleLowerCase() !== officialDistrict.toLowerCase()) {
-                        return res.render('user/add-address', {
-                            user: req.session.user,
-                            errors: { pincode: [`Pincode ${pincode} does not match ${district}, ${state}`]},
-                            oldData: req.body
-                        });
-                }
-            } else {
-                return res.render('user/add-address', {
-                    user: req.session.user,
-                    errors: { pincode: ["Invalid Pincode provided"] },
-                    oldData: req.body
-                });
-            }
-        } catch (apiErr) {
-            console.error("Pincode API Error:", apiErr);
+        const pinVerify = await verifyPincodeMatch(pincode, state, district);
+        if (!pinVerify.success) {
+            return res.render('user/add-address', {
+                user: req.session.user,
+                errors: { pincode: [pinVerify.message] },
+                oldData: req.body,
+                returnTo: req.body.returnTo
+            });
         }
 
         const addressData = {
@@ -207,7 +219,12 @@ const postAddAddress = async (req, res) => {
             $push: { addresses: newAddress._id }
         });
 
-        res.redirect('/profile/addresses?success=Address added successfully');
+        const returnTo = req.body.returnTo;
+        if (returnTo === 'checkout') {
+            res.redirect('/checkout?success=Address added successfully');
+        } else {
+            res.redirect('/profile/addresses?success=Address added successfully');
+        }
 
     } catch (error) {
         console.error('Error adding address:', error);
@@ -224,11 +241,13 @@ const getEditAddress = async (req, res) => {
             return res.redirect('/profile/addresses?error=Address not found')
         }
 
+        const returnTo = req.query.returnTo || 'profile';
         res.render('user/edit-address', {
             user: req.session.user,
             address: address,
             errors: {},
-            oldData: {}
+            oldData: {},
+            returnTo
         });
 
     } catch (error) {
@@ -250,12 +269,31 @@ const postEditAddress = async (req, res) => {
                 user: req.session.user,
                 address: { ...req.body, _id: addressId },
                 errors: errors,
-                oldData: req.body
+                oldData: req.body,
+                returnTo: req.body.returnTo
+            });
+        }
+
+        const { pincode, state, district } = validation.data;
+        const pinVerify = await verifyPincodeMatch(pincode, state, district);
+        
+        if (!pinVerify.success) {
+            return res.render('user/edit-address', {
+                user: req.session.user,
+                address: { ...req.body, _id: addressId },
+                errors: { pincode: [pinVerify.message] },
+                oldData: req.body,
+                returnTo: req.body.returnTo
             });
         }
 
         await Address.findByIdAndUpdate(addressId, validation.data);
-        res.redirect('/profile/addresses?success=Address updated');
+        const returnTo = req.body.returnTo;
+        if (returnTo === 'checkout') {
+            res.redirect('/checkout?success=Address updated');
+        } else {
+            res.redirect('/profile/addresses?success=Address updated');
+        }
     } catch (error) {
         res.status(500).send('Internal Server Error');
     }

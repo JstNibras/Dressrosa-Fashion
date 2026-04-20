@@ -16,6 +16,11 @@ exports.getCartPage = async (req, res) => {
             return res.redirect('/login'); 
         }
 
+        if (req.session.buyNowItem) {
+            delete req.session.buyNowItem;
+            delete req.session.appliedCoupon;
+        }
+
         const cartData = await cartService.getCartData(userId);
         const hasInvalidItems = cartData.items.some(item => item.isUnavailable || item.isDeleted);
         const addresses = await Address.find({ user: userId });
@@ -24,6 +29,8 @@ exports.getCartPage = async (req, res) => {
         res.render('user/cart', {
             cartItems: cartData.items,
             cartTotal: cartData.cartTotal,
+            regularTotal: cartData.regularTotal,
+            productDiscount: cartData.productDiscount,
             isCheckoutValid: cartData.isCheckoutValid && !hasInvalidItems,
             hasInvalidItems: hasInvalidItems,
             addresses: addresses,
@@ -144,6 +151,11 @@ exports.addToCart = async (req, res) => {
 
         const { productId, size, quantity = 1 } = req.body;
         const requestedQty = parseInt(quantity);
+
+        if (req.session.buyNowItem) {
+            delete req.session.buyNowItem;
+            delete req.session.appliedCoupon;
+        }
 
         const Product = require('../models/productModel');
         const product = await Product.findById(productId).populate('category');

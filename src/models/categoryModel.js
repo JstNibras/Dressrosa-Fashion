@@ -14,11 +14,6 @@ const categorySchema = new mongoose.Schema({
         unique: true,
         lowercase: true
     },
-    description: {
-        type: String,
-        trim: true,
-        default: ''
-    },
     image: {
         type: String,
         default: null 
