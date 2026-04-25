@@ -48,6 +48,17 @@
                         <option value="custom" <%= query.filter === 'custom' ? 'selected' : '' %>>Custom Date</option>
                     </select>
 
+                    <select name="status" class="form-input" style="width: auto;">
+                        <option value="" <%= !query.status ? 'selected' : '' %>>All Status</option>
+                        <option value="Placed" <%= query.status === 'Placed' ? 'selected' : '' %>>Placed</option>
+                        <option value="Shipped" <%= query.status === 'Shipped' ? 'selected' : '' %>>Shipped</option>
+                        <option value="Delivered" <%= query.status === 'Delivered' ? 'selected' : '' %>>Delivered</option>
+                        <option value="Cancelled" <%= query.status === 'Cancelled' ? 'selected' : '' %>>Cancelled</option>
+                        <option value="Return Requested" <%= query.status === 'Return Requested' ? 'selected' : '' %>>Return Requested</option>
+                        <option value="Returned" <%= query.status === 'Returned' ? 'selected' : '' %>>Returned</option>
+                        <option value="Return Rejected" <%= query.status === 'Return Rejected' ? 'selected' : '' %>>Return Rejected</option>
+                    </select>
+
                     <div class="custom-date-fields" id="customDateFields">
                         <span class="date-label">From:</span>
                         <input type="date" name="startDate" value="<%= query.startDate %>" class="form-input" style="width: auto;">
@@ -61,7 +72,7 @@
                 </div>
 
                 <div class="export-btn-group">
-                    <% const exportQuery = `?filter=${query.filter}&startDate=${query.startDate}&endDate=${query.endDate}`; %>
+                    <% const exportQuery = `?filter=${query.filter}&startDate=${query.startDate}&endDate=${query.endDate}&status=${query.status}`; %>
                     
                     <a href="/admin/report/download/excel<%= exportQuery %>" class="btn-export btn-excel">
                         <i class="fas fa-file-excel"></i> Excel
@@ -121,6 +132,7 @@
                                 let url = `?page=${pageNum}&filter=${query.filter}`;
                                 if (query.startDate) url += `&startDate=${query.startDate}`;
                                 if (query.endDate) url += `&endDate=${query.endDate}`;
+                                if (query.status) url += `&status=${query.status}`;
                                 return url;
                             }
                         %>

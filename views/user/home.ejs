@@ -121,7 +121,8 @@
                                 <% } %>
                                 <span class="tax-info">inclusive of all taxes</span>
                             </div>
-                            <% const isInWishlist = wishlist && wishlist.includes(product._id.toString()); %>
+                            <% const wishlistArrHome = locals.wishlist || []; %>
+                            <% const isInWishlist = wishlistArrHome.includes(product._id.toString()); %>
                             <i class="<%= isInWishlist ? 'fas' : 'far' %> fa-heart wishlist-icon" 
                                style="<%= isInWishlist ? 'color: #e74c3c;' : '' %>"
                                onclick="toggleWishlist('<%= product._id %>', this)"></i>

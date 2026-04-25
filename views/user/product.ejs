@@ -78,7 +78,11 @@
                     ADD TO CART
                 </button>
                 
-                <button class="btn-wishlist-inline" onclick="toggleWishlist('<%= product._id %>', this)" title="Add to Wishlist"><i class="far fa-heart"></i></button>
+                <% const wishlistArr = locals.wishlist || []; %>
+                <% const isMainInWishlist = wishlistArr.includes(product._id.toString()); %>
+                <button class="btn-wishlist-inline" onclick="toggleWishlist('<%= product._id %>', this)" title="Add to Wishlist">
+                    <i class="<%= isMainInWishlist ? 'fas' : 'far' %> fa-heart" style="<%= isMainInWishlist ? 'color: #e74c3c;' : '' %>"></i>
+                </button>
             </div>
 
             <button id="buyNowBtn" class="btn-buy-now" onclick="buyNow('<%= product._id %>')" disabled>BUY IT NOW</button>
@@ -108,8 +112,10 @@
                                 <img src="<%= rel.images[0] %>" alt="<%= rel.name %>" class="product-image">
                             </a>
                             
-                            <button class="btn-wishlist-card" onclick="toggleWishlist('<%= product._id %>', this)" title="Add to Wishlist">
-                                <i class="far fa-heart"></i>
+                            <% const wishlistArrForRel = locals.wishlist || []; %>
+                            <% const isRelInWishlist = wishlistArrForRel.includes(rel._id.toString()); %>
+                            <button class="btn-wishlist-card" onclick="toggleWishlist('<%= rel._id %>', this)" title="Add to Wishlist">
+                                <i class="<%= isRelInWishlist ? 'fas' : 'far' %> fa-heart" style="<%= isRelInWishlist ? 'color: #e74c3c;' : '' %>"></i>
                             </button>
                         </div>
 
