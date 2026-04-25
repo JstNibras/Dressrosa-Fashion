@@ -92,8 +92,10 @@
                                 <a href="/product/<%= product._id %>">
                                     <img src="<%= product.images[0] %>" alt="<%= product.name %>" class="product-image">
                                 </a>
+                                <% const wishlistArr = locals.wishlist || []; %>
+                                <% const isProductInWishlist = wishlistArr.includes(product._id.toString()); %>
                                 <button class="btn-wishlist" onclick="toggleWishlist('<%= product._id %>', this)" title="Add to Wishlist">
-                                    <i class="far fa-heart"></i>
+                                    <i class="<%= isProductInWishlist ? 'fas' : 'far' %> fa-heart" style="<%= isProductInWishlist ? 'color: #e74c3c;' : '' %>"></i>
                                 </button>
                             </div>
 
@@ -159,16 +161,6 @@
     <%- include('../layout/quickAdd') %>
     <%- include('../layout/footer') %>
 
-    <script>
-        function addToWishlist(productId) {
-            console.log('Wishlist clicked for:', productId);
-            // We will build the AJAX call for this later
-        }
 
-        function addToCart(productId) {
-            console.log('Add to cart clicked for:', productId);
-            // We will build the AJAX call for this later
-        }
-    </script>
 </body>
 </html>

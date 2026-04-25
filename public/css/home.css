@@ -80,33 +80,6 @@ a {
     color: #dddddd;
 }
 
-.search-container {
-    position: relative;
-    width: 350px;
-}
-
-.search-input {
-    width: 100%;
-    background: transparent;
-    border: 1px solid #ffffff;
-    border-radius: 20px;
-    padding: 8px 15px;
-    color: #ffffff;
-    font-size: 13px;
-    outline: none;
-}
-
-.search-input::placeholder { color: #aaaaaa; }
-
-.search-icon {
-    position: absolute;
-    right: 15px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #ffffff;
-    cursor: pointer;
-}
-
 .main-nav {
     display: flex;
     gap: 30px;
