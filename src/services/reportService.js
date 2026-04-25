@@ -35,32 +35,66 @@ const getDateRange = (filter, startDate, endDate) => {
     return { start, end };
 };
 
-exports.getReportData = async (filter, startDate, endDate, page = null, limit = 10) => {
+exports.getReportData = async (filter, startDate, endDate, page = null, limit = 10, status = '') => {
     const { start, end } = getDateRange(filter, startDate, endDate);
 
     const dateMatch = { createdAt: { $gte: start, $lte: end } };
+    const statusMatch = status ? { "items.itemStatus": status } : { "items.itemStatus": { $nin: ['Cancelled', 'Returned'] } };
 
     const kpiAgg = await Order.aggregate([
-        { $match: { ...dateMatch, orderStatus: { $nin: ['Cancelled', 'Returned'] } } },
+        { $match: dateMatch },
+        { $unwind: "$items" },
+        { $match: statusMatch },
         { $group: {
             _id: null,
-            totalSales: { $sum: "$pricing.total" },
-            totalOrders: { $sum: 1 },
-            totalDiscount: { $sum: "$pricing.discount" }
+            totalSales: { 
+                $sum: { 
+                    $subtract: [
+                        "$items.itemTotal", 
+                        { 
+                            $multiply: [
+                                "$items.itemTotal", 
+                                { 
+                                    $divide: [
+                                        { $ifNull: ["$pricing.discount", 0] }, 
+                                        { $cond: [{ $eq: ["$pricing.subtotal", 0] }, 1, "$pricing.subtotal"] }
+                                    ] 
+                                }
+                            ] 
+                        }
+                    ] 
+                } 
+            },
+            totalOrders: { $addToSet: "$_id" },
+            totalDiscount: { 
+                $sum: { 
+                    $multiply: [
+                        "$items.itemTotal", 
+                        { 
+                            $divide: [
+                                { $ifNull: ["$pricing.discount", 0] }, 
+                                { $cond: [{ $eq: ["$pricing.subtotal", 0] }, 1, "$pricing.subtotal"] }
+                            ] 
+                        }
+                    ] 
+                } 
+            }
         }},
         { $project: {
             _id: 0,
             totalSales: { $round: ["$totalSales", 2] },
-            totalOrders: 1,
+            totalOrders: { $size: "$totalOrders" },
             totalDiscount: { $round: ["$totalDiscount", 2] }
         }}
     ]);
 
     const kpi = kpiAgg.length > 0 ? kpiAgg[0] : { totalSales: 0, totalOrders: 0, totalDiscount: 0 };
 
+    const totalRecordsMatch = status ? { ...dateMatch, "items.itemStatus": status } : dateMatch;
     const totalRecordsAgg = await Order.aggregate([
         { $match: dateMatch },
         { $unwind: "$items" },
+        { $match: status ? { "items.itemStatus": status } : {} },
         { $count: "total" }
     ]);
 
@@ -69,6 +103,7 @@ exports.getReportData = async (filter, startDate, endDate, page = null, limit = 
     const pipeline = [
         { $match: dateMatch },
         { $unwind: "$items" },
+        { $match: status ? { "items.itemStatus": status } : {} },
         { $lookup: { from: 'users', localField: 'user', foreignField: '_id', as: 'userDetails' } },
         { $unwind: { path: "$userDetails", preserveNullAndEmptyArrays: true } },
         { $sort: { createdAt: -1 } },

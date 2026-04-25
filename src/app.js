@@ -86,6 +86,7 @@ app.use(async (req, res, next) => {
 
     res.locals.wishlistCount = 0;
     res.locals.cartCount = 0;
+    res.locals.wishlist = [];
 
     if (res.locals.user && res.locals.user.id) {
         try {
@@ -95,8 +96,13 @@ app.use(async (req, res, next) => {
                 Cart.findOne({ user: userId })
             ]);
             
-            if (wishlist) res.locals.wishlistCount = wishlist.products.length;
-            if (cart && cart.items) res.locals.cartCount = cart.items.length;
+            if (wishlist) {
+                res.locals.wishlistCount = wishlist.products.length;
+                res.locals.wishlist = wishlist.products.map(p => p.toString());
+            }
+            if (cart && cart.items) {
+                res.locals.cartCount = cart.items.length;
+            }
         } catch (error) {
             console.error("Global Badge Count Error:", error.message);
         }

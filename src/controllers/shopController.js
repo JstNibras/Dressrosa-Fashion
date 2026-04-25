@@ -12,18 +12,9 @@ exports.getHomePage = async (req, res) => {
 
         const categories = await Category.find({ isActive: true });
 
-        let wishlist = [];
-        if (req.session.user) {
-            const userWishlist = await Wishlist.findOne({ user: req.session.user.id });
-            if (userWishlist) {
-                wishlist = userWishlist.products.map(id => id.toString());
-            }
-        }
-
         res.render('user/home', {
             newArrivals,
-            categories,
-            wishlist
+            categories
         });
     } catch (error) {
         console.error("Home Page Error:", error);
@@ -38,7 +29,7 @@ exports.getShopPage = async (req, res) => {
         const shopData = await productService.getStorefrontProducts({
             search, category, minPrice, maxPrice, sort, page
         });
-
+        
         res.render('user/shop', {
             products: shopData.products,
             categories: shopData.activeCategories,
