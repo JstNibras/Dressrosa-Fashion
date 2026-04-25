@@ -5,18 +5,19 @@ exports.getReportPage = async (req, res) => {
         const filter = req.query.filter || 'all_time';
         const startDate = req.query.startDate || '';
         const endDate = req.query.endDate || '';
+        const status = req.query.status || '';
 
         const page = parseInt(req.query.page) || 1;
         const limit = 10;
 
-        const data = await reportService.getReportData(filter, startDate, endDate, page, limit);
+        const data = await reportService.getReportData(filter, startDate, endDate, page, limit, status);
         
         res.render('admin/report', {
             kpi: data.kpi,
             reportData: data.reportData,
             currentPage: data.currentPage,
             totalPages: data.totalPages,
-            query: { filter, startDate, endDate }
+            query: { filter, startDate, endDate, status }
         });
     } catch (error) {
         console.error("Report Page Error:", error);
@@ -30,8 +31,9 @@ exports.downloadReport = async (req, res) => {
         const filter = req.query.filter || 'all_time';
         const startDate = req.query.startDate || '';
         const endDate = req.query.endDate || '';
+        const status = req.query.status || '';
 
-        const data = await reportService.getReportData(filter, startDate, endDate, null);
+        const data = await reportService.getReportData(filter, startDate, endDate, null, 10, status);
 
         if (format === 'excel') {
             await reportService.generateExcel(data.reportData, data.kpi, res);
