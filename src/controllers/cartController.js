@@ -16,16 +16,23 @@ exports.getCartPage = async (req, res) => {
             return res.redirect('/login'); 
         }
 
+        if (req.session.buyNowItem) {
+            delete req.session.buyNowItem;
+            delete req.session.appliedCoupon;
+        }
+
         const cartData = await cartService.getCartData(userId);
-
+        const hasInvalidItems = cartData.items.some(item => item.isUnavailable || item.isDeleted);
         const addresses = await Address.find({ user: userId });
-
         const defaultAddress = addresses.find(a => a.isDefault) || addresses[0] || null;
 
         res.render('user/cart', {
             cartItems: cartData.items,
             cartTotal: cartData.cartTotal,
-            isCheckoutValid: cartData.isCheckoutValid,
+            regularTotal: cartData.regularTotal,
+            productDiscount: cartData.productDiscount,
+            isCheckoutValid: cartData.isCheckoutValid && !hasInvalidItems,
+            hasInvalidItems: hasInvalidItems,
             addresses: addresses,
             defaultAddress: defaultAddress
         });
@@ -70,6 +77,20 @@ exports.updateQuantity = async (req, res) => {
         item.quantity = requestedQty;
         await cart.save();
 
+        if (req.session.appliedCoupon) {
+            const cartData = await cartService.getCartData(userId);
+            if (cartData.cartTotal < req.session.appliedCoupon.minPurchaseAmount) {
+                req.session.appliedCoupon = null;
+            } else {
+                const Coupon = require('../models/couponModel');
+                const couponDoc = await Coupon.findOne({ code: req.session.appliedCoupon.code });
+                if (couponDoc) {
+                    const couponService = require('../services/couponService');
+                    req.session.appliedCoupon.discountAmount = couponService.calculateDiscount(couponDoc, cartData.cartTotal);
+                }
+            }
+        }
+
         res.status(200).json({ success: true, message: 'Quantity updated' });
     } catch (error) {
         console.error("Update Qty Error:", error);
@@ -94,6 +115,20 @@ exports.removeFromCart = async (req, res) => {
         cart.items.pull({ _id: itemId });
         await cart.save();
 
+        if (req.session.appliedCoupon) {
+            const cartData = await cartService.getCartData(userId);
+            if (cartData.cartTotal < req.session.appliedCoupon.minPurchaseAmount) {
+                req.session.appliedCoupon = null;
+            } else {
+                const Coupon = require('../models/couponModel');
+                const couponDoc = await Coupon.findOne({ code: req.session.appliedCoupon.code });
+                if (couponDoc) {
+                    const couponService = require('../services/couponService');
+                    req.session.appliedCoupon.discountAmount = couponService.calculateDiscount(couponDoc, cartData.cartTotal);
+                }
+            }
+        }
+
         res.status(200).json({ success: true, message: 'Item removed from cart' });
     } catch (error) {
         console.error("Remove Item Error:", error);
@@ -117,10 +152,16 @@ exports.addToCart = async (req, res) => {
         const { productId, size, quantity = 1 } = req.body;
         const requestedQty = parseInt(quantity);
 
+        if (req.session.buyNowItem) {
+            delete req.session.buyNowItem;
+            delete req.session.appliedCoupon;
+        }
+
         const Product = require('../models/productModel');
-        const product = await Product.findById(productId);
-        if(!product || !product.isActive) {
-            return res.status(404).json({ success: false, message: 'Product is unavailable.' });
+        const product = await Product.findById(productId).populate('category');
+        
+        if(!product || !product.isActive || (product.category && !product.category.isActive)) {
+            return res.status(404).json({ success: false, message: 'This item is currently unavailable.' });
         }
 
         const variant = product.variants.find(v => v.size === size && v.isActive);

@@ -2,6 +2,9 @@ const express = require('express');
 const router = express.Router();
 const adminController = require('../controllers/adminController');
 const adminOrderController = require('../controllers/adminOrderController'); 
+const adminCouponController = require('../controllers/adminCouponController');
+const adminDashboardController = require('../controllers/adminDashboardController');
+const reportController = require('../controllers/reportController');
 const { isAdmin, noCache, adminLogout } = require('../middlewares/auth');
 
 router.get('/admin/login', noCache, (req, res) => {
@@ -21,5 +24,15 @@ router.get('/admin/orders/:orderId', isAdmin, adminOrderController.getAdminOrder
 router.patch('/admin/orders/:orderId/status', isAdmin, adminOrderController.patchOrderStatus);
 router.patch('/admin/orders/:orderId/item/:itemId/status', isAdmin, adminOrderController.patchOrderItemStatus);
 router.post('/admin/orders/:orderId/item/:itemId/return', isAdmin, adminOrderController.postProcessReturn);
+
+router.get('/admin/coupons', isAdmin, adminCouponController.getCouponPage);
+router.post('/admin/coupons/add', isAdmin, adminCouponController.createCoupon);
+router.post('/admin/coupons/toggle', isAdmin, adminCouponController.toggleCouponStatus);
+router.post('/admin/coupons/edit', isAdmin, adminCouponController.editCoupon);
+
+router.get('/admin/dashboard', isAdmin, noCache, adminDashboardController.getDashboard);
+
+router.get('/admin/report', isAdmin, noCache, reportController.getReportPage);
+router.get('/admin/report/download/:format', isAdmin, noCache, reportController.downloadReport);
 
 module.exports = router;

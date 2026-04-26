@@ -24,10 +24,9 @@
                 <a href="/admin/users" class="nav-item"><i class="fas fa-users"></i> Users</a>
                 <a href="/admin/products" class="nav-item"><i class="fas fa-box"></i> Products</a>
                 <a href="/admin/categories" class="nav-item active"><i class="fas fa-th-list"></i> Categories</a>
-                <a href="/admin/banners" class="nav-item"><i class="fas fa-plus-square"></i> Add Banners</a>
                 <a href="/admin/coupons" class="nav-item"><i class="fas fa-ticket-alt"></i> Coupons</a>
                 <a href="/admin/orders" class="nav-item"><i class="fas fa-shopping-cart"></i> Orders</a>
-                <a href="/admin/report" class="nav-item"><i class="fas fa-chart-pie"></i> Report</a>
+                <a href="/admin/report" class="nav-item"><i class="fas fa-chart-pie"></i> Reports</a>
             </nav>
 
             <div class="sidebar-footer">
@@ -70,7 +69,7 @@
                         <tr>
                             <th>IMAGE</th>
                             <th>CATEGORY NAME</th>
-                            <th>DESCRIPTION</th>
+                            <th>OFFER</th>
                             <th>STATUS</th>
                             <th>ACTION</th>
                         </tr>
@@ -87,7 +86,7 @@
                                             <span><%= category.name %></span>
                                         </div>
                                     </td>
-                                    <td class="desc-text"><%= category.description || 'N/A' %></td>
+                                    <td><%= category.offerPercentage %>%</td>
                                     <td>
                                         <span id="status-badge-<%= category._id %>" class="<%= category.isActive ? 'badge-active' : 'badge-inactive' %>">
                                             <%= category.isActive ? 'Active' : 'Inactive' %>
@@ -96,7 +95,7 @@
                                     <td>
                                         <div style="display: flex; gap: 8px;">
                                             <button class="btn-action" style="background-color: #3085d6; color: white;" 
-                                                    onclick="openEditModal('<%= category._id %>', '<%= category.name %>', '<%= category.description || '' %>', '<%= category.image || '' %>')">
+                                                    onclick="openEditModal('<%= category._id %>', '<%= category.name %>', '<%= category.image || '' %>', '<%= category.offerPercentage || 0 %>')">
                                                 EDIT
                                             </button>
                                             
@@ -148,21 +147,27 @@
             <form id="addCategoryForm">
                 <div class="form-group">
                     <label>Category Name *</label>
-                    <input type="text" id="catName" name="name" class="form-input" required placeholder="e.g. Men's Sneakers">
+                    <input type="text" id="catName" name="name" class="form-input" placeholder="e.g. Men's Sneakers">
+                    <span id="add-error-name" class="error-message"></span>
                 </div>
                 <div class="form-group">
-                    <label>Description</label>
-                    <textarea id="catDesc" name="description" class="form-input" rows="3" placeholder="Optional description..."></textarea>
+                    <label>Category Offer (%)</label>
+                    <input type="number" name="offerPercentage" id="addCatOffer" class="form-input" min="0" max="100" placeholder="e.g., 10">
+                    <span id="add-error-offerPercentage" class="error-message"></span>
                 </div>
                 <div class="form-group">
                     <label style="margin-bottom: 10px; display: block;">Category Image *</label>
                     <div class="image-upload-container">
                         <div class="image-upload-box" style="max-width: 200px;">
-                            <input type="file" name="image" id="addCatInput" class="upload-input" accept="image/*" onchange="previewImage(this, 'prevCat', 'labelCat')" required>
+                            <input type="file" name="image" id="addCatInput" class="upload-input" accept="image/*" onchange="previewImage(this, 'prevCat', 'labelCat', 'removeCat')">
                             <img id="prevCat" class="upload-preview" src="">
                             <span id="labelCat" class="upload-label">Upload Image</span>
+                            <button type="button" id="removeCat" class="remove-image-btn" onclick="clearCategoryImage('image', 'prevCat', 'labelCat', 'removeCat')">
+                                <i class="fas fa-times"></i>
+                            </button>
                         </div>
                     </div>
+                    <span id="add-error-image" class="error-message"></span>
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn-action" style="background-color: #888888; color: #fff;" onclick="closeModal()">CANCEL</button>
@@ -182,21 +187,27 @@
                 <input type="hidden" id="editCatId" name="id">
                 <div class="form-group">
                     <label>Category Name *</label>
-                    <input type="text" id="editCatName" name="name" class="form-input" required>
+                    <input type="text" id="editCatName" name="name" class="form-input">
+                    <span id="edit-error-name" class="error-message"></span>
                 </div>
                 <div class="form-group">
-                    <label>Description</label>
-                    <textarea id="editCatDesc" name="description" class="form-input" rows="3"></textarea>
+                    <label>Category Offer (%)</label>
+                    <input type="number" name="offerPercentage" id="editCatOffer" class="form-input" min="0" max="100" placeholder="e.g., 10">
+                    <span id="edit-error-offerPercentage" class="error-message"></span>
                 </div>
                 <div class="form-group">
                     <label style="margin-bottom: 10px; display: block;">Category Image</label>
                     <div class="image-upload-container">
                         <div class="image-upload-box" style="max-width: 200px;">
-                            <input type="file" name="image" class="upload-input" accept="image/*" onchange="previewImage(this, 'editPrevCat', 'editLabelCat')">
+                            <input type="file" name="image" id="editCatInput" class="upload-input" accept="image/*" onchange="previewImage(this, 'editPrevCat', 'editLabelCat', 'editRemoveCat')">
                             <img id="editPrevCat" class="upload-preview" src="">
                             <span id="editLabelCat" class="upload-label">Change Image</span>
+                            <button type="button" id="editRemoveCat" class="remove-image-btn" onclick="clearCategoryImage('image', 'editPrevCat', 'editLabelCat', 'editRemoveCat')">
+                                <i class="fas fa-times"></i>
+                            </button>
                         </div>
                     </div>
+                    <span id="edit-error-image" class="error-message"></span>
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn-action" style="background-color: #888888; color: #fff;" onclick="closeEditModal()">CANCEL</button>
@@ -225,18 +236,26 @@
     </div>
 
     <script>
-        function openModal() { document.getElementById('categoryModal').style.display = 'flex'; }
+        function openModal() { 
+            closeModal(); // Ensure full reset before opening
+            document.getElementById('categoryModal').style.display = 'flex'; 
+        }
         
         function closeModal() { 
             document.getElementById('categoryModal').style.display = 'none'; 
             document.getElementById('addCategoryForm').reset();
+            clearErrors('add');
             
-            // HIGH-PRECISION FIX: Clear the preview images so the next Add is a clean slate
-            document.getElementById('prevCat').src = '';
-            document.getElementById('prevCat').style.display = 'none';
+            // Reset image previews and buttons
+            const prev = document.getElementById('prevCat');
+            if (prev) {
+                prev.src = '';
+                prev.removeAttribute('src');
+                prev.style.display = 'none';
+            }
             document.getElementById('labelCat').style.display = 'block';
+            document.getElementById('removeCat').style.display = 'none';
             
-            // Wipe the internal memory of the file input
             if (document.getElementById('addCatInput')) {
                 document.getElementById('addCatInput').value = '';
             }
@@ -244,6 +263,8 @@
 
         document.getElementById('addCategoryForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            if (!validateCategoryForm('add')) return;
+
             const form = document.getElementById('addCategoryForm');
             const formData = new FormData(form); 
 
@@ -260,7 +281,11 @@
                     Swal.fire({ icon: 'success', title: 'Success', text: data.message, timer: 1500, showConfirmButton: false })
                     .then(() => location.reload()); 
                 } else {
-                    Swal.fire({ icon: 'error', title: 'Oops...', text: data.message });
+                    if (data.field) {
+                        showError(data.field, data.message, 'add');
+                    } else {
+                        Swal.fire({ icon: 'error', title: 'Oops...', text: data.message });
+                    }
                 }
             } catch (error) {
                 Swal.fire({ icon: 'error', title: 'Error', text: 'Server error occurred' });
@@ -320,33 +345,55 @@
             }
         }
 
-        function openEditModal(id, name, description, imageUrl) {
+        function openEditModal(id, name, imageUrl, offerPercentage) {
             const preview = document.getElementById('editPrevCat');
             const label = document.getElementById('editLabelCat');
+            const removeBtn = document.getElementById('editRemoveCat');
             
-            // Assuming 'category.image' contains the Cloudinary URL
+            clearErrors('edit');
+
             if (imageUrl && imageUrl.trim() !== '') {
                 preview.src = imageUrl;
                 preview.style.display = 'block';
                 label.style.display = 'none';
+                removeBtn.style.display = 'flex';
             } else {
                 preview.src = '';
+                preview.removeAttribute('src');
                 preview.style.display = 'none';
                 label.style.display = 'block';
+                removeBtn.style.display = 'none';
             }
             document.getElementById('editCatId').value = id;
             document.getElementById('editCatName').value = name;
-            document.getElementById('editCatDesc').value = description;
+            document.getElementById('editCatOffer').value = offerPercentage;
             document.getElementById('editCategoryModal').style.display = 'flex';
         }
 
         function closeEditModal() {
             document.getElementById('editCategoryModal').style.display = 'none';
             document.getElementById('editCategoryForm').reset();
+            clearErrors('edit');
+            
+            // Reset image previews and buttons
+            const prev = document.getElementById('editPrevCat');
+            if (prev) {
+                prev.src = '';
+                prev.removeAttribute('src');
+                prev.style.display = 'none';
+            }
+            document.getElementById('editLabelCat').style.display = 'block';
+            document.getElementById('editRemoveCat').style.display = 'none';
+            
+            if (document.getElementById('editCatInput')) {
+                document.getElementById('editCatInput').value = '';
+            }
         }
 
         document.getElementById('editCategoryForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            if (!validateCategoryForm('edit')) return;
+
             const form = document.getElementById('editCategoryForm');
             const formData = new FormData(form);
             const categoryId = document.getElementById('editCatId').value;
@@ -362,14 +409,75 @@
                 if (data.success) {
                     closeEditModal();
                     Swal.fire({ icon: 'success', title: 'Updated!', text: data.message, timer: 1500, showConfirmButton: false })
-                    .then(() => location.reload()); // Reload to see updated name/image
+                    .then(() => location.reload()); 
                 } else {
-                    Swal.fire({ icon: 'error', title: 'Oops...', text: data.message });
+                    if (data.field) {
+                        showError(data.field, data.message, 'edit');
+                    } else {
+                        Swal.fire({ icon: 'error', title: 'Oops...', text: data.message });
+                    }
                 }
             } catch (error) {
                 Swal.fire({ icon: 'error', title: 'Error', text: 'Server error occurred' });
             }
         });
+
+        // --- VALIDATION ENGINE ---
+        function showError(field, message, prefix) {
+            const errorSpan = document.getElementById(`${prefix}-error-${field}`);
+            const input = document.querySelector(`#${prefix}CategoryForm [name="${field}"]`);
+            if (errorSpan) errorSpan.innerText = message;
+            if (input) input.classList.add('is-invalid');
+        }
+
+        function clearErrors(prefix) {
+            document.querySelectorAll(`#${prefix}CategoryForm .error-message`).forEach(el => el.innerText = '');
+            document.querySelectorAll(`#${prefix}CategoryForm .form-input`).forEach(el => el.classList.remove('is-invalid'));
+        }
+
+        function validateCategoryForm(prefix) {
+            clearErrors(prefix);
+            const form = document.getElementById(`${prefix}CategoryForm`);
+            let isValid = true;
+
+            const name = form.querySelector('[name="name"]').value.trim();
+            const offerPercentage = form.querySelector('[name="offerPercentage"]').value;
+
+            if (!name) { showError('name', 'Category name is required', prefix); isValid = false; }
+            else if (name.length < 3) { showError('name', 'Name must be at least 3 characters', prefix); isValid = false; }
+
+            if (offerPercentage && (Number(offerPercentage) < 0 || Number(offerPercentage) > 100)) {
+                showError('offerPercentage', 'Offer must be between 0 and 100', prefix); isValid = false;
+            }
+
+            // Image Validation
+            const preview = document.getElementById(prefix === 'add' ? 'prevCat' : 'editPrevCat');
+            const fileInput = document.getElementById(prefix === 'add' ? 'addCatInput' : 'editCatInput');
+            
+            const isImagePresent = (preview && preview.style.display === 'block') || (fileInput && fileInput.files.length > 0);
+
+            if (!isImagePresent) {
+                const errorSpan = document.getElementById(`${prefix}-error-image`);
+                if (errorSpan) errorSpan.innerText = 'Category image is required';
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        function clearCategoryImage(inputName, previewId, labelId, removeId) {
+            const prefix = previewId.includes('edit') ? 'edit' : 'add';
+            const input = document.getElementById(prefix === 'add' ? 'addCatInput' : 'editCatInput');
+            if (input) input.value = '';
+            
+            const preview = document.getElementById(previewId);
+            preview.src = '';
+            preview.removeAttribute('src');
+            preview.style.display = 'none';
+            
+            document.getElementById(labelId).style.display = 'block';
+            document.getElementById(removeId).style.display = 'none';
+        }
 
         // --- HIGH-PRECISION CROPPER ENGINE (CATEGORY) ---
         let cropper; 
@@ -377,11 +485,12 @@
         let currentPreviewId; 
         let currentLabelId;
 
-        function previewImage(input, previewId, labelId) {
+        function previewImage(input, previewId, labelId, removeId) {
             if (input.files && input.files[0]) {
                 currentInput = input;
                 currentPreviewId = previewId;
                 currentLabelId = labelId;
+                currentRemoveId = removeId;
 
                 const reader = new FileReader();
                 reader.onload = function(e) {
@@ -434,9 +543,11 @@
                 // 2. Update the visual UI
                 const preview = document.getElementById(currentPreviewId);
                 const label = document.getElementById(currentLabelId);
+                const removeBtn = document.getElementById(currentRemoveId);
                 preview.src = URL.createObjectURL(blob);
                 preview.style.display = 'block';
                 label.style.display = 'none';
+                if (removeBtn) removeBtn.style.display = 'flex';
 
                 // 3. Close the modal safely (passing FALSE so it doesn't wipe our new file!)
                 closeCropModal(false);

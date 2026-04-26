@@ -93,14 +93,15 @@
         <div class="add-address-title">ADD ADDRESS</div>
 
         <div class="add-address-form-box">
-            <form action="/profile/address/edit/<%= address._id %>" method="POST">
+            <form action="/profile/address/edit/<%= address._id %>" method="POST" novalidate>
+                <input type="hidden" name="returnTo" value="<%= returnTo %>">
                 <div class="form-row">
                     <div class="form-group form-col">
                         <label>First Name</label>
                         <input type="text" name="firstName"
                             value="<%= locals.oldData?.firstName || locals.address?.firstName || '' %>"
-                            class="form-control">
-                        <% if (locals.errors?.firstName) { %>
+                            class="form-control" required minlength="2">
+                        <% if (locals.errors && errors.firstName) { %>
                             <small style="color: #ff0055;">
                                 <%= errors.firstName[0] %>
                             </small>
@@ -110,8 +111,8 @@
                         <label>Last Name</label>
                         <input type="text" name="lastName"
                             value="<%= locals.oldData?.lastName || locals.address?.lastName || '' %>"
-                            class="form-control">
-                        <% if (locals.errors?.lastName) { %>
+                            class="form-control" required minlength="1">
+                        <% if (locals.errors && errors.lastName) { %>
                             <small style="color: #ff0055;">
                                 <%= errors.lastName[0] %>
                             </small>
@@ -123,8 +124,8 @@
                     <div class="form-group form-col">
                         <label>Mobile Number</label>
                         <input type="text" name="mobile"
-                            value="<%= locals.oldData?.mobile || locals.address?.mobile || '' %>" class="form-control">
-                        <% if (locals.errors?.mobile) { %>
+                            value="<%= locals.oldData?.mobile || locals.address?.mobile || '' %>" class="form-control" required pattern="[0-9]{10}">
+                        <% if (locals.errors && errors.mobile) { %>
                             <small style="color: #ff0055;">
                                 <%= errors.mobile[0] %>
                             </small>
@@ -134,8 +135,8 @@
                         <label>Pincode</label>
                         <input type="text" name="pincode"
                             value="<%= locals.oldData?.pincode || locals.address?.pincode || '' %>"
-                            class="form-control">
-                        <% if (locals.errors?.pincode) { %>
+                            class="form-control" required pattern="[0-9]{6}">
+                        <% if (locals.errors && errors.pincode) { %>
                             <small style="color: #ff0055;">
                                 <%= errors.pincode[0] %>
                             </small>
@@ -146,8 +147,8 @@
                 <div class="form-group">
                     <label>House No., Building Name</label>
                     <input type="text" name="houseNo"
-                        value="<%= locals.oldData?.houseNo || locals.address?.houseNo || '' %>" class="form-control">
-                    <% if (locals.errors?.houseNo) { %>
+                        value="<%= locals.oldData?.houseNo || locals.address?.houseNo || '' %>" class="form-control" required minlength="3">
+                    <% if (locals.errors && errors.houseNo) { %>
                         <small style="color: #ff0055;">
                             <%= errors.houseNo[0] %>
                         </small>
@@ -158,8 +159,8 @@
                     <div class="form-group form-col">
                         <label>State</label>
                         <input type="text" name="state"
-                            value="<%= locals.oldData?.state || locals.address?.state || '' %>" class="form-control">
-                        <% if (locals.errors?.state) { %>
+                            value="<%= locals.oldData?.state || locals.address?.state || '' %>" class="form-control" required>
+                        <% if (locals.errors && errors.state) { %>
                             <small style="color: #ff0055;">
                                 <%= errors.state[0] %>
                             </small>
@@ -169,8 +170,8 @@
                         <label>District</label>
                         <input type="text" name="district"
                             value="<%= locals.oldData?.district || locals.address?.district || '' %>"
-                            class="form-control">
-                        <% if (locals.errors?.district) { %>
+                            class="form-control" required>
+                        <% if (locals.errors && errors.district) { %>
                             <small style="color: #ff0055;">
                                 <%= errors.district[0] %>
                             </small>
@@ -179,8 +180,8 @@
                     <div class="form-group form-col">
                         <label>City</label>
                         <input type="text" name="city" value="<%= locals.oldData?.city || locals.address?.city || '' %>"
-                            class="form-control">
-                        <% if (locals.errors?.city) { %>
+                            class="form-control" required>
+                        <% if (locals.errors && errors.city) { %>
                             <small style="color: #ff0055;">
                                 <%= errors.city[0] %>
                             </small>
@@ -219,9 +220,144 @@
                         <% } %>
                 </div>
 
-                <button type="submit" class="btn-submit">UPDATE ADDRESS</button>
+                <div style="display: flex; gap: 15px; max-width: 500px; margin: 30px auto 0;">
+                    <button type="submit" class="btn-submit" style="margin: 0; flex: 1;">UPDATE ADDRESS</button>
+                    <a href="<%= returnTo === 'checkout' ? '/checkout' : '/profile/addresses' %>" 
+                       class="btn-submit" 
+                       style="margin: 0; flex: 1; background-color: #333; text-decoration: none; display: flex; align-items: center; justify-content: center;">
+                        CANCEL
+                    </a>
+                </div>
             </form>
         </div>
     </div>
 
     <%- include('../layout/footer') %>
+
+    <script>
+        // --- REAL-TIME FIELD-WISE VALIDATION ---
+        const form = document.querySelector('form');
+        const inputs = form.querySelectorAll('input[type="text"], input[type="radio"]');
+
+        const validationRules = {
+            firstName: { 
+                test: val => val.trim().length >= 2 && /^[a-zA-Z]+$/.test(val.trim()),
+                message: "First name must be at least 2 letters"
+            },
+            lastName: { 
+                test: val => val.trim().length >= 1 && /^[a-zA-Z]+$/.test(val.trim()),
+                message: "Last name must be letters only"
+            },
+            mobile: { 
+                test: val => /^[0-9]{10}$/.test(val.trim()),
+                message: "Enter a valid 10-digit mobile number"
+            },
+            pincode: { 
+                test: val => /^[0-9]{6}$/.test(val.trim()),
+                message: "Enter a valid 6-digit pincode"
+            },
+            houseNo: { 
+                test: val => val.trim().length >= 3,
+                message: "House No. must be at least 3 characters"
+            },
+            state: { test: val => val.trim() !== "", message: "State is required" },
+            district: { test: val => val.trim() !== "", message: "District is required" },
+            city: { test: val => val.trim() !== "", message: "City is required" }
+        };
+
+        function showError(input, message) {
+            let errorMsg = input.parentElement.querySelector('small');
+            if (!errorMsg) {
+                errorMsg = document.createElement('small');
+                errorMsg.style.color = '#ff0055';
+                errorMsg.style.display = 'block';
+                errorMsg.style.marginTop = '5px';
+                input.parentElement.appendChild(errorMsg);
+            }
+            errorMsg.innerText = message;
+            input.style.borderColor = '#ff0055';
+        }
+
+        function clearError(input) {
+            const errorMsg = input.parentElement.querySelector('small');
+            if (errorMsg) errorMsg.innerText = '';
+            input.style.borderColor = '#999';
+        }
+
+        inputs.forEach(input => {
+            input.addEventListener('blur', () => {
+                const rule = validationRules[input.name];
+                if (rule) {
+                    if (!rule.test(input.value)) {
+                        showError(input, rule.message);
+                    } else {
+                        clearError(input);
+                    }
+                }
+            });
+
+            input.addEventListener('input', () => {
+                const rule = validationRules[input.name];
+                if (rule && rule.test(input.value)) {
+                    clearError(input);
+                }
+            });
+        });
+
+        // --- PINCODE AUTO-FILL ENGINE ---
+        document.querySelector('input[name="pincode"]').addEventListener('input', async function (e) {
+            const pincode = e.target.value.trim();
+
+            if (pincode.length === 6 && /^\d+$/.test(pincode)) {
+                const districtField = document.querySelector('input[name="district"]');
+                const stateField = document.querySelector('input[name="state"]');
+                const cityField = document.querySelector('input[name="city"]');
+
+                try {
+                    districtField.placeholder = "Loading...";
+                    stateField.placeholder = "Loading...";
+
+                    const response = await fetch(`https://api.postalpincode.in/pincode/${pincode}`);
+                    const data = await response.json();
+
+                    if (Array.isArray(data) && data.length > 0 && data[0].Status === "Success") {
+                        const info = data[0].PostOffice[0];
+                        
+                        districtField.value = info.District || "";
+                        stateField.value = info.State || "";
+                        cityField.value = info.Block !== "Not Available" ? info.Block : info.Name;
+                        
+                        // Clear errors once filled
+                        clearError(districtField);
+                        clearError(stateField);
+                        clearError(cityField);
+                    }
+                } catch (error) {
+                    console.error("Pincode Fetch Error:", error);
+                }
+            }
+        });
+
+        form.addEventListener('submit', (e) => {
+            let isValid = true;
+            Object.keys(validationRules).forEach(name => {
+                const input = form.querySelector(`[name="${name}"]`);
+                if (input) {
+                    if (!validationRules[name].test(input.value)) {
+                        showError(input, validationRules[name].message);
+                        isValid = false;
+                    }
+                }
+            });
+
+            if (!isValid) {
+                e.preventDefault();
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Wait!',
+                    text: 'Please fix the errors in the form before submitting.',
+                    confirmButtonColor: '#ff0055'
+                });
+            }
+        });
+    </script>

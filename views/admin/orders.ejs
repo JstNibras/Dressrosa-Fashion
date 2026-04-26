@@ -22,10 +22,9 @@
                 <a href="/admin/users" class="nav-item"><i class="fas fa-users"></i> Users</a>
                 <a href="/admin/products" class="nav-item"><i class="fas fa-box"></i> Products</a>
                 <a href="/admin/categories" class="nav-item"><i class="fas fa-th-list"></i> Categories</a>
-                <a href="/admin/banners" class="nav-item"><i class="fas fa-plus-square"></i> Add Banners</a>
                 <a href="/admin/coupons" class="nav-item"><i class="fas fa-ticket-alt"></i> Coupons</a>
                 <a href="/admin/orders" class="nav-item active"><i class="fas fa-shopping-cart"></i> Orders</a>
-                <a href="/admin/report" class="nav-item"><i class="fas fa-chart-pie"></i> Report</a>
+                <a href="/admin/report" class="nav-item"><i class="fas fa-chart-pie"></i> Reports</a>
             </nav>
             <div class="sidebar-footer">
                 <a href="/admin/logout" class="nav-item logout-btn">Logout <i class="fas fa-sign-out-alt"></i></a>
@@ -119,9 +118,26 @@
                                         </td>
                                         
                                         <td>
-                                            <span class="status-select status-<%= order.orderStatus %>" style="display: inline-block; padding: 4px 10px; border-radius: 4px; pointer-events: none;">
+                                            <span class="status-select status-<%= order.orderStatus %>" style="display: inline-block; padding: 4px 10px; border-radius: 4px; pointer-events: none; margin-bottom: 6px;">
                                                 <%= order.orderStatus %>
                                             </span>
+                                            <br>
+                                            
+                                            <% 
+                                                const statusTally = {};
+                                                order.items.forEach(item => {
+                                                    statusTally[item.itemStatus] = (statusTally[item.itemStatus] || 0) + 1;
+                                                });
+                                            %>
+                                            
+                                            <div style="font-size: 11px; color: #666; line-height: 1.4; border-top: 1px dashed #ddd; padding-top: 4px;">
+                                                <% Object.keys(statusTally).forEach(status => { %>
+                                                    <% const color = status === 'Return Requested' ? '#f57c00' : (status === 'Cancelled' ? '#d32f2f' : '#666'); %>
+                                                    <div style="color: <%= color %>; font-weight: <%= status === 'Return Requested' ? '600' : 'normal' %>;">
+                                                        <%= statusTally[status] %>x <%= status %>
+                                                    </div>
+                                                <% }) %>
+                                            </div>
                                         </td>
                                         
                                         <td>

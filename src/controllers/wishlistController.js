@@ -3,11 +3,12 @@ const wishlistService = require('../services/wishlistService');
 
 exports.toggleWishlist = async (req, res) => {
     try {
-        if (!req.session || !req.session.user) {
+        const currentUser = req.user || (req.session ? req.session.user : null);
+        if (!currentUser) {
             return res.status(401).json({ success: false, message: 'Please log in to add items to your wishlist.' })
         }
 
-        const userId = req.session.user._id;
+        const userId = currentUser._id || currentUser.id;
         const productId = req.body.productId;
 
         let wishlist = await Wishlist.findOne({ user: userId });
@@ -42,11 +43,13 @@ exports.toggleWishlist = async (req, res) => {
 
 exports.getWishlistPage = async (req, res) => {
     try {
-        if (!req.session || !req.session.user) {
+        const currentUser = req.user || (req.session ? req.session.user : null);
+        if (!currentUser) {
             return res.redirect('/login');
         }
 
-        const products = await wishlistService.getUserWishlist(req.session.user._id);
+        const userId = currentUser._id || currentUser.id;
+        const products = await wishlistService.getUserWishlist(userId);
 
         res.render('user/wishlist', {
             products: products

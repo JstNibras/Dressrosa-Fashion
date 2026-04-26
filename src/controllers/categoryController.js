@@ -64,7 +64,7 @@ exports.getCategories = async (req, res) => {
 
 exports.postAddCategory = async (req, res) => {
     try {
-        const { name, description } = req.body;
+        const { name, offerPercentage } = req.body;
 
         const existingCategory = await Category.findOne({ name: { $regex: new RegExp(`^${name}$`, 'i') } });
         if (existingCategory) {
@@ -74,14 +74,16 @@ exports.postAddCategory = async (req, res) => {
         let imageUrl = null;
         if (req.file) {
             imageUrl = await uploadBufferToCloudinary(req.file);
-        } else {
-            return res.status(400).json({ success: false, message: "Category image is required." });
+        }
+
+        if (!imageUrl) {
+            return res.status(400).json({ success: false, message: "Category image is required.", field: "image" });
         }
 
         const newCategory = new Category({
             name,
-            description,
-            image: imageUrl
+            image: imageUrl,
+            offerPercentage: Number(offerPercentage) || 0
         });
 
         await newCategory.save();
@@ -95,7 +97,7 @@ exports.postAddCategory = async (req, res) => {
 exports.postEditCategory = async (req, res) => {
     try {
         const categoryId = req.params.id;
-        const { name, description } = req.body;
+        const { name, offerPercentage } = req.body;
 
         const existingCategory = await Category.findOne({
             name: { $regex: new RegExp(`^${name}$`, 'i') },
@@ -126,9 +128,19 @@ exports.postEditCategory = async (req, res) => {
         }
 
         category.name = name;
-        category.description = description;
+        category.offerPercentage = Number(offerPercentage) || 0;
         
         await category.save();
+
+        const Product = require('../models/productModel');
+        const products = await Product.find({ category: categoryId });
+
+        for (let prod of products) {
+            const prodOffer = prod.offerPercentage || 0;
+            const effectiveDiscount = Math.max(prodOffer, category.offerPercentage);
+            prod.salePrice = Math.round(prod.regularPrice - (prod.regularPrice * effectiveDiscount / 100));
+            await prod.save();
+        }
 
         res.status(200).json({ success: true, message: "Category updated successfully!" });
     } catch (error) {

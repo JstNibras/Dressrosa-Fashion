@@ -9,9 +9,9 @@ const { upload } = require('../config/cloudinary');
 const userController = require('../controllers/authController');
 
 
-router.get('/', noCache, (req, res) => {
-    res.render('user/home');
-});
+const shopController = require('../controllers/shopController');
+
+router.get('/', noCache, shopController.getHomePage);
 
 router.get('/login', noCache, (req, res) => {
     if (req.session.user) {

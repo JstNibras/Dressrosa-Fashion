@@ -3,23 +3,55 @@ const Cart = require('../models/cartModel');
 const Address = require('../models/addressModel');
 const Product = require('../models/productModel');
 
-exports.placeOrder = async (userId, addressId, paymentMethod) => {
+exports.placeOrder = async (userId, addressId, paymentMethod, appliedCoupon = null, buyNowItem = null) => {
     try {
-        const cartDoc = await Cart.findOne({ user: userId }).populate('items.product');
         const addressDoc = await Address.findById(addressId);
-
-        if (!cartDoc || cartDoc.items.length === 0) throw new Error("Cart is empty");
         if (!addressDoc) throw new Error("Delivery address not found");
 
-        const pureCart = JSON.parse(JSON.stringify(cartDoc));
+        let validItems = [];
+        let cartDoc = null;
+
+        if (buyNowItem) {
+            const product = await Product.findById(buyNowItem.productId).populate('category');
+            
+            if (!product || product.isActive === false || product.isListed === false) {
+                throw new Error("Transaction Failed: This product is no longer available.");
+            }
+            if (!product.category || product.category.isActive === false || product.category.isListed === false) {
+                throw new Error("Transaction Failed: The category for this product is currently unavailable.");
+            }
+
+            validItems = [{
+                product: product, 
+                size: buyNowItem.size,
+                quantity: buyNowItem.quantity
+            }];
+        } else {
+            cartDoc = await Cart.findOne({ user: userId }).populate({
+                path: 'items.product',
+                populate: { path: 'category' }
+            });
+
+            if (!cartDoc || cartDoc.items.length === 0) throw new Error("Cart is empty");
+
+            const pureCart = JSON.parse(JSON.stringify(cartDoc));
+            validItems = pureCart.items.filter(item => {
+                const p = item.product;
+                if (!p) return false;
+                const productActive = p.isActive !== false && p.isListed !== false;
+                const categoryActive = p.category && p.category.isActive !== false && p.category.isListed !== false;
+                return productActive && categoryActive;
+            });
+
+            if (validItems.length !== pureCart.items.length) {
+                throw new Error("Transaction Failed: Some items in your cart are no longer available (Blocked or Inactive). Please review your cart.");
+            }
+            if (validItems.length === 0) throw new Error("No valid items found in cart during checkout.");
+        }
 
         let subtotal = 0;
-        const validItems = pureCart.items.filter(item => item.product != null);
-        if (validItems.length === 0) throw new Error("No valid items found in cart during checkout.");
-
         const orderItems = validItems.map(item => {
             const product = item.product;
-
             const variant = product.variants.find(v => 
                 String(v.size).trim().toLowerCase() === String(item.size).trim().toLowerCase()
             );
@@ -50,8 +82,25 @@ exports.placeOrder = async (userId, addressId, paymentMethod) => {
         });
 
         const finalTotal = subtotal;
+        let orderDiscount = 0;
 
+        let couponToUpdate = null;
+        if (appliedCoupon) {
+            const couponService = require('./couponService');
+            const result = await couponService.validateCoupon(appliedCoupon.code, userId, finalTotal);
+            
+            if (!result.success) {
+                throw new Error(`Coupon Validation Failed: ${result.message}`);
+            }
+
+            const discount = couponService.calculateDiscount(result.coupon, finalTotal);
+            orderDiscount = discount;
+            couponToUpdate = result.coupon;
+        }
+
+        const netTotal = finalTotal - orderDiscount;
         const orderId = 'ORD-' + Date.now() + Math.floor(Math.random() * 1000);
+        
         const newOrder = new Order({
             user: userId,
             orderId: orderId,
@@ -65,12 +114,18 @@ exports.placeOrder = async (userId, addressId, paymentMethod) => {
                 pincode: addressDoc.pincode,
                 phone: addressDoc.mobile
             },
-            pricing: { subtotal, shipping: 0, total: finalTotal },
+            pricing: { subtotal: finalTotal, shipping: 0, discount: orderDiscount, total: netTotal },
             paymentMethod: paymentMethod,
-            paymentStatus: paymentMethod === 'COD' ? 'Pending' : 'Completed'
+            paymentStatus: 'Pending'
         });
 
         await newOrder.save();
+
+        if (couponToUpdate) {
+            couponToUpdate.usedBy.push(userId);
+            couponToUpdate.usedCount += 1;
+            await couponToUpdate.save();
+        }
 
         for (let item of validItems) {
             await Product.updateOne(
@@ -79,9 +134,10 @@ exports.placeOrder = async (userId, addressId, paymentMethod) => {
             );
         }
 
-        // 5. Empty the Cart (Using the original Mongoose Document)
-        cartDoc.items = [];
-        await cartDoc.save();
+        if (!buyNowItem && cartDoc) {
+            cartDoc.items = [];
+            await cartDoc.save();
+        }
 
         return newOrder;
 

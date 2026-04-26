@@ -25,7 +25,7 @@ exports.isAdmin = (req, res, next) => {
 exports.adminLogout = (req, res) => {
     req.session.destroy((err) => {
         if(err) return res.redirect('/admin/users');
-        res.clearCookie('connect.sid');
+        res.clearCookie('admin.sid');
         res.redirect('/admin/login')
     })
 }

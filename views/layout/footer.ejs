@@ -101,10 +101,60 @@
 .footer-bottom {
     border-top: 1px solid #333;
     margin-top: 50px;
-    padding-top: 20px;
+    padding: 30px 20px 10px;
     text-align: center;
-    font-size: 12px;
-    color: #666;
+    font-size: 13px;
+    color: #888;
+}
+
+.social-links {
+    display: flex;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.social-links a {
+    width: 35px;
+    height: 35px;
+    background: #222;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 50%;
+    transition: 0.3s;
+    font-size: 14px;
+}
+
+.social-links a:hover {
+    background: #ff0055;
+    transform: translateY(-3px);
+}
+
+.contact-info p {
+    color: #aaa;
+    font-size: 14px;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.contact-info p i {
+    color: #ff0055;
+    width: 20px;
+}
+
+.payment-methods {
+    display: flex;
+    gap: 15px;
+    font-size: 24px;
+    color: #444;
+}
+
+.payment-methods i:hover {
+    color: #888;
+    cursor: pointer;
 }
 </style>
 
@@ -115,52 +165,53 @@
                 <span>Dressrosa</span> Fashion
             </a>
             <p class="footer-description">
-                Your destination for high-precision fashion. Crafted for those who value style and substance.
+                High-precision fashion for the modern individual. We combine timeless style with premium quality to ensure you always look your best.
             </p>
             <div class="social-links">
-                <a href="#"><i class="fab fa-facebook-f"></i></a>
-                <a href="#"><i class="fab fa-instagram"></i></a>
-                <a href="#"><i class="fab fa-twitter"></i></a>
+                <a href="#" title="Facebook"><i class="fab fa-facebook-f"></i></a>
+                <a href="#" title="Instagram"><i class="fab fa-instagram"></i></a>
+                <a href="#" title="Twitter"><i class="fab fa-twitter"></i></a>
+                <a href="#" title="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
             </div>
         </div>
 
         <div class="footer-column">
-            <h4 class="footer-title">Shop</h4>
+            <h4 class="footer-title">Collections</h4>
             <ul>
-                <li><a href="/category/men">Men's Collection</a></li>
-                <li><a href="/category/women">Women's Collection</a></li>
-                <li><a href="/new-arrivals">New Arrivals</a></li>
-                <li><a href="/offers">Exclusive Offers</a></li>
+                <li><a href="/shop">All Products</a></li>
+                <li><a href="/shop?sort=new-arrivals">New Arrivals</a></li>
+                <li><a href="/shop?sort=price-low">Best Deals</a></li>
+                <li><a href="/wishlist">My Wishlist</a></li>
             </ul>
         </div>
 
         <div class="footer-column">
-            <h4 class="footer-title">Support</h4>
+            <h4 class="footer-title">Account & Support</h4>
             <ul>
-                <li><a href="/profile">My Account</a></li>
-                <li><a href="/profile/orders">Order Tracking</a></li>
-                <li><a href="/profile/addresses">Shipping Policy</a></li>
-                <li><a href="/contact">Contact Us</a></li>
+                <li><a href="/profile">My Profile</a></li>
+                <li><a href="/profile/orders">My Orders</a></li>
+                <li><a href="/profile/addresses">Saved Addresses</a></li>
+                <li><a href="/wallet">Wallet Balance</a></li>
+                <li><a href="/refer">Refer a Friend</a></li>
             </ul>
         </div>
 
-        <div class="footer-column newsletter">
-            <h4 class="footer-title">Stay Updated</h4>
-            <p>Subscribe to get special offers and first look at new drops.</p>
-            <form class="footer-form">
-                <input type="email" placeholder="Enter your email" required>
-                <button type="submit">Join</button>
-            </form>
+        <div class="footer-column contact-info">
+            <h4 class="footer-title">Contact Us</h4>
+            <p><i class="fas fa-map-marker-alt"></i> Dressrosa Towers, Cyberpark, Kerala</p>
+            <p><i class="fas fa-phone-alt"></i> +91 98765 43210</p>
+            <p><i class="fas fa-envelope"></i> support@dressrosa.com</p>
+            <div class="payment-methods" style="margin-top: 20px;">
+                <i class="fab fa-cc-visa"></i>
+                <i class="fab fa-cc-mastercard"></i>
+                <i class="fab fa-google-pay"></i>
+                <i class="fab fa-apple-pay"></i>
+            </div>
         </div>
     </div>
 
     <div class="footer-bottom">
-        <p>&copy; 2026 Dressrosa Fashion. All Rights Reserved. Built in Kerala.</p>
-        <div class="payment-methods">
-            <i class="fab fa-cc-visa"></i>
-            <i class="fab fa-cc-mastercard"></i>
-            <i class="fab fa-google-pay"></i>
-        </div>
+        <p>&copy; 2026 Dressrosa Fashion. All Rights Reserved. Crafted with passion in India.</p>
     </div>
 </footer>
 
@@ -214,13 +265,16 @@
                     }
                 } else {
                     // 2. We are on Shop/Home -> Just toggle the Heart Icon Color
-                    const icon = buttonElement.querySelector('i');
+                    // If buttonElement is the <i> itself, use it. Otherwise find <i> inside.
+                    const icon = buttonElement.tagName === 'I' ? buttonElement : buttonElement.querySelector('i');
                     if (icon) {
                         if (data.isAdded) {
-                            icon.classList.replace('far', 'fas');
+                            icon.classList.remove('far');
+                            icon.classList.add('fas');
                             icon.style.color = '#e74c3c';
                         } else {
-                            icon.classList.replace('fas', 'far');
+                            icon.classList.remove('fas');
+                            icon.classList.add('far');
                             icon.style.color = 'inherit';
                         }
                     }

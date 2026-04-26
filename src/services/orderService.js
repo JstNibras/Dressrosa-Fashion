@@ -1,5 +1,8 @@
+const mongoose = require('mongoose');
 const Order = require('../models/orderModel');
 const Product = require('../models/productModel');
+const walletService = require('./walletService');
+const { prependListener } = require('pdfkit');
 
 exports.getUserOrders = async (userId, searchQuery = '', page = 1, limit = 5) => {
     try {
@@ -43,28 +46,86 @@ exports.getOrderDetails = async (orderId, userId) => {
 };
 
 exports.cancelOrderItem = async (orderId, itemId, userId, reason) => {
-    const order = await Order.findOne({ orderId: orderId, user: userId });
-    if (!order) throw new Error("Order not found");
 
-    const item = order.items.id(itemId);
-    if (!item) throw new Error("Item not found in order");
-    if (item.itemStatus === 'Delivered' || item.itemStatus === 'Cancelled' || item.itemStatus === 'Returned') {
-        throw new Error(`Item cannot be cancelled because it is currently ${item.itemStatus}`);
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        const order = await Order.findOne({ orderId: orderId, user: userId }).session(session);
+        if (!order) throw new Error("Order not found");
+
+        const item = order.items.id(itemId);
+        if (!item) throw new Error("Item not found in order");
+        
+        if (['Shipped', 'Delivered', 'Cancelled', 'Returned'].includes(item.itemStatus)) {
+            throw new Error(`Item cannot be cancelled because it is currently ${item.itemStatus}`);
+        }
+
+        item.itemStatus = 'Cancelled';
+        item.cancellationReason = reason || 'User requested cancellation';
+
+        order.markModified('items');
+
+        const activeItems = order.items.filter(i => i.itemStatus !== 'Cancelled' && i.itemStatus !== 'Returned');
+
+        if (activeItems.length === 0) {
+            const hasReturned = order.items.some(i => i.itemStatus === 'Returned');
+            order.orderStatus = hasReturned ? 'Returned' : 'Cancelled';
+        } else {
+            const allDelivered = activeItems.every(i => ['Delivered', 'Return Requested', 'Return Rejected'].includes(i.itemStatus));
+            const anyShipped = activeItems.some(i => i.itemStatus === 'Shipped');
+
+            if (allDelivered) order.orderStatus = 'Delivered';
+            else if (anyShipped) order.orderStatus = 'Shipped';
+            else order.orderStatus = 'Processing';
+        }
+
+        await Product.updateOne(
+            { _id: item.productId, "variants.size": item.size },
+            { $inc: { "variants.$.stock": item.quantity } },
+            { session }
+        );
+
+        const method = order?.paymentMethod;
+        const status = order?.paymentStatus;
+
+        if (method === 'RAZORPAY' || method === 'WALLET') {
+            if (status === 'Completed') {
+                
+                let refundAmount = item.itemTotal;
+
+                if (order.pricing && order.pricing.discount > 0) {
+                    const itemProportion = item.itemTotal / order.pricing.subtotal;
+                    const itemDiscount = order.pricing.discount * itemProportion;
+
+                    refundAmount = Math.round((item.itemTotal - itemDiscount) * 100) / 100;
+                }
+
+                await walletService.creditWallet(
+                    userId,
+                    refundAmount,
+                    `Refund for Cancelled Item in Order #${order.orderId}`,
+                    session
+                );
+            }
+        }
+
+        const allCancelled = order.items.every(i => i.itemStatus === 'Cancelled');
+        if (allCancelled) order.orderStatus = 'Cancelled';
+
+        await order.save({ session });
+
+        await session.commitTransaction();
+        session.endSession();
+
+        return order;
+
+    } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        console.error("Cancellation Transaction Aborted:", error);
+        throw new Error(error.message || "Failed to process cancellation.");
     }
-
-    item.itemStatus = 'Cancelled';
-    item.cancellationReason = reason || 'No reason provided';
-
-    await Product.updateOne(
-        { _id: item.productId, "variants.size": item.size },
-        { $inc: { "variants.$.stock": item.quantity } }
-    );
-
-    const allCancelled = order.items.every(i => i.itemStatus === 'Cancelled');
-    if (allCancelled) order.orderStatus = 'Cancelled';
-
-    await order.save();
-    return order;
 }
 
 exports.returnOrderItem = async (orderId, itemId, userId, reason) => {
@@ -167,21 +228,23 @@ exports.updateOrderItemStatusAdmin = async (orderId, itemId, newStatus) => {
 
         item.itemStatus = newStatus;
 
+        order.markModified('items');
+
         const activeItems = order.items.filter(i => i.itemStatus !== 'Cancelled' && i.itemStatus !== 'Returned');
 
         if (activeItems.length === 0) {
-            const allReturned = order.items.every(i => i.itemStatus === 'Returned' || i.itemStatus === 'Cancelled');
-            order.orderStatus = allReturned ? 'Returned' : 'Cancelled';
+            const hasReturned = order.items.some(i => i.itemStatus === 'Returned');
+            order.orderStatus = hasReturned ? 'Returned' : 'Cancelled';
         } else {
-            const allDelivered = activeItems.every(i => i.itemStatus === 'Delivered');
-            const anyShipped = activeItems.some(i => i.itemStatus === 'Shipped' || i.itemStatus === 'Delivered');
+            const allDelivered = activeItems.every(i => ['Delivered', 'Return Requested', 'Return Rejected'].includes(i.itemStatus));
+            const anyShipped = activeItems.some(i => i.itemStatus === 'Shipped');
 
             if (allDelivered) {
                 order.orderStatus = 'Delivered';
             } else if (anyShipped) {
                 order.orderStatus = 'Shipped';
             } else {
-                order.orderStatus = 'Placed';
+                order.orderStatus = 'Processing';
             }
         }
 
@@ -193,27 +256,83 @@ exports.updateOrderItemStatusAdmin = async (orderId, itemId, newStatus) => {
 };
 
 exports.processReturnRequestAdmin = async (orderId, itemId, action, rejectReason) => {
-    const order = await Order.findOne({ orderId: orderId });
-    if (!order) throw new Error("Order not found");
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    
+    try {
+        const order = await Order.findOne({ orderId: orderId }).session(session);
+        if (!order) throw new Error("Order not found");
 
-    const item = order.items.id(itemId);
-    if (!item || item.itemStatus !== 'Return Requested') throw new Error("No pending return request for this item");
+        const item = order.items.id(itemId);
+        if (!item || item.itemStatus !== 'Return Requested') throw new Error("No pending return request for this item");
 
-    if (action === 'approve') {
-        item.itemStatus = 'Returned';
+        if (action === 'approve') {
+            item.itemStatus = 'Returned';
 
-        const Product = require('../models/productModel');
-        await Product.updateOne(
-            { _id: item.productId, "variants.size": item.size },
-            { $inc: { "variants.$.stock": item.quantity } }
-        );
-    } else if (action === 'reject') {
-        if (!rejectReason || rejectReason.trim() === '') throw new Error("Rejection reason is required.");
-        item.itemStatus = 'Return Rejected';
-        item.adminRejectReason = rejectReason;
+            const Product = require('../models/productModel');
+            const prodId = item.product || item.productId;
+
+            if (prodId) {
+                await Product.updateOne(
+                    { _id: prodId, "variants.size": item.size },
+                    { $inc: { "variants.$.stock": item.quantity } },
+                    { session }
+                );
+            }
+
+            const walletService = require('./walletService');
+            let refundAmount = item.itemTotal;
+
+            if (order.pricing && order.pricing.discount > 0) {
+                const itemProportion = item.itemTotal / order.pricing.subtotal;
+                const itemDiscount = order.pricing.discount * itemProportion;
+                refundAmount = Math.round((item.itemTotal - itemDiscount) * 100) / 100;
+            }
+
+            await walletService.creditWallet(
+                order.user,
+                refundAmount,
+                `Refund for Returned Item in Order #${order.orderId}`,
+                session
+            );
+            
+        } else if (action === 'reject') {
+            if (!rejectReason || rejectReason.trim() === '') throw new Error("Rejection reason is required.");
+            item.itemStatus = 'Return Rejected';
+            item.adminRejectReason = rejectReason;
+        }
+
+        order.markModified('items');
+
+        const activeItems = order.items.filter(i => i.itemStatus !== 'Cancelled' && i.itemStatus !== 'Returned');
+
+        if (activeItems.length === 0) {
+            const hasReturned = order.items.some(i => i.itemStatus === 'Returned');
+            order.orderStatus = hasReturned ? 'Returned' : 'Cancelled';
+        } else {
+            const allDelivered = activeItems.every(i => ['Delivered', 'Return Requested', 'Return Rejected'].includes(i.itemStatus));
+            const anyShipped = activeItems.some(i => i.itemStatus === 'Shipped');
+
+            if (allDelivered) {
+                order.orderStatus = 'Delivered';
+            } else if (anyShipped) {
+                order.orderStatus = 'Shipped';
+            } else {
+                order.orderStatus = 'Processing';
+            }
+        }
+
+        await order.save({ session });
+        await session.commitTransaction();
+        session.endSession();
+
+        return item;
+
+    } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        console.error("Return Process Database Error:", error);
+        throw new Error(error.message || "Database failed to process the return.");
     }
-
-    await order.save();
-    return item;
 }
 
