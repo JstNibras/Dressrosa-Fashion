@@ -100,6 +100,20 @@ exports.createProduct = async (productData, files) => {
         } catch (e) {
             throw new Error("Invalid variant data format. Must be valid JSON.");
         }
+        
+        const seenVariants = new Set();
+        for (const variant of parsedVariants) {
+            if (variant.isActive !== false) {
+                const size = (variant.size || "").trim().toLowerCase();
+                const color = (variant.color || "").trim().toLowerCase();
+                const key = `${size}-${color}`;
+                
+                if (seenVariants.has(key)) {
+                    throw new Error(`Duplicate variants found (Size: ${variant.size || 'N/A'}, Color: ${variant.color || 'N/A'}).`);
+                }
+                seenVariants.add(key);
+            }
+        }
     }
 
     const Category = require('../models/categoryModel');
@@ -160,6 +174,20 @@ exports.updateProduct = async (productId, productData, files) => {
             parsedVariants = JSON.parse(productData.variants);
         } catch (e) {
             throw new Error("Invalid variant data format.");
+        }
+        
+        const seenVariants = new Set();
+        for (const variant of parsedVariants) {
+            if (variant.isActive !== false) {
+                const size = (variant.size || "").trim().toLowerCase();
+                const color = (variant.color || "").trim().toLowerCase();
+                const key = `${size}-${color}`;
+                
+                if (seenVariants.has(key)) {
+                    throw new Error(`Duplicate variants found (Size: ${variant.size || 'N/A'}, Color: ${variant.color || 'N/A'}).`);
+                }
+                seenVariants.add(key);
+            }
         }
     }
 
