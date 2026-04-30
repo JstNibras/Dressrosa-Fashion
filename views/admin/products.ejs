@@ -504,15 +504,32 @@
             // Variant Validation
             const variantRows = form.querySelectorAll(prefix === 'add' ? '.variant-row' : '.edit-variant-row');
             let activeVariantsCount = 0;
+            let duplicateFound = false;
+            const seenVariants = new Set();
+            
             variantRows.forEach(row => {
                 const activeInput = row.querySelector('.var-active');
                 if (!activeInput || activeInput.value === 'true') {
                     const stock = row.querySelector('.var-stock').value;
-                    if (stock !== "") activeVariantsCount++;
+                    const size = row.querySelector('.var-size').value.trim().toLowerCase();
+                    const color = row.querySelector('.var-color').value.trim().toLowerCase();
+                    
+                    if (stock !== "") {
+                        activeVariantsCount++;
+                        const key = `${size}-${color}`;
+                        if (seenVariants.has(key)) {
+                            duplicateFound = true;
+                        }
+                        seenVariants.add(key);
+                    }
                 }
             });
 
-            if (activeVariantsCount === 0) {
+            if (duplicateFound) {
+                const errorSpan = document.getElementById(`${prefix}-error-variants`);
+                if (errorSpan) errorSpan.innerText = 'Duplicate variants (same size and color) are not allowed.';
+                isValid = false;
+            } else if (activeVariantsCount === 0) {
                 const errorSpan = document.getElementById(`${prefix}-error-variants`);
                 if (errorSpan) errorSpan.innerText = 'At least one active variant with stock is required.';
                 isValid = false;
