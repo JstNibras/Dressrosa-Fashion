@@ -128,7 +128,7 @@
                 closeQuickAdd();
                 return Swal.fire({
                     icon: 'warning', title: 'Login Required', text: data.message, confirmButtonText: 'Log In', confirmButtonColor: '#111'
-                }).then((res) => { if (res.isConfirmed) window.location.href = '/login'; });
+                }).then((res) => { if (res.isConfirmed) window.location.href = '/login?returnTo=' + encodeURIComponent(window.location.pathname + window.location.search); });
             }
 
             if (data.success) {

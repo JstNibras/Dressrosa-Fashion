@@ -45,6 +45,7 @@ exports.getWishlistPage = async (req, res) => {
     try {
         const currentUser = req.user || (req.session ? req.session.user : null);
         if (!currentUser) {
+            req.session.returnTo = req.originalUrl;
             return res.redirect('/login');
         }
 

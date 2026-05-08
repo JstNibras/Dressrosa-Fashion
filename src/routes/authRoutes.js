@@ -17,6 +17,20 @@ router.get('/login', noCache, (req, res) => {
     if (req.session.user) {
         return res.redirect('/'); 
     }
+    if (req.query.returnTo) {
+        req.session.returnTo = req.query.returnTo;
+    } else if (!req.session.returnTo && req.headers.referer) {
+        const referer = req.headers.referer;
+        const host = req.get('host');
+        if (referer.includes(host) && !referer.includes('/login') && !referer.includes('/signup')) {
+            try {
+                const url = new URL(referer);
+                req.session.returnTo = url.pathname + url.search;
+            } catch (e) {
+            }
+        }
+    }
+    
     res.render('user/login', { error: null });
 });
 
@@ -64,7 +78,9 @@ router.get('/auth/google/callback',
                 return res.redirect('/login');
             }
             console.log("Session saved. User logged in:", req.user.email);
-            res.redirect('/');
+            const returnTo = req.session.returnTo || '/';
+            delete req.session.returnTo;
+            res.redirect(returnTo);
         });
     }
 );

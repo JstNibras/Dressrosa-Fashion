@@ -13,6 +13,7 @@ exports.getCartPage = async (req, res) => {
         }
 
         if (!userId) {
+            req.session.returnTo = req.originalUrl;
             return res.redirect('/login'); 
         }
 
