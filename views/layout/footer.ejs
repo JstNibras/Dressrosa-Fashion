@@ -239,7 +239,7 @@
                     confirmButtonText: 'Log In',
                     confirmButtonColor: '#111'
                 }).then((result) => {
-                    if (result.isConfirmed) window.location.href = '/login';
+                    if (result.isConfirmed) window.location.href = '/login?returnTo=' + encodeURIComponent(window.location.pathname + window.location.search);
                 });
                 return;
             }

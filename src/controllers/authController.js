@@ -91,7 +91,9 @@ exports.login = async (req, res) => {
             if (err) {
                 return res.status(500).send("Internal Server Error");
             }
-            res.redirect('/');
+            const returnTo = req.session.returnTo || '/';
+            delete req.session.returnTo;
+            res.redirect(returnTo);
         });
     } catch (error) {
         res.status(500).send("Internal Server Error");
