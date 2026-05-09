@@ -33,7 +33,10 @@ const verifyPincodeMatch = async (pincode, state, district) => {
 const getProfile = async (req, res) => {
     try {
         const userId = req.session.user ? req.session.user.id : null;
-        if (!userId) return res.redirect('/login');
+        if (!userId) {
+            req.session.returnTo = req.originalUrl;
+            return res.redirect('/login');
+        }
 
         const user = await User.findById(userId).populate('addresses');
         
@@ -52,7 +55,10 @@ const getProfile = async (req, res) => {
 const getEditProfile = async (req, res) => {
      try {
         const userId = req.session.user ? req.session.user.id : null;
-        if (!userId) return res.redirect('/login');
+        if (!userId) {
+            req.session.returnTo = req.originalUrl;
+            return res.redirect('/login');
+        }
 
         const user = await User.findById(userId);
         res.render('user/edit-profile', { user });
@@ -136,7 +142,10 @@ const postChangePassword = async (req, res) => {
 const getAddresses = async (req, res) => {
     try {
         const userId = req.session.user ? req.session.user.id : null;
-        if (!userId) return res.redirect('/login');
+        if (!userId) {
+            req.session.returnTo = req.originalUrl;
+            return res.redirect('/login');
+        }
 
         const addresses = await Address.find({ user: userId });
         res.render('user/addresses', { addresses, user: req.session.user });

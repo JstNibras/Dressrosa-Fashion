@@ -10,6 +10,9 @@ exports.isUser = async (req, res, next) => {
             res.redirect('/login?error=Account Blocked');
         }
     } else {
+        if (req.method === 'GET' && !req.xhr && (!req.headers.accept || !req.headers.accept.includes('json'))) {
+            req.session.returnTo = req.originalUrl;
+        }
         res.redirect('/login');
     }
 };

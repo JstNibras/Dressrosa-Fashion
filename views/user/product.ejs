@@ -316,7 +316,7 @@
                     Swal.fire({
                         icon: 'info', title: 'Login Required', text: data.message,
                         confirmButtonText: 'Log In', confirmButtonColor: '#111'
-                    }).then((res) => { if (res.isConfirmed) window.location.href = '/login'; });
+                    }).then((res) => { if (res.isConfirmed) window.location.href = '/login?returnTo=' + encodeURIComponent(window.location.pathname + window.location.search); });
                 } else if (data.success) {
                     const cartBadge = document.getElementById('nav-cart-badge');
                     if (cartBadge) {
@@ -368,7 +368,7 @@
                     Swal.fire({
                         icon: 'info', title: 'Login Required', text: data.message || 'Please log in to continue.',
                         confirmButtonText: 'Log In', confirmButtonColor: '#111'
-                    }).then((res) => { if (res.isConfirmed) window.location.href = '/login'; });
+                    }).then((res) => { if (res.isConfirmed) window.location.href = '/login?returnTo=' + encodeURIComponent(window.location.pathname + window.location.search); });
                 } else if (data.success) {
                     window.location.href = data.redirectUrl || '/checkout';
                 } else {
